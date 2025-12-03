@@ -1,0 +1,16 @@
+
+d:\Project\TestApp>mkdir lib\config 
+
+d:\Project\TestApp>mkdir lib\core 
+
+d:\Project\TestApp>mkdir lib\data 
+
+d:\Project\TestApp>mkdir lib\logic 
+
+d:\Project\TestApp>mkdir lib\presentation 
+
+d:\Project\TestApp>mkdir lib\presentation\auth 
+
+d:\Project\TestApp>mkdir lib\presentation\parent 
+
+d:\Project\TestApp>mkdir lib\presentation\child 

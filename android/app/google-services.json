@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "99958570766",
+    "project_id": "dekdee-a563c",
+    "storage_bucket": "dekdee-a563c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99958570766:android:867fa5ee4216f27daba15f",
+        "android_client_info": {
+          "package_name": "com.seniorproject.kid_guard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "99958570766-5rhjqnkuqtarp220mgnnbsnjrfmbuo2g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.seniorproject.kid_guard",
+            "certificate_hash": "3bafa71fab47b56926cafc024a6e720f81cc5c48"
+          }
+        },
+        {
+          "client_id": "99958570766-kikroknulgf5e1e61vjtic0lmauo12e3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYNMw9KNUGPyVRX6MCCUuVkKRgbt0JNaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "99958570766-kikroknulgf5e1e61vjtic0lmauo12e3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
