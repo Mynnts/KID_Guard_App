@@ -11,7 +11,8 @@ class ChildPinScreen extends StatefulWidget {
   State<ChildPinScreen> createState() => _ChildPinScreenState();
 }
 
-class _ChildPinScreenState extends State<ChildPinScreen> {
+class _ChildPinScreenState extends State<ChildPinScreen>
+    with SingleTickerProviderStateMixin {
   final List<TextEditingController> _pinControllers = List.generate(
     6,
     (_) => TextEditingController(),
@@ -19,13 +20,33 @@ class _ChildPinScreenState extends State<ChildPinScreen> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _hasError = false;
 
-  // Theme Colors
-  static const _primaryColor = Color(0xFFF97316); // Orange
-  static const _bgColor = Color(0xFFFAFAFA);
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  // Minimal Premium Colors - Child Theme (Warm Orange)
+  static const _accentColor = Color(0xFFE67E22);
+  static const _bgColor = Color(0xFFFAFAFC);
+  static const _textPrimary = Color(0xFF1A1A2E);
+  static const _textSecondary = Color(0xFF6B7280);
+  static const _textMuted = Color(0xFF9CA3AF);
+  static const _borderColor = Color(0xFFE5E5EA);
+  static const _inputBg = Color(0xFFF5F5F7);
 
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+
+    _animController.forward();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
@@ -33,6 +54,7 @@ class _ChildPinScreenState extends State<ChildPinScreen> {
 
   @override
   void dispose() {
+    _animController.dispose();
     for (var c in _pinControllers) {
       c.dispose();
     }
@@ -79,10 +101,22 @@ class _ChildPinScreenState extends State<ChildPinScreen> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Invalid PIN. Please try again.'),
-          backgroundColor: Colors.red[400],
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 18),
+              SizedBox(width: 12),
+              Text(
+                'รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(20),
         ),
       );
       for (var c in _pinControllers) {
@@ -96,206 +130,321 @@ class _ChildPinScreenState extends State<ChildPinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgColor,
-      appBar: AppBar(
-        backgroundColor: _bgColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_rounded,
-            color: Color(0xFF1F2937),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
 
-              // Header
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.child_care_rounded,
-                  size: 32,
-                  color: _primaryColor,
-                ),
-              ),
+                  // Back Button
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildBackButton(),
+                  ),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 56),
 
-              const Text(
-                'Enter Parent PIN',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
+                  // Icon
+                  _buildIcon(),
 
-              const SizedBox(height: 8),
+                  const SizedBox(height: 32),
 
-              Text(
-                'Ask your parent for the 6-digit PIN',
-                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-              ),
+                  // Title
+                  const Text(
+                    'กรอกรหัส PIN',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
 
-              const SizedBox(height: 48),
+                  const SizedBox(height: 8),
 
-              // PIN Boxes
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(6, (index) {
-                  return Container(
-                    width: 44,
-                    height: 52,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    child: RawKeyboardListener(
-                      focusNode: FocusNode(),
-                      onKey: (e) => _onKeyPressed(index, e),
-                      child: TextFormField(
-                        controller: _pinControllers[index],
-                        focusNode: _focusNodes[index],
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        maxLength: 1,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: _hasError ? Colors.red : _primaryColor,
-                        ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: _hasError
-                                  ? Colors.red.withOpacity(0.5)
-                                  : Colors.grey[200]!,
+                  Text(
+                    'ขอรหัส 6 หลักจากผู้ปกครอง',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _textSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // PIN Boxes
+                  _buildPinBoxes(),
+
+                  const SizedBox(height: 40),
+
+                  // Connect Button
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      if (auth.isLoading) {
+                        return Center(
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: _accentColor,
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: _hasError ? Colors.red : _primaryColor,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        onChanged: (v) => _onDigitChanged(index, v),
-                      ),
-                    ),
-                  );
-                }),
+                        );
+                      }
+                      return _buildConnectButton();
+                    },
+                  ),
+
+                  const SizedBox(height: 56),
+
+                  // Help Card
+                  _buildHelpCard(),
+
+                  const SizedBox(height: 40),
+                ],
               ),
-
-              const SizedBox(height: 32),
-
-              // Connect Button
-              Consumer<AuthProvider>(
-                builder: (context, auth, _) {
-                  if (auth.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: _primaryColor),
-                    );
-                  }
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _submit,
-                      icon: const Icon(Icons.link_rounded, size: 20),
-                      label: const Text(
-                        'Connect',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 40),
-
-              // Help Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.info_outline,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Where to find PIN?',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F2937),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Settings → Connection PIN',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _borderColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.arrow_back_ios_rounded,
+          color: _textPrimary,
+          size: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIcon() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: _accentColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: _accentColor.withOpacity(0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.child_care_outlined,
+        size: 40,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildPinBoxes() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(6, (index) {
+        final hasValue = _pinControllers[index].text.isNotEmpty;
+        final isFocused = _focusNodes[index].hasFocus;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 48,
+          height: 56,
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          decoration: BoxDecoration(
+            color: isFocused ? Colors.white : _inputBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _hasError
+                  ? const Color(0xFFEF4444)
+                  : isFocused
+                  ? _accentColor
+                  : hasValue
+                  ? _accentColor.withOpacity(0.4)
+                  : _borderColor,
+              width: isFocused ? 1.5 : 1,
+            ),
+            boxShadow: isFocused
+                ? [
+                    BoxShadow(
+                      color: _accentColor.withOpacity(0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: RawKeyboardListener(
+            focusNode: FocusNode(),
+            onKey: (e) => _onKeyPressed(index, e),
+            child: TextFormField(
+              controller: _pinControllers[index],
+              focusNode: _focusNodes[index],
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              maxLength: 1,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: _hasError ? const Color(0xFFEF4444) : _textPrimary,
+              ),
+              decoration: const InputDecoration(
+                counterText: '',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (v) => _onDigitChanged(index, v),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildConnectButton() {
+    return GestureDetector(
+      onTap: _submit,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: _accentColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _accentColor.withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.link_rounded, size: 20, color: Colors.white),
+            SizedBox(width: 10),
+            Text(
+              'เชื่อมต่อ',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHelpCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F5), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icon Container
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.help_outline_rounded,
+              color: Color(0xFF3B82F6),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Text Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'หารหัส PIN ที่ไหน?',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ตั้งค่า → รหัสเชื่อมต่อ',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _textSecondary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Arrow
+          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _textMuted),
+        ],
       ),
     );
   }

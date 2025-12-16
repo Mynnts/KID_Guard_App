@@ -9,6 +9,8 @@ import '../../data/models/child_model.dart';
 import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
+import 'sleep_schedule_screen.dart';
+import 'quiet_time_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -856,18 +858,24 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
         onTap: () => _toggleLock(context, children, isAnyLocked),
       ),
       _QuickAction(
-        icon: Icons.child_care_rounded,
-        label: 'Child Mode',
-        subtitle: 'Switch mode',
-        color: const Color(0xFF8B5CF6),
-        onTap: () => Navigator.pushNamed(context, '/child/activation'),
+        icon: Icons.bedtime_rounded,
+        label: 'Sleep',
+        subtitle: 'เวลานอน',
+        color: const Color(0xFF6366F1),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SleepScheduleScreen()),
+        ),
       ),
       _QuickAction(
-        icon: Icons.contacts_rounded,
-        label: 'Contacts',
-        subtitle: 'View contacts',
-        color: const Color(0xFFEC4899),
-        onTap: () => Navigator.pushNamed(context, '/parent/contacts'),
+        icon: Icons.do_not_disturb_on_rounded,
+        label: 'Quiet Time',
+        subtitle: 'เวลาพัก',
+        color: const Color(0xFF8B5CF6),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const QuietTimeScreen()),
+        ),
       ),
     ];
 

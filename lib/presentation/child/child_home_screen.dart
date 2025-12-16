@@ -24,7 +24,12 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   final OverlayService _overlayService = OverlayService();
   final LocationService _locationService = LocationService();
   bool _isChildrenModeActive = false;
-  bool _isUnlocking = false;
+
+  // Minimal Premium Colors
+  static const _accentColor = Color(0xFFE67E22);
+  static const _bgColor = Color(0xFFFAFAFC);
+  static const _textPrimary = Color(0xFF1A1A2E);
+  static const _textSecondary = Color(0xFF6B7280);
 
   @override
   void initState() {
@@ -36,18 +41,6 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   }
 
   void _checkIntent() {
-    // We can't easily check intent extras in pure Flutter initState without a plugin or method channel check
-    // But since we launched MainActivity, we can check if we were triggered by a specific action
-    // However, standard Flutter doesn't expose intent extras directly in initState.
-    // We might need to use a method channel to ask "why was I opened?" or listen to new intents.
-    // For simplicity, let's assume if the user is here and the overlay was just shown, they might want to unlock.
-    // Actually, let's use the method channel to check for pending actions.
-
-    // A better way for MVP: The OverlayService launched MainActivity.
-    // We can just show the PIN dialog if we detect we are in a "Time Limit Reached" state but the user is in the app.
-    // But the user might just be opening the app normally.
-
-    // Let's add a method to check if we should show unlock dialog.
     platform.invokeMethod('getLaunchIntentAction').then((action) {
       if (action == 'unlock_time_limit') {
         _showPinDialog(isTimeLimitUnlock: true);
@@ -58,15 +51,12 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   void _initializeServices() {
     _backgroundService = BackgroundService(
       onBlockedAppDetected: (packageName) {
-        print('Blocked app detected: $packageName');
         OverlayService().showBlockOverlay(packageName);
       },
       onTimeLimitReached: () {
-        print('Time limit reached!');
         OverlayService().showBlockOverlay("Time Limit Reached");
       },
       onAppAllowed: () {
-        print('App allowed, hiding overlay');
         OverlayService().hideOverlay();
       },
     );
@@ -91,11 +81,9 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   Future<void> _toggleChildMode(bool value) async {
     if (value) {
-      // Turn ON
       bool overlayPerm = await _overlayService.checkPermission();
       if (!overlayPerm) {
         await _overlayService.requestPermission();
-        // Re-check after returning from settings
         overlayPerm = await _overlayService.checkPermission();
         if (!overlayPerm) return;
       }
@@ -107,11 +95,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       if (child != null && user != null) {
         await _backgroundService.startMonitoring(child.id, user.uid);
         await _locationService.startTracking(user.uid, child.id);
-        setState(() {
-          _isChildrenModeActive = true;
-        });
+        setState(() => _isChildrenModeActive = true);
 
-        // Update Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -120,13 +105,30 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             .update({'isChildModeActive': true});
 
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Child Mode Activated')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  SizedBox(width: 12),
+                  Text('เปิดใช้งานโหมดเด็กแล้ว'),
+                ],
+              ),
+              backgroundColor: const Color(0xFF22C55E),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(20),
+            ),
+          );
         }
       }
     } else {
-      // Turn OFF - Require PIN
       _showPinDialog();
     }
   }
@@ -137,8 +139,15 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          isTimeLimitUnlock ? 'Unlock Time Limit' : 'Enter Parent PIN',
+          isTimeLimitUnlock ? 'ปลดล็อคเวลา' : 'กรอก PIN ผู้ปกครอง',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _textPrimary,
+            fontSize: 18,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -146,16 +155,39 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             if (isTimeLimitUnlock)
               const Padding(
                 padding: EdgeInsets.only(bottom: 16.0),
-                child: Text('Enter PIN to extend time by 1 hour.'),
+                child: Text(
+                  'กรอก PIN เพื่อขยายเวลาอีก 1 ชั่วโมง',
+                  style: TextStyle(color: _textSecondary, fontSize: 14),
+                ),
               ),
             TextField(
               controller: pinController,
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: 4,
-              decoration: const InputDecoration(
-                hintText: '****',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 8,
+              ),
+              decoration: InputDecoration(
+                hintText: '••••',
+                hintStyle: TextStyle(
+                  color: _textSecondary.withOpacity(0.5),
+                  letterSpacing: 8,
+                ),
                 counterText: '',
+                filled: true,
+                fillColor: const Color(0xFFF5F5F7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _accentColor, width: 1.5),
+                ),
               ),
             ),
           ],
@@ -165,16 +197,18 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             onPressed: () {
               Navigator.pop(context);
               if (isTimeLimitUnlock) {
-                setState(() {
-                  _isUnlocking = false;
-                });
-                // Re-show overlay
                 OverlayService().showBlockOverlay("Time Limit Reached");
               }
             },
-            child: const Text('Cancel'),
+            child: const Text(
+              'ยกเลิก',
+              style: TextStyle(
+                color: _textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () async {
               final authProvider = Provider.of<AuthProvider>(
                 context,
@@ -183,25 +217,32 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
               final correctPin = authProvider.userModel?.pin;
 
               if (pinController.text == correctPin) {
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context);
                 if (isTimeLimitUnlock) {
-                  setState(() {
-                    _isUnlocking = false;
-                  });
                   await _extendTimeLimit();
                 } else {
                   await _disableChildMode();
                 }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Incorrect PIN'),
-                    backgroundColor: Colors.red,
+                  SnackBar(
+                    content: const Text('PIN ไม่ถูกต้อง'),
+                    backgroundColor: const Color(0xFFEF4444),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 );
               }
             },
-            child: const Text('Unlock'),
+            child: const Text(
+              'ยืนยัน',
+              style: TextStyle(
+                color: _accentColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -214,7 +255,6 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     final user = authProvider.userModel;
 
     if (child != null && user != null) {
-      // Extend by 1 hour (3600 seconds)
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -222,12 +262,18 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
           .doc(child.id)
           .update({'dailyTimeLimit': FieldValue.increment(3600)});
 
-      // Hide overlay immediately (BackgroundService will pick up the change shortly)
       OverlayService().hideOverlay();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Time extended by 1 hour')),
+          SnackBar(
+            content: const Text('ขยายเวลาอีก 1 ชั่วโมง'),
+            backgroundColor: const Color(0xFF22C55E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         );
       }
     }
@@ -250,14 +296,19 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
           .update({'isChildModeActive': false});
     }
 
-    setState(() {
-      _isChildrenModeActive = false;
-    });
+    setState(() => _isChildrenModeActive = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Child Mode Deactivated')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('ปิดโหมดเด็กแล้ว'),
+          backgroundColor: _textSecondary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
@@ -267,10 +318,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     final user = authProvider.userModel;
 
     if (child != null && user != null) {
-      // 1. Sync Installed Apps to Firestore
       await AppService().syncApps(user.uid, child.id);
 
-      // 2. Listen for Blocked Apps from Firestore and update Native Service
       FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -288,7 +337,6 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
       _updateOnlineStatus(true);
 
-      // Check initial state from Firestore
       final childDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -299,17 +347,11 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       if (childDoc.exists && mounted) {
         final isActive = childDoc.data()?['isChildModeActive'] ?? false;
         if (isActive) {
-          // Auto-start if it was active
-          // We need to check permissions silently or prompt?
-          // For now, let's just update UI state, user might need to re-enable if killed
-          // Or we can try to start monitoring if we have permission
           bool overlayPerm = await _overlayService.checkPermission();
           if (overlayPerm) {
             await _backgroundService.startMonitoring(child.id, user.uid);
             await _locationService.startTracking(user.uid, child.id);
-            setState(() {
-              _isChildrenModeActive = true;
-            });
+            setState(() => _isChildrenModeActive = true);
           }
         }
       }
@@ -321,9 +363,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       await platform.invokeMethod('updateBlocklist', {
         'blockedApps': blockedApps,
       });
-      print("Updated native blocklist: $blockedApps");
     } catch (e) {
-      print("Failed to update native blocklist: $e");
+      debugPrint("Failed to update native blocklist: $e");
     }
   }
 
@@ -339,50 +380,179 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final childName = authProvider.currentChild?.name ?? 'น้อง';
+
     return Scaffold(
-      backgroundColor: const Color(0xFFE0F7FA), // Light Cyan
+      backgroundColor: _bgColor,
       body: SafeArea(
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.child_care, size: 100, color: Colors.cyan),
-              const SizedBox(height: 32),
-              Text(
-                'Children Mode',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.cyan.shade900,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: _isChildrenModeActive
+                        ? _accentColor
+                        : const Color(0xFFF0F0F5),
+                    shape: BoxShape.circle,
+                    boxShadow: _isChildrenModeActive
+                        ? [
+                            BoxShadow(
+                              color: _accentColor.withOpacity(0.3),
+                              blurRadius: 30,
+                              offset: const Offset(0, 10),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    _isChildrenModeActive
+                        ? Icons.shield_rounded
+                        : Icons.shield_outlined,
+                    size: 56,
+                    color: _isChildrenModeActive
+                        ? Colors.white
+                        : _textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.0),
-                child: Text(
-                  'Turn on to protect this device and sync apps to parent.',
+
+                const SizedBox(height: 40),
+
+                // Title
+                Text(
+                  'สวัสดี $childName',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Subtitle
+                Text(
+                  _isChildrenModeActive
+                      ? 'โหมดป้องกันกำลังทำงาน'
+                      : 'เปิดใช้งานเพื่อเริ่มการป้องกัน',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: _textSecondary,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 48),
-              Transform.scale(
-                scale: 2.0,
-                child: Switch(
-                  value: _isChildrenModeActive,
-                  onChanged: (value) => _toggleChildMode(value),
-                  activeColor: Colors.cyan,
+
+                const SizedBox(height: 48),
+
+                // Switch
+                GestureDetector(
+                  onTap: () => _toggleChildMode(!_isChildrenModeActive),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: 88,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: _isChildrenModeActive
+                          ? _accentColor
+                          : const Color(0xFFE5E5EA),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: _isChildrenModeActive
+                          ? [
+                              BoxShadow(
+                                color: _accentColor.withOpacity(0.35),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                      alignment: _isChildrenModeActive
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.all(4),
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _isChildrenModeActive
+                              ? Icons.check_rounded
+                              : Icons.close_rounded,
+                          size: 20,
+                          color: _isChildrenModeActive
+                              ? _accentColor
+                              : _textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _isChildrenModeActive ? 'Active' : 'Inactive',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _isChildrenModeActive ? Colors.green : Colors.grey,
+
+                const SizedBox(height: 24),
+
+                // Status Badge
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isChildrenModeActive
+                        ? const Color(0xFF22C55E).withOpacity(0.1)
+                        : const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: _isChildrenModeActive
+                          ? const Color(0xFF22C55E).withOpacity(0.3)
+                          : const Color(0xFFE5E5EA),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _isChildrenModeActive
+                              ? const Color(0xFF22C55E)
+                              : _textSecondary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _isChildrenModeActive ? 'กำลังป้องกัน' : 'ปิดอยู่',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _isChildrenModeActive
+                              ? const Color(0xFF22C55E)
+                              : _textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

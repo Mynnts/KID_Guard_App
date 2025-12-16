@@ -12,11 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Initialize WorkManager
-  Workmanager().initialize(
-    callbackDispatcher, // From background_worker.dart
-    isInDebugMode: true, // Set to false in production
-  );
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
   runApp(const MyApp());
 }

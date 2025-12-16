@@ -5,99 +5,133 @@ import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../config/routes.dart';
 
-class ChildSelectionScreen extends StatelessWidget {
+class ChildSelectionScreen extends StatefulWidget {
   const ChildSelectionScreen({super.key});
+
+  @override
+  State<ChildSelectionScreen> createState() => _ChildSelectionScreenState();
+}
+
+class _ChildSelectionScreenState extends State<ChildSelectionScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  // Minimal Premium Colors
+  static const _accentColor = Color(0xFFE67E22);
+  static const _bgColor = Color(0xFFFAFAFC);
+  static const _textPrimary = Color(0xFF1A1A2E);
+  static const _textSecondary = Color(0xFF6B7280);
+  static const _borderColor = Color(0xFFE5E5EA);
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final children = authProvider.children;
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: _bgColor,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 56, 32, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Who is using',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w300,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: -0.5,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 48, 32, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ใครกำลังใช้งาน',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: _textSecondary,
+                        letterSpacing: 0.2,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'this device?',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                      letterSpacing: -0.5,
+                    const SizedBox(height: 4),
+                    const Text(
+                      'เครื่องนี้?',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                        letterSpacing: -0.5,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 8,
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: children.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == children.length) {
+                      return _buildAddChildCard(context);
+                    }
+                    return _buildChildCard(context, children[index]);
+                  },
                 ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 24,
-                  mainAxisSpacing: 24,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: children.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == children.length) {
-                    return _buildAddChildCard(context);
-                  }
-                  return _buildChildCard(context, children[index]);
-                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildChildCard(BuildContext context, ChildModel child) {
-    final theme = Theme.of(context);
     return Stack(
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(28),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFF0F0F5), width: 1),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.04),
+                color: Colors.black.withOpacity(0.04),
                 blurRadius: 20,
-                offset: const Offset(0, 6),
-                spreadRadius: -2,
-              ),
-              BoxShadow(
-                color: theme.shadowColor.withOpacity(0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(24),
               onTap: () async {
                 final authProvider = Provider.of<AuthProvider>(
                   context,
@@ -119,73 +153,60 @@ class ChildSelectionScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              theme.colorScheme.primary.withOpacity(0.3),
-                              theme.colorScheme.secondary.withOpacity(0.3),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          border: Border.all(
+                            color: _accentColor.withOpacity(0.2),
+                            width: 2,
                           ),
                         ),
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: theme.colorScheme.surface,
-                          ),
-                          child: CircleAvatar(
-                            radius: 42,
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHigh,
-                            backgroundImage: child.avatar != null
-                                ? AssetImage(child.avatar!)
-                                : null,
-                            child: child.avatar == null
-                                ? Text(
-                                    child.name.isNotEmpty
-                                        ? child.name[0].toUpperCase()
-                                        : '?',
-                                    style: theme.textTheme.displaySmall
-                                        ?.copyWith(
-                                          color: theme.colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  )
-                                : null,
-                          ),
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundColor: const Color(0xFFF5F5F7),
+                          backgroundImage: child.avatar != null
+                              ? AssetImage(child.avatar!)
+                              : null,
+                          child: child.avatar == null
+                              ? Text(
+                                  child.name.isNotEmpty
+                                      ? child.name[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: _accentColor,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Text(
                       child.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 6,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withOpacity(
-                          0.3,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+                        color: _accentColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${child.age} years',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+                        '${child.age} ปี',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _accentColor,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -196,17 +217,17 @@ class ChildSelectionScreen extends StatelessWidget {
           ),
         ),
         Positioned(
-          top: 12,
-          right: 12,
+          top: 8,
+          right: 8,
           child: Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+              color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, 1),
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -214,12 +235,12 @@ class ChildSelectionScreen extends StatelessWidget {
               onPressed: () => _confirmDelete(context, child),
               icon: Icon(
                 Icons.close_rounded,
-                color: theme.colorScheme.error.withOpacity(0.7),
-                size: 18,
+                color: Colors.grey[400],
+                size: 16,
               ),
               style: IconButton.styleFrom(
                 padding: const EdgeInsets.all(6),
-                minimumSize: const Size(32, 32),
+                minimumSize: const Size(28, 28),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
@@ -233,32 +254,32 @@ class ChildSelectionScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          'Delete Profile?',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'ลบโปรไฟล์?',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _textPrimary,
+            fontSize: 18,
+          ),
         ),
         content: Text(
-          'Are you sure you want to delete ${child.name}\'s profile?',
-          style: Theme.of(context).textTheme.bodyMedium,
+          'คุณแน่ใจหรือไม่ที่จะลบโปรไฟล์ของ ${child.name}?',
+          style: const TextStyle(color: _textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
             child: Text(
-              'Cancel',
+              'ยกเลิก',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+                color: _textSecondary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () async {
               Navigator.pop(context);
               final success = await Provider.of<AuthProvider>(
@@ -269,7 +290,7 @@ class ChildSelectionScreen extends StatelessWidget {
               if (!success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Failed to delete profile'),
+                    content: const Text('ไม่สามารถลบโปรไฟล์ได้'),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -278,13 +299,12 @@ class ChildSelectionScreen extends StatelessWidget {
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
             child: const Text(
-              'Delete',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              'ลบ',
+              style: TextStyle(
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -293,27 +313,19 @@ class ChildSelectionScreen extends StatelessWidget {
   }
 
   Widget _buildAddChildCard(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.4),
-          width: 2,
-        ),
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primaryContainer.withOpacity(0.02),
-            theme.colorScheme.secondaryContainer.withOpacity(0.02),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          color: _borderColor,
+          width: 1.5,
+          style: BorderStyle.solid,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           onTap: () {
             Navigator.pushReplacementNamed(
               context,
@@ -324,31 +336,25 @@ class ChildSelectionScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primaryContainer.withOpacity(0.2),
-                      theme.colorScheme.secondaryContainer.withOpacity(0.2),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _accentColor.withOpacity(0.08),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.add_rounded,
-                  size: 40,
-                  color: theme.colorScheme.primary,
+                  size: 28,
+                  color: _accentColor,
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Add New',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.2,
+              const SizedBox(height: 14),
+              const Text(
+                'เพิ่มโปรไฟล์',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: _accentColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

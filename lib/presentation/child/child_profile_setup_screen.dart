@@ -11,113 +11,298 @@ class ChildProfileSetupScreen extends StatefulWidget {
       _ChildProfileSetupScreenState();
 }
 
-class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen> {
+class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
+    with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   int _selectedAvatar = 0;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
 
   final List<String> _avatars = [
     'assets/avatars/boy_1.png',
     'assets/avatars/girl_2.png',
   ];
 
+  // Minimal Premium Colors
+  static const _accentColor = Color(0xFFE67E22);
+  static const _bgColor = Color(0xFFFAFAFC);
+  static const _textPrimary = Color(0xFF1A1A2E);
+  static const _textSecondary = Color(0xFF6B7280);
+  static const _textMuted = Color(0xFF9CA3AF);
+  static const _borderColor = Color(0xFFE5E5EA);
+  static const _inputBg = Color(0xFFF5F5F7);
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _animController.forward();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Profile')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Text(
-              'Choose your avatar',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 120,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _avatars.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedAvatar = index;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedAvatar == index
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.transparent,
-                          width: 3,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundImage: AssetImage(_avatars[index]),
-                      ),
+      backgroundColor: _bgColor,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                // Back Button
+                _buildBackButton(),
+
+                const SizedBox(height: 40),
+
+                // Title
+                const Text(
+                  'สร้างโปรไฟล์',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'เลือก avatar และกรอกข้อมูลของน้อง',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: _textSecondary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Avatar Selection
+                Center(
+                  child: SizedBox(
+                    height: 110,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      shrinkWrap: true,
+                      itemCount: _avatars.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 20),
+                      itemBuilder: (context, index) {
+                        final isSelected = _selectedAvatar == index;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedAvatar = index;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? _accentColor
+                                    : Colors.transparent,
+                                width: 2.5,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: _accentColor.withOpacity(0.2),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: CircleAvatar(
+                              radius: 46,
+                              backgroundColor: const Color(0xFFF5F5F7),
+                              backgroundImage: AssetImage(_avatars[index]),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _ageController,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final name = _nameController.text.trim();
-                  final age = int.tryParse(_ageController.text.trim());
+                  ),
+                ),
 
-                  if (name.isNotEmpty && age != null) {
-                    final success = await Provider.of<AuthProvider>(
-                      context,
-                      listen: false,
-                    ).registerChild(name, age, _avatars[_selectedAvatar]);
+                const SizedBox(height: 48),
 
-                    if (success && mounted) {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.childHome,
-                      );
-                    }
-                  }
-                },
-                child: const Text("Let's Go!"),
-              ),
+                // Name Field
+                _buildTextField(
+                  controller: _nameController,
+                  label: 'ชื่อเล่น',
+                  icon: Icons.person_outline_rounded,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Age Field
+                _buildTextField(
+                  controller: _ageController,
+                  label: 'อายุ',
+                  icon: Icons.cake_outlined,
+                  keyboardType: TextInputType.number,
+                ),
+
+                const SizedBox(height: 48),
+
+                // Submit Button
+                _buildSubmitButton(),
+
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return GestureDetector(
+      onTap: () => Navigator.pop(context),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _borderColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: const Icon(
+          Icons.arrow_back_ios_rounded,
+          color: _textPrimary,
+          size: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: _textPrimary,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: _textSecondary,
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: _accentColor,
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 16, right: 12),
+          child: Icon(icon, color: _textMuted, size: 20),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0),
+        filled: true,
+        fillColor: _inputBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _borderColor, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _accentColor, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return GestureDetector(
+      onTap: () async {
+        final name = _nameController.text.trim();
+        final age = int.tryParse(_ageController.text.trim());
+
+        if (name.isNotEmpty && age != null) {
+          final success = await Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).registerChild(name, age, _avatars[_selectedAvatar]);
+
+          if (success && mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.childHome);
+          }
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: _accentColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _accentColor.withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'เริ่มต้นใช้งาน',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
         ),
       ),
     );
