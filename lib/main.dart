@@ -5,9 +5,18 @@ import 'config/app_theme.dart';
 import 'config/routes.dart';
 import 'logic/providers/auth_provider.dart';
 
+import 'package:workmanager/workmanager.dart';
+import 'logic/background_worker.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Initialize WorkManager
+  Workmanager().initialize(
+    callbackDispatcher, // From background_worker.dart
+    isInDebugMode: true, // Set to false in production
+  );
 
   runApp(const MyApp());
 }

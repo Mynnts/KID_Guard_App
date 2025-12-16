@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -27,146 +28,637 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final pin = authProvider.userModel?.pin;
+    final user = authProvider.userModel;
+    final pin = user?.pin;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true),
-      body: ListView(
-        padding: const EdgeInsets.all(24.0),
-        children: [
-          Card(
-            elevation: 0,
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: colorScheme.outlineVariant),
+      backgroundColor: colorScheme.background,
+      body: CustomScrollView(
+        slivers: [
+          // Modern App Bar
+          SliverAppBar(
+            expandedHeight: 100,
+            floating: true,
+            pinned: true,
+            backgroundColor: colorScheme.background,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              title: Text(
+                'Settings',
+                style: TextStyle(
+                  color: colorScheme.onBackground,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
             ),
+          ),
+
+          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.vpn_key_outlined,
-                        color: colorScheme.primary,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Child Connection PIN',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  // Profile Header Card
+                  _buildProfileCard(
+                    user?.displayName ?? 'Parent',
+                    user?.email ?? '',
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // PIN Section
+                  _buildSectionTitle('Connection'),
+                  const SizedBox(height: 12),
+                  _buildPinCard(pin, authProvider.isLoading, authProvider),
+
+                  const SizedBox(height: 24),
+
+                  // General Settings Section
+                  _buildSectionTitle('General'),
+                  const SizedBox(height: 12),
+                  _buildSettingsGroup([
+                    _SettingItem(
+                      icon: Icons.notifications_outlined,
+                      title: 'Notifications',
+                      subtitle: 'Manage alerts',
+                      trailing: const _StatusDot(isActive: true),
+                      onTap: () {},
+                    ),
+                    _SettingItem(
+                      icon: Icons.palette_outlined,
+                      title: 'Appearance',
+                      subtitle: 'Theme & colors',
+                      onTap: () {},
+                    ),
+                    _SettingItem(
+                      icon: Icons.language_outlined,
+                      title: 'Language',
+                      subtitle: 'English',
+                      onTap: () {},
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  // Support Section
+                  _buildSectionTitle('Support'),
+                  const SizedBox(height: 12),
+                  _buildSettingsGroup([
+                    _SettingItem(
+                      icon: Icons.help_outline,
+                      title: 'Help Center',
+                      subtitle: 'FAQ & guides',
+                      onTap: () {},
+                    ),
+                    _SettingItem(
+                      icon: Icons.feedback_outlined,
+                      title: 'Send Feedback',
+                      subtitle: 'Report issues',
+                      onTap: () {},
+                    ),
+                    _SettingItem(
+                      icon: Icons.info_outline,
+                      title: 'About',
+                      subtitle: 'Version 1.0.0',
+                      onTap: () {},
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  // Danger Zone
+                  _buildSectionTitle('Account'),
+                  const SizedBox(height: 12),
+                  _buildSignOutButton(authProvider),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(String name, String email) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.tertiary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 2,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Use this PIN to connect a child device to your account.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                   Container(
-                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      vertical: 24,
-                      horizontal: 16,
+                      horizontal: 10,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface,
+                      color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colorScheme.outline),
                     ),
-                    child: Column(
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (authProvider.isLoading)
-                          const CircularProgressIndicator()
-                        else
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                pin ?? '------',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 8,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              IconButton(
-                                onPressed: pin != null
-                                    ? () {
-                                        Clipboard.setData(
-                                          ClipboardData(text: pin),
-                                        );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'PIN copied to clipboard',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.copy),
-                                tooltip: 'Copy PIN',
-                              ),
-                            ],
-                          ),
+                        Icon(Icons.verified, color: Colors.white, size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'Parent Account',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: authProvider.isLoading
-                          ? null
-                          : () async {
-                              final newPin = await authProvider.generatePin();
-                              if (newPin != null && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('New PIN generated'),
-                                  ),
-                                );
-                              }
-                            },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Regenerate PIN'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+              ),
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPinCard(String? pin, bool isLoading, AuthProvider authProvider) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
           ),
-          const SizedBox(height: 24),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () async {
-              await authProvider.signOut();
-              if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/select_user',
-                  (route) => false,
-                );
-              }
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.vpn_key, color: colorScheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Connection PIN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Use this to link child devices',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // PIN Display
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: isLoading
+                    ? CircularProgressIndicator(color: colorScheme.primary)
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ...List.generate(
+                            pin?.length ?? 6,
+                            (index) => _PinDigit(
+                              digit: pin?[index] ?? '-',
+                              delay: index * 100,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            await authProvider.generatePin();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('New PIN generated'),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Regenerate'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: pin != null
+                        ? () {
+                            Clipboard.setData(ClipboardData(text: pin));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('PIN copied to clipboard'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
+                    icon: const Icon(Icons.copy, size: 18),
+                    label: const Text('Copy'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup(List<_SettingItem> items) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isLast = index == items.length - 1;
+
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 400 + (index * 100)),
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(20 * (1 - value), 0),
+                  child: child,
+                ),
+              );
             },
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      item.icon,
+                      color: colorScheme.primary,
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    item.title,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    item.subtitle,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.trailing != null) item.trailing!,
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ],
+                  ),
+                  onTap: item.onTap,
+                ),
+                if (!isLast)
+                  Divider(height: 1, indent: 56, color: Colors.grey.shade200),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSignOutButton(AuthProvider authProvider) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 700),
+      builder: (context, value, child) {
+        return Opacity(opacity: value, child: child);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.red.withOpacity(0.2)),
+        ),
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.logout, color: Colors.red, size: 22),
+          ),
+          title: const Text(
+            'Sign Out',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            'Log out of your account',
+            style: TextStyle(color: Colors.red.withOpacity(0.7), fontSize: 12),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 14,
+            color: Colors.red.withOpacity(0.5),
+          ),
+          onTap: () async {
+            await authProvider.signOut();
+            if (mounted) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/select_user',
+                (route) => false,
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingItem {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final VoidCallback onTap;
+
+  _SettingItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+    required this.onTap,
+  });
+}
+
+class _StatusDot extends StatelessWidget {
+  final bool isActive;
+
+  const _StatusDot({required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: (isActive ? Colors.green : Colors.grey).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: isActive ? Colors.green : Colors.grey,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isActive ? 'On' : 'Off',
+            style: TextStyle(
+              color: isActive ? Colors.green : Colors.grey,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PinDigit extends StatelessWidget {
+  final String digit;
+  final int delay;
+
+  const _PinDigit({required this.digit, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 300 + delay),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.5 + (0.5 * value),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Container(
+        width: 36,
+        height: 48,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            digit,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+        ),
       ),
     );
   }

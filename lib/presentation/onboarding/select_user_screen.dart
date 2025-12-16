@@ -4,157 +4,186 @@ import '../../config/routes.dart';
 class SelectUserScreen extends StatelessWidget {
   const SelectUserScreen({super.key});
 
+  // App Theme Colors
+  static const _primaryColor = Color(0xFF6366F1); // Indigo
+  static const _secondaryColor = Color(0xFFF97316); // Orange for child
+  static const _bgColor = Color(0xFFFAFAFA);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surfaceContainerHighest,
+      backgroundColor: _bgColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+
+              // Logo
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: _primaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.shield_rounded,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // App Name
+              const Text(
+                'Kid Guard',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1F2937),
+                  letterSpacing: -0.5,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                'Digital parenting made simple',
+                style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+              ),
+
+              const Spacer(flex: 2),
+
+              // Selection Label
+              Text(
+                'I am a...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                  letterSpacing: 0.5,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Parent Card
+              _UserCard(
+                title: 'Parent',
+                subtitle: 'Monitor and manage activity',
+                icon: Icons.person_rounded,
+                color: _primaryColor,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.login),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Child Card
+              _UserCard(
+                title: 'Child',
+                subtitle: 'Connect to parent account',
+                icon: Icons.child_care_rounded,
+                color: _secondaryColor,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.childPin),
+              ),
+
+              const Spacer(flex: 3),
+
+              // Footer
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_rounded, size: 14, color: Colors.grey[400]),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Secure & Private',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
             ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(flex: 1),
-                // Logo or Icon
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.family_restroom,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Title
-                Text(
-                  'Welcome to Kid Guard',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Who is using this device?',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const Spacer(flex: 1),
-                // Selection Cards
-                _buildSelectionCard(
-                  context,
-                  title: 'Parent',
-                  subtitle: 'Monitor and manage activity',
-                  icon: Icons.admin_panel_settings_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.login);
-                  },
-                ),
-                const SizedBox(height: 20),
-                _buildSelectionCard(
-                  context,
-                  title: 'Child',
-                  subtitle: 'Safe and fun digital space',
-                  icon: Icons.child_care,
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.childPin);
-                  },
-                ),
-                const Spacer(flex: 2),
-              ],
-            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildSelectionCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+class _UserCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _UserCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
           ),
           child: Row(
             children: [
+              // Icon
               Container(
-                padding: const EdgeInsets.all(16),
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 32, color: color),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 14),
+
+              // Text
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                     ),
                   ],
                 ),
               ),
+
+              // Arrow
               Icon(
-                Icons.arrow_forward_ios,
+                Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: Colors.grey[400],
               ),
             ],
           ),

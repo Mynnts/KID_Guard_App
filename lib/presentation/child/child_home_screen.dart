@@ -7,6 +7,7 @@ import '../../data/services/app_service.dart';
 import '../../data/services/auth_service.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
+import '../../logic/services/location_service.dart';
 
 class ChildHomeScreen extends StatefulWidget {
   const ChildHomeScreen({super.key});
@@ -21,6 +22,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   late final BackgroundService _backgroundService;
   final OverlayService _overlayService = OverlayService();
+  final LocationService _locationService = LocationService();
   bool _isChildrenModeActive = false;
   bool _isUnlocking = false;
 
@@ -104,6 +106,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
       if (child != null && user != null) {
         await _backgroundService.startMonitoring(child.id, user.uid);
+        await _locationService.startTracking(user.uid, child.id);
         setState(() {
           _isChildrenModeActive = true;
         });
@@ -232,6 +235,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   Future<void> _disableChildMode() async {
     await _backgroundService.stopMonitoring();
+    _locationService.stopTracking();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final child = authProvider.currentChild;
@@ -302,6 +306,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
           bool overlayPerm = await _overlayService.checkPermission();
           if (overlayPerm) {
             await _backgroundService.startMonitoring(child.id, user.uid);
+            await _locationService.startTracking(user.uid, child.id);
             setState(() {
               _isChildrenModeActive = true;
             });

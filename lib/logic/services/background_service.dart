@@ -1,6 +1,10 @@
 import 'dart:async';
-import 'package:usage_stats/usage_stats.dart';
+import 'package:usage_stats/usage_stats.dart' hide NetworkType;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../data/local/blocklist_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:device_apps/device_apps.dart';
 
 class BackgroundService {
   Timer? _monitorTimer;
@@ -12,6 +16,10 @@ class BackgroundService {
   // Dynamic blocklist
   Set<String> _blockedPackages = {};
   StreamSubscription? _blocklistSubscription;
+
+  // App Usage Tracking
+  final Map<String, int> _appUsageSession = {}; // Package -> Seconds
+  final Map<String, String> _appNames = {}; // Cache Package -> Name
 
   // Time Limit
   int _dailyTimeLimit = 0;
@@ -35,6 +43,20 @@ class BackgroundService {
 
     _currentChildId = childId;
     _currentParentId = parentId;
+
+    // Save IDs for Background Worker (WorkManager)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('current_child_id', childId);
+    await prefs.setString('current_parent_uid', parentId);
+
+    // Register Periodic Task
+    Workmanager().registerPeriodicTask(
+      "sync_blocklist",
+      "syncBlocklistTask",
+      frequency: const Duration(minutes: 15),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingWorkPolicy.replace,
+    );
 
     // Check for permission
     bool? isPermissionGranted = await UsageStats.checkUsagePermission();
@@ -83,6 +105,8 @@ class BackgroundService {
                 .map((doc) => doc['packageName'] as String)
                 .toSet();
             print('Updated blocklist: $_blockedPackages');
+            // Save to local storage for Native Service (and offline backup)
+            BlocklistStorage().saveBlocklist(_blockedPackages.toList());
           },
           onError: (e) {
             print('Error listening to blocklist: $e');
@@ -123,10 +147,7 @@ class BackgroundService {
       // Check Time Limit first
       if (_dailyTimeLimit > 0 && _currentScreenTime >= _dailyTimeLimit) {
         onTimeLimitReached();
-        // We can return here if we want to block EVERYTHING,
-        // but usually we still want to check for specific blocked apps
-        // if the time limit overlay isn't full screen or if we want to be double sure.
-        // For now, let's assume onTimeLimitReached handles the blocking UI.
+        // Return but still allow background checks if needed, but here we block.
         return;
       }
 
@@ -146,6 +167,23 @@ class BackgroundService {
 
       if (usageStats.isNotEmpty) {
         String currentPackage = usageStats.first.packageName!;
+
+        // Track App Usage
+        // We only track meaningful usage if screen is ON (implicit since this runs in timer)
+        _appUsageSession[currentPackage] =
+            (_appUsageSession[currentPackage] ?? 0) + 1;
+
+        // Cache Name
+        if (!_appNames.containsKey(currentPackage)) {
+          _appNames[currentPackage] = currentPackage; // Fallback
+          DeviceApps.getApp(currentPackage)
+              .then((app) {
+                if (app != null) {
+                  _appNames[currentPackage] = app.appName;
+                }
+              })
+              .catchError((_) {});
+        }
 
         if (_isBlocked(currentPackage)) {
           if (_lastBlockedPackage != currentPackage) {
@@ -168,7 +206,6 @@ class BackgroundService {
     if (_currentChildId == null || _currentParentId == null) return;
 
     _sessionSeconds++;
-    // Optimistic local update for immediate feedback
     _currentScreenTime++;
 
     // Update Firestore every 10 seconds to reduce writes
@@ -180,10 +217,43 @@ class BackgroundService {
             .collection('children')
             .doc(_currentChildId);
 
+        // 1. Update Realtime (Quick View)
         await docRef.update({
           'screenTime': FieldValue.increment(10),
           'lastActive': FieldValue.serverTimestamp(),
         });
+
+        // 2. Update History (Chart & Apps)
+        final dateStr = DateTime.now().toIso8601String().split(
+          'T',
+        )[0]; // YYYY-MM-DD
+
+        // Prepare App Updates
+        Map<String, dynamic> appUpdates = {};
+        _appUsageSession.forEach((pkg, seconds) {
+          if (seconds > 0) {
+            final safeKey = pkg.replaceAll('.', '_');
+            final appName = _appNames[pkg] ?? pkg;
+            appUpdates['apps.$safeKey.duration'] = FieldValue.increment(
+              seconds,
+            );
+            appUpdates['apps.$safeKey.name'] = appName;
+            appUpdates['apps.$safeKey.packageName'] = pkg;
+          }
+        });
+
+        // Add Timestamp & Total
+        appUpdates['screenTime'] = FieldValue.increment(10);
+        appUpdates['timestamp'] = FieldValue.serverTimestamp();
+
+        // Use Set with Merge
+        await docRef
+            .collection('daily_stats')
+            .doc(dateStr)
+            .set(appUpdates, SetOptions(merge: true));
+
+        // Clear session buffer
+        _appUsageSession.clear();
       } catch (e) {
         print('Error updating screen time: $e');
       }
