@@ -60,6 +60,9 @@ class MainActivity: FlutterActivity() {
                     val action = intent.getStringExtra("action")
                     result.success(action)
                 }
+                "getFilesDir" -> {
+                    result.success(applicationContext.filesDir.absolutePath)
+                }
                 else -> {
                     result.notImplemented()
                 }

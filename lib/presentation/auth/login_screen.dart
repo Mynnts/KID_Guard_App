@@ -11,6 +11,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -47,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _animController.dispose();
@@ -57,6 +59,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -64,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (_isLogin) {
       success = await authProvider.signIn(email, password);
     } else {
-      success = await authProvider.register(email, password, 'Parent');
+      success = await authProvider.register(email, password, name);
     }
 
     if (success) {
@@ -102,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() {
       _isLogin = !_isLogin;
       _formKey.currentState?.reset();
+      _nameController.clear();
       _emailController.clear();
       _passwordController.clear();
     });
@@ -166,6 +170,25 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
 
                   const SizedBox(height: 48),
+
+                  // Name Field (only for registration)
+                  if (!_isLogin) ...[
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'ชื่อที่แสดง',
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'กรุณากรอกชื่อที่แสดง';
+                        }
+                        if (value.length < 2) {
+                          return 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Email Field
                   _buildTextField(

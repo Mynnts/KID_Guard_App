@@ -254,7 +254,9 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 ),
                 child: const Icon(Icons.edit, color: Colors.white, size: 20),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamed(context, '/parent/account-profile');
+              },
             ),
           ],
         ),

@@ -212,4 +212,48 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> updateDisplayName(String newName) async {
+    if (_userModel == null) return false;
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authService.updateDisplayName(_userModel!.uid, newName);
+      // Update local user model
+      _userModel = UserModel(
+        uid: _userModel!.uid,
+        email: _userModel!.email,
+        displayName: newName,
+        role: _userModel!.role,
+        childIds: _userModel!.childIds,
+        pin: _userModel!.pin,
+      );
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updatePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    if (_userModel == null) return false;
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authService.updatePassword(currentPassword, newPassword);
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

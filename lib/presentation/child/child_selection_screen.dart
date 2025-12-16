@@ -171,8 +171,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
       curve: Curves.easeOutBack,
       builder: (context, value, widget) {
         return Transform.scale(
-          scale: 0.8 + (0.2 * value),
-          child: Opacity(opacity: value, child: widget),
+          scale: 0.8 + (0.2 * value.clamp(0.0, 1.0)),
+          child: Opacity(opacity: value.clamp(0.0, 1.0), child: widget),
         );
       },
       child: GestureDetector(
@@ -485,8 +485,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
       curve: Curves.easeOutBack,
       builder: (context, value, widget) {
         return Transform.scale(
-          scale: 0.8 + (0.2 * value),
-          child: Opacity(opacity: value, child: widget),
+          scale: 0.8 + (0.2 * value.clamp(0.0, 1.0)),
+          child: Opacity(opacity: value.clamp(0.0, 1.0), child: widget),
         );
       },
       child: Container(

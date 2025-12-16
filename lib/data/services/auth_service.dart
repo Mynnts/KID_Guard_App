@@ -276,4 +276,44 @@ class AuthService {
       print(e.toString());
     }
   }
+
+  // Update Display Name
+  Future<void> updateDisplayName(String uid, String newName) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'displayName': newName,
+      });
+      // Also update Firebase Auth display name
+      await _auth.currentUser?.updateDisplayName(newName);
+    } catch (e) {
+      print(e.toString());
+      rethrow;
+    }
+  }
+
+  // Update Password
+  Future<void> updatePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Re-authenticate user with current password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Update password
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      print(e.toString());
+      rethrow;
+    }
+  }
 }

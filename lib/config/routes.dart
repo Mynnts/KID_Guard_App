@@ -10,6 +10,7 @@ import '../presentation/child/child_profile_setup_screen.dart';
 import '../presentation/child/child_selection_screen.dart';
 import '../presentation/parent/contacts/parent_contacts_screen.dart';
 import '../presentation/parent/apps/parent_app_control_screen.dart';
+import '../presentation/parent/account_profile_screen.dart';
 
 class AppRoutes {
   static const String selectUser = '/select_user';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String childSelection = '/child/selection';
   static const String parentContacts = '/parent/contacts';
   static const String parentAppControl = '/parent/app_control';
+  static const String parentAccountProfile = '/parent/account-profile';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -37,6 +39,7 @@ class AppRoutes {
       childSelection: (context) => const ChildSelectionScreen(),
       parentContacts: (context) => const ParentContactsScreen(),
       parentAppControl: (context) => const ParentAppControlScreen(),
+      parentAccountProfile: (context) => const AccountProfileScreen(),
     };
   }
 }

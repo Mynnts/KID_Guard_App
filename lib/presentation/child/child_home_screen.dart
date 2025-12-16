@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/services/app_service.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/local/blocklist_storage.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
 import '../../logic/services/location_service.dart';
@@ -360,6 +361,10 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   Future<void> _updateNativeBlocklist(List<String> blockedApps) async {
     try {
+      // Save to file for AccessibilityService to read
+      await BlocklistStorage().saveBlocklist(blockedApps);
+
+      // Also update via MethodChannel (SharedPreferences) as backup
       await platform.invokeMethod('updateBlocklist', {
         'blockedApps': blockedApps,
       });
