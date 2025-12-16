@@ -28,6 +28,19 @@ class BackgroundService {
 
   String? _lastBlockedPackage;
 
+  // Sleep Schedule
+  bool _sleepScheduleEnabled = false;
+  int _bedtimeHour = 20;
+  int _bedtimeMinute = 0;
+  int _wakeHour = 7;
+  int _wakeMinute = 0;
+
+  // Quiet Times
+  List<Map<String, dynamic>> _quietTimes = [];
+
+  // Track if currently in restricted time
+  bool _isInRestrictedTime = false;
+
   final Function(String) onBlockedAppDetected;
   final Function() onTimeLimitReached;
   final Function() onAppAllowed;
@@ -69,7 +82,7 @@ class BackgroundService {
 
     // Listen for blocked apps
     _listenToBlocklist();
-    // Listen for child settings (Time Limit)
+    // Listen for child settings (Time Limit + Schedules)
     _listenToChildSettings();
 
     _monitorTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
@@ -86,6 +99,7 @@ class BackgroundService {
     _sessionSeconds = 0;
     _blockedPackages.clear();
     _lastBlockedPackage = null;
+    _isInRestrictedTime = false;
   }
 
   void _listenToBlocklist() {
@@ -128,10 +142,33 @@ class BackgroundService {
             if (snapshot.exists) {
               final data = snapshot.data();
               if (data != null) {
+                // Time Limit
                 _dailyTimeLimit = data['dailyTimeLimit'] ?? 0;
                 _currentScreenTime = data['screenTime'] ?? 0;
+
+                // Sleep Schedule
+                if (data['sleepSchedule'] != null) {
+                  final sleep = data['sleepSchedule'] as Map<String, dynamic>;
+                  _sleepScheduleEnabled = sleep['enabled'] ?? false;
+                  _bedtimeHour = sleep['bedtimeHour'] ?? 20;
+                  _bedtimeMinute = sleep['bedtimeMinute'] ?? 0;
+                  _wakeHour = sleep['wakeHour'] ?? 7;
+                  _wakeMinute = sleep['wakeMinute'] ?? 0;
+                }
+
+                // Quiet Times
+                if (data['quietTimes'] != null) {
+                  _quietTimes = List<Map<String, dynamic>>.from(
+                    (data['quietTimes'] as List).map(
+                      (item) => Map<String, dynamic>.from(item),
+                    ),
+                  );
+                } else {
+                  _quietTimes = [];
+                }
+
                 print(
-                  'Updated settings: Limit=$_dailyTimeLimit, Current=$_currentScreenTime',
+                  'Updated settings: Limit=$_dailyTimeLimit, Sleep=${_sleepScheduleEnabled ? "ON" : "OFF"}, QuietTimes=${_quietTimes.length}',
                 );
               }
             }
@@ -142,12 +179,96 @@ class BackgroundService {
         );
   }
 
+  /// Check if current time is within sleep schedule
+  bool _isInSleepTime() {
+    if (!_sleepScheduleEnabled) return false;
+
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+    final bedtimeMinutes = _bedtimeHour * 60 + _bedtimeMinute;
+    final wakeMinutes = _wakeHour * 60 + _wakeMinute;
+
+    // Handle overnight sleep (e.g., 20:00 - 07:00)
+    if (bedtimeMinutes > wakeMinutes) {
+      // Overnight: current time is in sleep if >= bedtime OR < wake time
+      return currentMinutes >= bedtimeMinutes || currentMinutes < wakeMinutes;
+    } else {
+      // Same day: current time is in sleep if >= bedtime AND < wake time
+      return currentMinutes >= bedtimeMinutes && currentMinutes < wakeMinutes;
+    }
+  }
+
+  /// Check if current time is within any quiet time period
+  bool _isInQuietTime() {
+    if (_quietTimes.isEmpty) return false;
+
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    for (final period in _quietTimes) {
+      final enabled = period['enabled'] ?? false;
+      if (!enabled) continue;
+
+      final startMinutes =
+          (period['startHour'] ?? 0) * 60 + (period['startMinute'] ?? 0);
+      final endMinutes =
+          (period['endHour'] ?? 0) * 60 + (period['endMinute'] ?? 0);
+
+      // Check if current time is within this period
+      if (startMinutes <= endMinutes) {
+        // Same day period
+        if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+          return true;
+        }
+      } else {
+        // Overnight period (rare for quiet time but handle it)
+        if (currentMinutes >= startMinutes || currentMinutes < endMinutes) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Get the reason for current restriction
+  String _getRestrictionReason() {
+    if (_isInSleepTime()) {
+      return 'เวลานอน 🌙';
+    }
+    if (_isInQuietTime()) {
+      return 'เวลาพักผ่อน 🔕';
+    }
+    if (_dailyTimeLimit > 0 && _currentScreenTime >= _dailyTimeLimit) {
+      return 'หมดเวลาใช้งาน ⏰';
+    }
+    return '';
+  }
+
   Future<void> _checkForegroundApp() async {
     try {
-      // Check Time Limit first
+      // Check Schedule Restrictions (Sleep Time & Quiet Time)
+      final inSleep = _isInSleepTime();
+      final inQuiet = _isInQuietTime();
+      final isRestricted = inSleep || inQuiet;
+
+      if (isRestricted) {
+        if (!_isInRestrictedTime) {
+          // Just entered restricted time
+          _isInRestrictedTime = true;
+          onBlockedAppDetected(_getRestrictionReason());
+        }
+        return; // Don't process further, device should be locked
+      } else {
+        if (_isInRestrictedTime) {
+          // Just exited restricted time
+          _isInRestrictedTime = false;
+          onAppAllowed();
+        }
+      }
+
+      // Check Time Limit
       if (_dailyTimeLimit > 0 && _currentScreenTime >= _dailyTimeLimit) {
         onTimeLimitReached();
-        // Return but still allow background checks if needed, but here we block.
         return;
       }
 
@@ -169,7 +290,6 @@ class BackgroundService {
         String currentPackage = usageStats.first.packageName!;
 
         // Track App Usage
-        // We only track meaningful usage if screen is ON (implicit since this runs in timer)
         _appUsageSession[currentPackage] =
             (_appUsageSession[currentPackage] ?? 0) + 1;
 
@@ -203,6 +323,9 @@ class BackgroundService {
   }
 
   Future<void> _updateScreenTime() async {
+    // Don't count screen time during restricted periods
+    if (_isInRestrictedTime) return;
+
     if (_currentChildId == null || _currentParentId == null) return;
 
     _sessionSeconds++;
@@ -262,5 +385,19 @@ class BackgroundService {
 
   bool _isBlocked(String packageName) {
     return _blockedPackages.contains(packageName);
+  }
+
+  /// Get current schedule status for debugging/UI
+  Map<String, dynamic> getScheduleStatus() {
+    return {
+      'sleepEnabled': _sleepScheduleEnabled,
+      'bedtime': '$_bedtimeHour:$_bedtimeMinute',
+      'wakeTime': '$_wakeHour:$_wakeMinute',
+      'isInSleepTime': _isInSleepTime(),
+      'quietTimesCount': _quietTimes.length,
+      'isInQuietTime': _isInQuietTime(),
+      'isRestricted': _isInRestrictedTime,
+      'restrictionReason': _getRestrictionReason(),
+    };
   }
 }

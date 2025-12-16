@@ -284,65 +284,68 @@ class _ChildPinScreenState extends State<ChildPinScreen>
   }
 
   Widget _buildPinBoxes() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(6, (index) {
-        final hasValue = _pinControllers[index].text.isNotEmpty;
-        final isFocused = _focusNodes[index].hasFocus;
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(6, (index) {
+          final hasValue = _pinControllers[index].text.isNotEmpty;
+          final isFocused = _focusNodes[index].hasFocus;
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 48,
-          height: 56,
-          margin: const EdgeInsets.symmetric(horizontal: 5),
-          decoration: BoxDecoration(
-            color: isFocused ? Colors.white : _inputBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _hasError
-                  ? const Color(0xFFEF4444)
-                  : isFocused
-                  ? _accentColor
-                  : hasValue
-                  ? _accentColor.withOpacity(0.4)
-                  : _borderColor,
-              width: isFocused ? 1.5 : 1,
-            ),
-            boxShadow: isFocused
-                ? [
-                    BoxShadow(
-                      color: _accentColor.withOpacity(0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: RawKeyboardListener(
-            focusNode: FocusNode(),
-            onKey: (e) => _onKeyPressed(index, e),
-            child: TextFormField(
-              controller: _pinControllers[index],
-              focusNode: _focusNodes[index],
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              maxLength: 1,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: _hasError ? const Color(0xFFEF4444) : _textPrimary,
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 48,
+            height: 56,
+            margin: const EdgeInsets.symmetric(horizontal: 5),
+            decoration: BoxDecoration(
+              color: isFocused ? Colors.white : _inputBg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _hasError
+                    ? const Color(0xFFEF4444)
+                    : isFocused
+                    ? _accentColor
+                    : hasValue
+                    ? _accentColor.withOpacity(0.4)
+                    : _borderColor,
+                width: isFocused ? 1.5 : 1,
               ),
-              decoration: const InputDecoration(
-                counterText: '',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: (v) => _onDigitChanged(index, v),
+              boxShadow: isFocused
+                  ? [
+                      BoxShadow(
+                        color: _accentColor.withOpacity(0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
-          ),
-        );
-      }),
+            child: RawKeyboardListener(
+              focusNode: FocusNode(),
+              onKey: (e) => _onKeyPressed(index, e),
+              child: TextFormField(
+                controller: _pinControllers[index],
+                focusNode: _focusNodes[index],
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                maxLength: 1,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: _hasError ? const Color(0xFFEF4444) : _textPrimary,
+                ),
+                decoration: const InputDecoration(
+                  counterText: '',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (v) => _onDigitChanged(index, v),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 

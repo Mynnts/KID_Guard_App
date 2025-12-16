@@ -2294,54 +2294,57 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
                       ),
                       child: authProvider.isLoading
                           ? const Center(child: CircularProgressIndicator())
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: (pin ?? '------').split('').map((
-                                digit,
-                              ) {
-                                return TweenAnimationBuilder<double>(
-                                  tween: Tween(begin: 0.8, end: 1.0),
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.elasticOut,
-                                  builder: (context, value, child) {
-                                    return Transform.scale(
-                                      scale: value,
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 12,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                          : FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: (pin ?? '------').split('').map((
+                                  digit,
+                                ) {
+                                  return TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: 0.8, end: 1.0),
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.elasticOut,
+                                    builder: (context, value, child) {
+                                      return Transform.scale(
+                                        scale: value,
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 4,
                                           ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(
-                                                0xFF667EEA,
-                                              ).withOpacity(0.15),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
                                             ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          digit,
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF667EEA),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFF667EEA,
+                                                ).withOpacity(0.15),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            digit,
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF667EEA),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }).toList(),
+                                      );
+                                    },
+                                  );
+                                }).toList(),
+                              ),
                             ),
                     ),
                     const SizedBox(height: 16),
@@ -2639,34 +2642,49 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
                     ),
                   ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _isPressed
-                      ? widget.action.color.withOpacity(0.2)
-                      : widget.action.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  widget.action.icon,
-                  color: widget.action.color,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                widget.action.label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate responsive sizes based on available space
+              final availableHeight = constraints.maxHeight;
+              final iconBoxSize = (availableHeight * 0.45).clamp(36.0, 50.0);
+              final iconSize = (iconBoxSize * 0.52).clamp(18.0, 26.0);
+              final fontSize = (availableHeight * 0.11).clamp(10.0, 13.0);
+              final spacing = (availableHeight * 0.08).clamp(4.0, 10.0);
+              final iconPadding = (iconBoxSize * 0.24).clamp(8.0, 12.0);
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.all(iconPadding),
+                    decoration: BoxDecoration(
+                      color: _isPressed
+                          ? widget.action.color.withOpacity(0.2)
+                          : widget.action.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      widget.action.icon,
+                      color: widget.action.color,
+                      size: iconSize,
+                    ),
+                  ),
+                  SizedBox(height: spacing),
+                  Text(
+                    widget.action.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: fontSize,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
