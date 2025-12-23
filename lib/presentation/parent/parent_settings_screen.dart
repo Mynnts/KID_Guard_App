@@ -616,8 +616,8 @@ class _PinDigit extends StatelessWidget {
       curve: Curves.elasticOut,
       builder: (context, value, child) {
         return Transform.scale(
-          scale: 0.5 + (0.5 * value),
-          child: Opacity(opacity: value, child: child),
+          scale: 0.5 + (0.5 * value.clamp(0.0, 1.0)),
+          child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
         );
       },
       child: Container(

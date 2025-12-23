@@ -139,10 +139,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
 
                     const SizedBox(height: 28),
 
-                    // Today's Highlights
-                    _buildSectionHeader('Today\'s Highlights', onSeeAll: () {}),
-                    const SizedBox(height: 16),
-                    _buildHighlightsRow(selectedChild, colorScheme),
+                    // Device Status Card
+                    _buildDeviceStatusCard(selectedChild, colorScheme),
 
                     const SizedBox(height: 28),
 
@@ -652,87 +650,129 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
-  Widget _buildHighlightsRow(ChildModel? child, ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildHighlightCard(
-            icon: Icons.apps_rounded,
-            label: 'Apps Used',
-            value: '12',
-            color: const Color(0xFF4F46E5),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildHighlightCard(
-            icon: Icons.block_rounded,
-            label: 'Blocked',
-            value: '3',
-            color: const Color(0xFFEF4444),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildHighlightCard(
-            icon: Icons.location_on_rounded,
-            label: 'Location',
-            value: 'Home',
-            color: const Color(0xFF10B981),
-            isSmallText: true,
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildDeviceStatusCard(ChildModel? child, ColorScheme colorScheme) {
+    if (child == null) return const SizedBox();
 
-  Widget _buildHighlightCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-    bool isSmallText = false,
-  }) {
+    final isOnline =
+        child.lastActive != null &&
+        DateTime.now().difference(child.lastActive!).inMinutes < 2;
+    final lastActiveText = child.lastActive != null
+        ? _formatLastActive(child.lastActive!)
+        : 'Never';
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.grey.shade100),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
+          // Status Indicator
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: isOnline
+                  ? const Color(0xFF10B981).withOpacity(0.1)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, _) {
+                  return Container(
+                    width: isOnline ? 16 + (_pulseController.value * 4) : 16,
+                    height: isOnline ? 16 + (_pulseController.value * 4) : 16,
+                    decoration: BoxDecoration(
+                      color: isOnline
+                          ? const Color(0xFF10B981)
+                          : Colors.grey.shade400,
+                      shape: BoxShape.circle,
+                      boxShadow: isOnline
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withOpacity(
+                                  0.4 - _pulseController.value * 0.2,
+                                ),
+                                blurRadius: 12,
+                                spreadRadius: _pulseController.value * 4,
+                              ),
+                            ]
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Status Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOnline ? 'Device Online' : 'Device Offline',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: isOnline
+                        ? const Color(0xFF10B981)
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isOnline ? 'Active now' : 'Last seen $lastActiveText',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          // Action Button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isSmallText ? 20 : 26,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-              color: const Color(0xFF1F2937),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.visibility_outlined,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Details',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatLastActive(DateTime lastActive) {
+    final diff = DateTime.now().difference(lastActive);
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else {
+      return '${diff.inDays}d ago';
+    }
   }
 
   Widget _buildEnhancedQuickActions(
@@ -1105,7 +1145,7 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: widget.action.color.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(14),
@@ -1113,28 +1153,34 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
                 child: Icon(
                   widget.action.icon,
                   color: widget.action.color,
-                  size: 24,
+                  size: 22,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                widget.action.label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Color(0xFF374151),
+              const SizedBox(height: 8),
+              Flexible(
+                child: Text(
+                  widget.action.label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    color: Color(0xFF374151),
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 3),
-              Text(
-                widget.action.subtitle,
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
+              const SizedBox(height: 2),
+              Flexible(
+                child: Text(
+                  widget.action.subtitle,
+                  style: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),

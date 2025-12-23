@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,14 +12,13 @@ class TimeLimitScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
-    final colorScheme = Theme.of(context).colorScheme;
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
           // Modern App Bar
@@ -27,36 +26,97 @@ class TimeLimitScreen extends StatelessWidget {
             expandedHeight: 100,
             floating: true,
             pinned: true,
-            backgroundColor: colorScheme.background,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+            backgroundColor: const Color(0xFFF8FAFC),
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.grey.shade700,
+                  size: 18,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            flexibleSpace: const FlexibleSpaceBar(
+              titlePadding: EdgeInsets.only(left: 60, bottom: 16),
               title: Text(
                 'Time Limits',
                 style: TextStyle(
-                  color: colorScheme.onBackground,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  color: Color(0xFF1F2937),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+          ),
+
+          // Header Description
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF6366F1).withOpacity(0.1),
+                      const Color(0xFF8B5CF6).withOpacity(0.05),
+                    ],
                   ),
-                  child: Icon(
-                    Icons.info_outline,
-                    color: colorScheme.primary,
-                    size: 20,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF6366F1).withOpacity(0.2),
                   ),
                 ),
-                onPressed: () => _showInfoDialog(context),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.timer_outlined,
+                        color: Color(0xFF6366F1),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Daily Screen Time',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Tap on a child to set their daily limit',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-            ],
+            ),
           ),
 
           // Children List
@@ -80,15 +140,26 @@ class TimeLimitScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.child_care,
-                          size: 64,
-                          color: Colors.grey[400],
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.child_care_rounded,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
                           'No children added yet',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -106,23 +177,23 @@ class TimeLimitScreen extends StatelessWidget {
                   .toList();
 
               return SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(milliseconds: 400 + (index * 100)),
+                      duration: Duration(milliseconds: 300 + (index * 80)),
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
                         return Opacity(
                           opacity: value,
                           child: Transform.translate(
-                            offset: Offset(0, 30 * (1 - value)),
+                            offset: Offset(0, 20 * (1 - value)),
                             child: child,
                           ),
                         );
                       },
-                      child: _ChildTimeLimitCard(
+                      child: _ChildListItem(
                         child: children[index],
                         parentId: user.uid,
                       ),
@@ -132,366 +203,23 @@ class TimeLimitScreen extends StatelessWidget {
               );
             },
           ),
-        ],
-      ),
-    );
-  }
 
-  void _showInfoDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(
-              Icons.lightbulb_outline,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            const Text('WHO Guidelines'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Under 2 years', 'No screen time', Colors.red),
-            _buildInfoRow('2-4 years', 'Less than 1 hour', Colors.orange),
-            _buildInfoRow('5+ years', '1-2 hours recommended', Colors.green),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it!'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String age, String recommendation, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(age, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  recommendation,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
+          // Bottom padding
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
   }
 }
 
-class _ChildTimeLimitCard extends StatefulWidget {
+class _ChildListItem extends StatelessWidget {
   final ChildModel child;
   final String parentId;
 
-  const _ChildTimeLimitCard({required this.child, required this.parentId});
-
-  @override
-  State<_ChildTimeLimitCard> createState() => _ChildTimeLimitCardState();
-}
-
-class _ChildTimeLimitCardState extends State<_ChildTimeLimitCard> {
-  late int _selectedLimit;
-  final List<int> _presets = [
-    30 * 60,
-    60 * 60,
-    2 * 60 * 60,
-    3 * 60 * 60,
-    4 * 60 * 60,
-  ];
-  final List<String> _presetLabels = ['30m', '1h', '2h', '3h', '4h'];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedLimit = widget.child.dailyTimeLimit;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final usedTime = widget.child.screenTime;
-    final limitTime = _selectedLimit > 0 ? _selectedLimit : 1;
-    final progress = _selectedLimit > 0
-        ? (usedTime / limitTime).clamp(0.0, 1.0)
-        : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.tertiary],
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: colorScheme.surface,
-                    backgroundImage: widget.child.avatar != null
-                        ? AssetImage(widget.child.avatar!)
-                        : null,
-                    child: widget.child.avatar == null
-                        ? Text(
-                            widget.child.name[0].toUpperCase(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.child.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${widget.child.age} years old',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(progress),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Progress Ring
-            SizedBox(
-              height: 180,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background circle
-                  SizedBox(
-                    width: 160,
-                    height: 160,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: progress),
-                      duration: const Duration(milliseconds: 1000),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, value, child) {
-                        return CustomPaint(
-                          painter: _ProgressRingPainter(
-                            progress: value,
-                            backgroundColor: colorScheme.surfaceVariant,
-                            progressColor: _getProgressColor(value),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  // Center text
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatDuration(_selectedLimit),
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      Text(
-                        'Daily Limit',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      if (_selectedLimit > 0) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          '${_formatDuration(usedTime)} used',
-                          style: TextStyle(
-                            color: _getProgressColor(progress),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Preset buttons
-            Text(
-              'Quick Set',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(_presets.length, (index) {
-                final isSelected = _selectedLimit == _presets[index];
-                return _PresetButton(
-                  label: _presetLabels[index],
-                  isSelected: isSelected,
-                  onTap: () => _updateLimit(_presets[index]),
-                );
-              }),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Custom slider
-            _buildCustomSlider(),
-
-            const SizedBox(height: 16),
-
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _updateLimit(0),
-                    icon: const Icon(Icons.all_inclusive, size: 18),
-                    label: const Text('Unlimited'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _resetUsage,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Reset'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(double progress) {
-    Color color;
-    String text;
-    if (_selectedLimit == 0) {
-      color = Colors.blue;
-      text = 'Unlimited';
-    } else if (progress >= 1) {
-      color = Colors.red;
-      text = 'Limit Reached';
-    } else if (progress >= 0.8) {
-      color = Colors.orange;
-      text = 'Almost Done';
-    } else {
-      color = Colors.green;
-      text = 'Good';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomSlider() {
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        activeTrackColor: Theme.of(context).colorScheme.primary,
-        inactiveTrackColor: Colors.grey.shade200,
-        thumbColor: Theme.of(context).colorScheme.primary,
-        overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-        trackHeight: 6,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-      ),
-      child: Slider(
-        value: _selectedLimit.toDouble(),
-        min: 0,
-        max: 8 * 60 * 60,
-        divisions: 48,
-        onChanged: (value) => setState(() => _selectedLimit = value.toInt()),
-        onChangeEnd: (value) => _updateLimit(value.toInt()),
-      ),
-    );
-  }
-
-  Color _getProgressColor(double progress) {
-    if (progress >= 1) return Colors.red;
-    if (progress >= 0.8) return Colors.orange;
-    if (progress >= 0.5) return Colors.amber;
-    return Colors.green;
-  }
+  const _ChildListItem({required this.child, required this.parentId});
 
   String _formatDuration(int seconds) {
-    if (seconds == 0) return '∞';
+    if (seconds == 0) return 'Unlimited';
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
     if (hours > 0) {
@@ -500,134 +228,548 @@ class _ChildTimeLimitCardState extends State<_ChildTimeLimitCard> {
     return '${minutes}m';
   }
 
-  void _updateLimit(int value) {
-    setState(() => _selectedLimit = value);
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.parentId)
-        .collection('children')
-        .doc(widget.child.id)
-        .update({'dailyTimeLimit': value});
+  Color _getStatusColor(int usedTime, int limit) {
+    if (limit == 0) return const Color(0xFF3B82F6);
+    final progress = usedTime / limit;
+    if (progress >= 1) return const Color(0xFFEF4444);
+    if (progress >= 0.8) return const Color(0xFFF59E0B);
+    return const Color(0xFF10B981);
   }
-
-  void _resetUsage() async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.parentId)
-        .collection('children')
-        .doc(widget.child.id)
-        .update({'screenTime': 0});
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Screen time reset for today'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
-  }
-}
-
-class _PresetButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PresetButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final usedTime = child.screenTime;
+    final limit = child.dailyTimeLimit;
+    final progress = limit > 0 ? (usedTime / limit).clamp(0.0, 1.0) : 0.0;
+    final statusColor = _getStatusColor(usedTime, limit);
 
     return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      onTap: () => _showTimePicker(context),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [colorScheme.primary, colorScheme.tertiary],
-                )
-              : null,
-          color: isSelected ? null : colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade100),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 26,
+                backgroundColor: Colors.white,
+                backgroundImage: child.avatar != null
+                    ? AssetImage(child.avatar!)
+                    : null,
+                child: child.avatar == null
+                    ? Text(
+                        child.name[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Color(0xFF6366F1),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    child.name,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDuration(usedTime),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        ' / ${_formatDuration(limit)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (limit > 0) ...[
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 5,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation(statusColor),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Edit Icon
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                color: Colors.grey.shade500,
+                size: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTimePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _TimePickerModal(child: child, parentId: parentId),
+    );
+  }
+}
+
+class _TimePickerModal extends StatefulWidget {
+  final ChildModel child;
+  final String parentId;
+
+  const _TimePickerModal({required this.child, required this.parentId});
+
+  @override
+  State<_TimePickerModal> createState() => _TimePickerModalState();
+}
+
+class _TimePickerModalState extends State<_TimePickerModal> {
+  int _selectedHours = 0;
+  int _selectedMinutes = 0;
+  FixedExtentScrollController? _hoursController;
+  FixedExtentScrollController? _minutesController;
+
+  @override
+  void initState() {
+    super.initState();
+    final totalSeconds = widget.child.dailyTimeLimit;
+    _selectedHours = totalSeconds ~/ 3600;
+    _selectedMinutes = (totalSeconds % 3600) ~/ 60;
+    _hoursController = FixedExtentScrollController(initialItem: _selectedHours);
+    _minutesController = FixedExtentScrollController(
+      initialItem: _selectedMinutes ~/ 5,
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoursController?.dispose();
+    _minutesController?.dispose();
+    super.dispose();
+  }
+
+  int get _totalSeconds => (_selectedHours * 3600) + (_selectedMinutes * 60);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      widget.child.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Color(0xFF6366F1),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.child.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Set daily time limit',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Time Picker
+          Container(
+            height: 200,
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Stack(
+              children: [
+                // Selection highlight
+                Center(
+                  child: Container(
+                    height: 48,
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withOpacity(0.2),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Pickers
+                Row(
+                  children: [
+                    const SizedBox(width: 20),
+                    // Hours Picker
+                    Expanded(
+                      child: CupertinoPicker(
+                        scrollController: _hoursController,
+                        itemExtent: 48,
+                        diameterRatio: 1.5,
+                        squeeze: 1.0,
+                        selectionOverlay: const SizedBox(),
+                        onSelectedItemChanged: (index) {
+                          setState(() => _selectedHours = index);
+                        },
+                        children: List.generate(13, (index) {
+                          return Center(
+                            child: Text(
+                              index.toString().padLeft(2, '0'),
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    // Hours label
+                    Text(
+                      'hr',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    // Minutes Picker
+                    Expanded(
+                      child: CupertinoPicker(
+                        scrollController: _minutesController,
+                        itemExtent: 48,
+                        diameterRatio: 1.5,
+                        squeeze: 1.0,
+                        selectionOverlay: const SizedBox(),
+                        onSelectedItemChanged: (index) {
+                          setState(() => _selectedMinutes = index * 5);
+                        },
+                        children: List.generate(12, (index) {
+                          return Center(
+                            child: Text(
+                              (index * 5).toString().padLeft(2, '0'),
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    // Minutes label
+                    Text(
+                      'min',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Quick Presets
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                _buildPresetChip('30m', 0, 30),
+                const SizedBox(width: 8),
+                _buildPresetChip('1h', 1, 0),
+                const SizedBox(width: 8),
+                _buildPresetChip('2h', 2, 0),
+                const SizedBox(width: 8),
+                _buildPresetChip('∞', 0, 0),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Action Buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Row(
+              children: [
+                // Cancel Button
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Save Button
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: _saveAndClose,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Save Limit',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Safe area padding
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetChip(String label, int hours, int minutes) {
+    final isSelected = _selectedHours == hours && _selectedMinutes == minutes;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedHours = hours;
+            _selectedMinutes = minutes;
+          });
+          _hoursController?.animateToItem(
+            hours,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+          _minutesController?.animateToItem(
+            minutes ~/ 5,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  )
+                : null,
+            color: isSelected ? null : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : Colors.grey.shade200,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
-}
 
-class _ProgressRingPainter extends CustomPainter {
-  final double progress;
-  final Color backgroundColor;
-  final Color progressColor;
+  void _saveAndClose() async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.parentId)
+        .collection('children')
+        .doc(widget.child.id)
+        .update({'dailyTimeLimit': _totalSeconds});
 
-  _ProgressRingPainter({
-    required this.progress,
-    required this.backgroundColor,
-    required this.progressColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
-    const strokeWidth = 12.0;
-
-    // Background circle
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawCircle(center, radius, bgPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    canvas.drawArc(
-      rect,
-      -math.pi / 2, // Start from top
-      2 * math.pi * progress, // Sweep angle
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ProgressRingPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.progressColor != progressColor;
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                _totalSeconds == 0
+                    ? '${widget.child.name} set to unlimited'
+                    : '${widget.child.name}\'s limit saved',
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF10B981),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
   }
 }
