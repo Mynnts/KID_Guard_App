@@ -138,4 +138,40 @@ class AppService {
         .doc(docId)
         .set({'isLocked': isLocked}, SetOptions(merge: true));
   }
+
+  /// Request child device to sync apps (called from parent)
+  Future<void> requestSync(String parentUid, String childId) async {
+    await _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .set({'syncRequested': true}, SetOptions(merge: true));
+  }
+
+  /// Clear sync request flag (called from child after syncing)
+  Future<void> clearSyncRequest(String parentUid, String childId) async {
+    await _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .set({'syncRequested': false}, SetOptions(merge: true));
+  }
+
+  /// Stream to listen for sync requests (called from child)
+  Stream<bool> streamSyncRequest(String parentUid, String childId) {
+    return _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.exists) {
+            return snapshot.data()?['syncRequested'] ?? false;
+          }
+          return false;
+        });
+  }
 }

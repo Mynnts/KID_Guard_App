@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../config/routes.dart';
 
 class ParentSettingsScreen extends StatefulWidget {
   const ParentSettingsScreen({super.key});
@@ -84,19 +85,28 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                       title: 'Notifications',
                       subtitle: 'Manage alerts',
                       trailing: const _StatusDot(isActive: true),
-                      onTap: () {},
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.settingsNotifications,
+                      ),
                     ),
                     _SettingItem(
                       icon: Icons.palette_outlined,
                       title: 'Appearance',
                       subtitle: 'Theme & colors',
-                      onTap: () {},
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.settingsAppearance,
+                      ),
                     ),
                     _SettingItem(
                       icon: Icons.language_outlined,
                       title: 'Language',
-                      subtitle: 'English',
-                      onTap: () {},
+                      subtitle: 'ไทย',
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.settingsLanguage,
+                      ),
                     ),
                   ]),
 
@@ -110,19 +120,26 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                       icon: Icons.help_outline,
                       title: 'Help Center',
                       subtitle: 'FAQ & guides',
-                      onTap: () {},
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.settingsHelpCenter,
+                      ),
                     ),
                     _SettingItem(
                       icon: Icons.feedback_outlined,
                       title: 'Send Feedback',
                       subtitle: 'Report issues',
-                      onTap: () {},
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.settingsFeedback,
+                      ),
                     ),
                     _SettingItem(
                       icon: Icons.info_outline,
                       title: 'About',
                       subtitle: 'Version 1.0.0',
-                      onTap: () {},
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.settingsAbout),
                     ),
                   ]),
 
@@ -354,65 +371,33 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            await authProvider.generatePin();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('New PIN generated'),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Regenerate'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+            // Copy button only
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: pin != null
+                    ? () {
+                        Clipboard.setData(ClipboardData(text: pin));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('PIN copied to clipboard'),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy PIN'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: pin != null
-                        ? () {
-                            Clipboard.setData(ClipboardData(text: pin));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('PIN copied to clipboard'),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            );
-                          }
-                        : null,
-                    icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('Copy'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),

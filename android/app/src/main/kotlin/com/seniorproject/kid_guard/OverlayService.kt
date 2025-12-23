@@ -109,9 +109,9 @@ class OverlayService : Service() {
         val button = overlayView?.findViewById<Button>(R.id.overlay_button)
 
         if (packageName == "Time Limit Reached") {
-            title?.text = "Time's Up!"
-            message?.text = "You have used your screen time for today."
-            button?.text = "Unlock with PIN"
+            title?.text = "หมดเวลาใช้งาน"
+            message?.text = "คุณใช้เวลาหน้าจอครบตามที่กำหนดแล้ว"
+            button?.text = "ปลดล็อคด้วย PIN"
             button?.setOnClickListener {
                  val appIntent = Intent(this, MainActivity::class.java)
                  appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -125,9 +125,9 @@ class OverlayService : Service() {
                  overlayView?.visibility = View.GONE
             }
         } else {
-            title?.text = "App Locked"
-            message?.text = "You cannot access $packageName right now."
-            button?.text = "I Understand"
+            title?.text = "แอพนี้ถูกล็อค"
+            message?.text = "ไม่สามารถเข้าถึงแอพนี้ได้ในขณะนี้"
+            button?.text = "รับทราบ"
             button?.setOnClickListener {
                 val startMain = Intent(Intent.ACTION_MAIN)
                 startMain.addCategory(Intent.CATEGORY_HOME)

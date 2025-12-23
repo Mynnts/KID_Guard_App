@@ -60,76 +60,92 @@ class _SelectUserScreenState extends State<SelectUserScreen>
           opacity: _fadeAnimation,
           child: SlideTransition(
             position: _slideAnimation,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                children: [
-                  const Spacer(flex: 3),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          children: [
+                            const Spacer(flex: 3),
 
-                  // Minimal Logo
-                  _buildMinimalLogo(),
+                            // Minimal Logo
+                            _buildMinimalLogo(),
 
-                  const SizedBox(height: 28),
+                            const SizedBox(height: 28),
 
-                  // App Name
-                  const Text(
-                    'Kid Guard',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: _textPrimary,
-                      letterSpacing: -1,
+                            // App Name
+                            const Text(
+                              'Kid Guard',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: _textPrimary,
+                                letterSpacing: -1,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              'ปกป้อง ดูแล เข้าใจ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _textSecondary,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+
+                            const Spacer(flex: 2),
+
+                            // Selection Label
+                            _buildSelectionLabel(),
+
+                            const SizedBox(height: 24),
+
+                            // Parent Card
+                            _MinimalUserCard(
+                              title: 'ผู้ปกครอง',
+                              subtitle: 'จัดการและดูแลกิจกรรมของลูก',
+                              icon: Icons.person_outline_rounded,
+                              accentColor: _parentAccent,
+                              onTap: () =>
+                                  Navigator.pushNamed(context, AppRoutes.login),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Child Card
+                            _MinimalUserCard(
+                              title: 'เด็ก',
+                              subtitle: 'เชื่อมต่อกับบัญชีผู้ปกครอง',
+                              icon: Icons.child_care_outlined,
+                              accentColor: _childAccent,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.childPin,
+                              ),
+                            ),
+
+                            const Spacer(flex: 3),
+
+                            // Footer
+                            _buildFooter(),
+
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    'ปกป้อง ดูแล เข้าใจ',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _textSecondary,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-
-                  const Spacer(flex: 2),
-
-                  // Selection Label
-                  _buildSelectionLabel(),
-
-                  const SizedBox(height: 24),
-
-                  // Parent Card
-                  _MinimalUserCard(
-                    title: 'ผู้ปกครอง',
-                    subtitle: 'จัดการและดูแลกิจกรรมของลูก',
-                    icon: Icons.person_outline_rounded,
-                    accentColor: _parentAccent,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.login),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Child Card
-                  _MinimalUserCard(
-                    title: 'เด็ก',
-                    subtitle: 'เชื่อมต่อกับบัญชีผู้ปกครอง',
-                    icon: Icons.child_care_outlined,
-                    accentColor: _childAccent,
-                    onTap: () =>
-                        Navigator.pushNamed(context, AppRoutes.childPin),
-                  ),
-
-                  const Spacer(flex: 3),
-
-                  // Footer
-                  _buildFooter(),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),

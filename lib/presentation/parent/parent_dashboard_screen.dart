@@ -1032,46 +1032,48 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _shimmerBox(100, 14),
-                      const SizedBox(height: 8),
-                      _shimmerBox(150, 28),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _shimmerBox(48, 48, radius: 14),
-                      const SizedBox(width: 12),
-                      _shimmerCircle(48),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              _shimmerBox(100, 20),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 3,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
-                  itemBuilder: (_, __) => _shimmerBox(140, 160, radius: 20),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _shimmerBox(100, 14),
+                        const SizedBox(height: 8),
+                        _shimmerBox(150, 28),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        _shimmerBox(48, 48, radius: 14),
+                        const SizedBox(width: 12),
+                        _shimmerCircle(48),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 28),
-              _shimmerBox(double.infinity, 180, radius: 28),
-            ],
+                const SizedBox(height: 32),
+                _shimmerBox(100, 20),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    itemBuilder: (_, __) => _shimmerBox(140, 160, radius: 20),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                _shimmerBox(double.infinity, 180, radius: 28),
+              ],
+            ),
           ),
         ),
       ),
