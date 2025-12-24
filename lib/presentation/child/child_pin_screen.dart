@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
+import 'dart:math' as math;
 
 class ChildPinScreen extends StatefulWidget {
   const ChildPinScreen({super.key});
@@ -12,83 +13,83 @@ class ChildPinScreen extends StatefulWidget {
 }
 
 class _ChildPinScreenState extends State<ChildPinScreen>
-    with SingleTickerProviderStateMixin {
-  final List<TextEditingController> _pinControllers = List.generate(
-    6,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+    with TickerProviderStateMixin {
+  String _pin = '';
   bool _hasError = false;
 
-  late AnimationController _animController;
+  late AnimationController _fadeController;
+  late AnimationController _shakeController;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _shakeAnimation;
 
-  // Minimal Premium Colors - Child Theme (Warm Orange)
-  static const _accentColor = Color(0xFFE67E22);
-  static const _bgColor = Color(0xFFFAFAFC);
-  static const _textPrimary = Color(0xFF1A1A2E);
-  static const _textSecondary = Color(0xFF6B7280);
-  static const _textMuted = Color(0xFF9CA3AF);
-  static const _borderColor = Color(0xFFE5E5EA);
-  static const _inputBg = Color(0xFFF5F5F7);
+  // Ultra Minimal Color Palette
+  static const _bgColor = Color(0xFFF8F9FC);
+  static const _cardColor = Color(0xFFFFFFFF);
+  static const _primaryColor = Color(0xFF6366F1); // Indigo
+  static const _textPrimary = Color(0xFF1F2937);
+  static const _textSecondary = Color(0xFF9CA3AF);
+  static const _dotEmpty = Color(0xFFE5E7EB);
+  static const _dotFilled = Color(0xFF6366F1);
+  static const _errorColor = Color(0xFFEF4444);
+  static const _keyBg = Color(0xFFF3F4F6);
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
+
+    _fadeController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _shakeController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
 
-    _animController.forward();
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNodes[0].requestFocus();
-    });
+    _shakeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _shakeController, curve: Curves.elasticOut),
+    );
+
+    _fadeController.forward();
   }
 
   @override
   void dispose() {
-    _animController.dispose();
-    for (var c in _pinControllers) {
-      c.dispose();
-    }
-    for (var n in _focusNodes) {
-      n.dispose();
-    }
+    _fadeController.dispose();
+    _shakeController.dispose();
     super.dispose();
   }
 
-  String get _pin => _pinControllers.map((c) => c.text).join();
-
-  void _onDigitChanged(int index, String value) {
-    if (value.isNotEmpty && index < 5) {
-      _focusNodes[index + 1].requestFocus();
+  void _onKeyPressed(String value) {
+    if (_hasError) {
+      setState(() => _hasError = false);
     }
-    if (_hasError) setState(() => _hasError = false);
-    if (_pin.length == 6) _submit();
-  }
 
-  void _onKeyPressed(int index, RawKeyEvent event) {
-    if (event is RawKeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
-        _pinControllers[index].text.isEmpty &&
-        index > 0) {
-      _focusNodes[index - 1].requestFocus();
+    HapticFeedback.selectionClick();
+
+    if (value == 'delete') {
+      if (_pin.isNotEmpty) {
+        setState(() => _pin = _pin.substring(0, _pin.length - 1));
+      }
+    } else if (_pin.length < 6) {
+      setState(() => _pin += value);
+      if (_pin.length == 6) {
+        _submit();
+      }
     }
   }
 
   void _submit() async {
-    final pin = _pin;
-    if (pin.length != 6) return;
+    if (_pin.length != 6) return;
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.childLogin(pin);
+    final success = await auth.childLogin(_pin);
 
     if (success && mounted) {
       if (auth.children.isNotEmpty) {
@@ -98,31 +99,17 @@ class _ChildPinScreenState extends State<ChildPinScreen>
       }
     } else if (mounted) {
       setState(() => _hasError = true);
-      HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 18),
-              SizedBox(width: 12),
-              Text(
-                'รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(20),
-        ),
-      );
-      for (var c in _pinControllers) {
-        c.clear();
+      HapticFeedback.heavyImpact();
+      _shakeController.reset();
+      _shakeController.forward();
+
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) {
+        setState(() {
+          _pin = '';
+          _hasError = false;
+        });
       }
-      _focusNodes[0].requestFocus();
     }
   }
 
@@ -131,323 +118,214 @@ class _ChildPinScreenState extends State<ChildPinScreen>
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-
-                  // Back Button
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _buildBackButton(),
-                  ),
-
-                  const SizedBox(height: 56),
-
-                  // Icon
-                  _buildIcon(),
-
-                  const SizedBox(height: 32),
-
-                  // Title
-                  const Text(
-                    'กรอกรหัส PIN',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: _textPrimary,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    'ขอรหัส 6 หลักจากผู้ปกครอง',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _textSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // PIN Boxes
-                  _buildPinBoxes(),
-
-                  const SizedBox(height: 40),
-
-                  // Connect Button
-                  Consumer<AuthProvider>(
-                    builder: (context, auth, _) {
-                      if (auth.isLoading) {
-                        return Center(
-                          child: Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: _accentColor,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                      return _buildConnectButton();
-                    },
-                  ),
-
-                  const SizedBox(height: 56),
-
-                  // Help Card
-                  _buildHelpCard(),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackButton() {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _borderColor, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.arrow_back_ios_rounded,
-          color: _textPrimary,
-          size: 16,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIcon() {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        color: _accentColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _accentColor.withOpacity(0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.child_care_outlined,
-        size: 40,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildPinBoxes() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(6, (index) {
-          final hasValue = _pinControllers[index].text.isNotEmpty;
-          final isFocused = _focusNodes[index].hasFocus;
-
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 48,
-            height: 56,
-            margin: const EdgeInsets.symmetric(horizontal: 5),
-            decoration: BoxDecoration(
-              color: isFocused ? Colors.white : _inputBg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _hasError
-                    ? const Color(0xFFEF4444)
-                    : isFocused
-                    ? _accentColor
-                    : hasValue
-                    ? _accentColor.withOpacity(0.4)
-                    : _borderColor,
-                width: isFocused ? 1.5 : 1,
-              ),
-              boxShadow: isFocused
-                  ? [
-                      BoxShadow(
-                        color: _accentColor.withOpacity(0.12),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            children: [
+              // Minimal Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: _textPrimary,
+                          size: 20,
+                        ),
                       ),
-                    ]
-                  : null,
-            ),
-            child: RawKeyboardListener(
-              focusNode: FocusNode(),
-              onKey: (e) => _onKeyPressed(index, e),
-              child: TextFormField(
-                controller: _pinControllers[index],
-                focusNode: _focusNodes[index],
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                maxLength: 1,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(flex: 2),
+
+              // Simple Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: _primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: _primaryColor,
+                  size: 28,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Title
+              const Text(
+                'Enter PIN',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: _hasError ? const Color(0xFFEF4444) : _textPrimary,
+                  color: _textPrimary,
+                  letterSpacing: -0.5,
                 ),
-                decoration: const InputDecoration(
-                  counterText: '',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onChanged: (v) => _onDigitChanged(index, v),
               ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                'Ask your parent for the code',
+                style: TextStyle(fontSize: 14, color: _textSecondary),
+              ),
+
+              const SizedBox(height: 32),
+
+              // PIN Dots
+              AnimatedBuilder(
+                animation: _shakeAnimation,
+                builder: (context, child) {
+                  final offset =
+                      math.sin(_shakeAnimation.value * math.pi * 4) *
+                      10 *
+                      (1 - _shakeAnimation.value);
+                  return Transform.translate(
+                    offset: Offset(offset, 0),
+                    child: child,
+                  );
+                },
+                child: _buildPinDots(),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Error text
+              SizedBox(
+                height: 20,
+                child: _hasError
+                    ? const Text(
+                        'Incorrect PIN',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: _errorColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    : Consumer<AuthProvider>(
+                        builder: (context, auth, _) {
+                          if (auth.isLoading) {
+                            return const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: _primaryColor,
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+              ),
+
+              const Spacer(flex: 1),
+
+              // Keypad
+              _buildKeypad(),
+
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPinDots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(6, (index) {
+        final isFilled = index < _pin.length;
+        final color = _hasError
+            ? _errorColor
+            : isFilled
+            ? _dotFilled
+            : _dotEmpty;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        );
+      }),
+    );
+  }
+
+  Widget _buildKeypad() {
+    final keys = [
+      ['1', '2', '3'],
+      ['4', '5', '6'],
+      ['7', '8', '9'],
+      ['', '0', 'del'],
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48),
+      child: Column(
+        children: keys.map((row) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: row.map((key) {
+                if (key.isEmpty) {
+                  return const SizedBox(width: 64, height: 64);
+                }
+                return _buildKey(key);
+              }).toList(),
             ),
           );
-        }),
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildConnectButton() {
+  Widget _buildKey(String value) {
+    final isDelete = value == 'del';
+
     return GestureDetector(
-      onTap: _submit,
+      onTap: () => _onKeyPressed(isDelete ? 'delete' : value),
       child: Container(
-        width: double.infinity,
-        height: 56,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
-          color: _accentColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: _accentColor.withOpacity(0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: isDelete ? Colors.transparent : _keyBg,
+          shape: BoxShape.circle,
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.link_rounded, size: 20, color: Colors.white),
-            SizedBox(width: 10),
-            Text(
-              'เชื่อมต่อ',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHelpCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF0F0F5), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon Container
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.help_outline_rounded,
-              color: Color(0xFF3B82F6),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Text Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'หารหัส PIN ที่ไหน?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
+        child: Center(
+          child: isDelete
+              ? const Icon(
+                  Icons.backspace_outlined,
+                  color: _textSecondary,
+                  size: 22,
+                )
+              : Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
                     color: _textPrimary,
-                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'ตั้งค่า → รหัสเชื่อมต่อ',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: _textSecondary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Arrow
-          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _textMuted),
-        ],
+        ),
       ),
     );
   }

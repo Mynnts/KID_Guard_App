@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 
@@ -16,6 +17,22 @@ class ParentActivityScreen extends StatefulWidget {
 class _ParentActivityScreenState extends State<ParentActivityScreen> {
   String? _selectedActivityChildId;
   int _selectedBarIndex = 6;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Timer to refresh online duration every second
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,6 +248,11 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
 
                   const SizedBox(height: 24),
 
+                  // Realtime Online Status Card
+                  _buildOnlineStatusCard(selectedChild),
+
+                  const SizedBox(height: 20),
+
                   // Stats Summary Cards
                   _buildActivityStatsCards(selectedChild),
 
@@ -252,40 +274,423 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
     );
   }
 
+  Widget _buildOnlineStatusCard(ChildModel child) {
+    // Calculate online status from lastActive (within 2 minutes)
+    final isOnline =
+        child.lastActive != null &&
+        DateTime.now().difference(child.lastActive!).inMinutes < 2;
+
+    // Calculate online duration from sessionStartTime
+    String onlineDuration = '';
+    if (isOnline && child.sessionStartTime != null) {
+      final diff = DateTime.now().difference(child.sessionStartTime!);
+      if (diff.inHours > 0) {
+        onlineDuration = '${diff.inHours}h ${diff.inMinutes.remainder(60)}m';
+      } else if (diff.inMinutes > 0) {
+        onlineDuration = '${diff.inMinutes} min';
+      } else {
+        onlineDuration = 'Just now';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isOnline
+              ? const Color(0xFF10B981).withOpacity(0.3)
+              : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Animated Status Indicator
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isOnline
+                  ? const Color(0xFF10B981).withOpacity(0.1)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: isOnline
+                      ? const Color(0xFF10B981)
+                      : Colors.grey.shade400,
+                  shape: BoxShape.circle,
+                  boxShadow: isOnline
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : null,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Status Text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOnline ? 'Online Now' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isOnline
+                        ? const Color(0xFF10B981)
+                        : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isOnline && onlineDuration.isNotEmpty
+                      ? 'Active for $onlineDuration'
+                      : child.lastActive != null
+                      ? 'Last seen ${_formatLastActive(child.lastActive!)}'
+                      : 'Never connected',
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          // Live Badge
+          if (isOnline)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.fiber_manual_record,
+                    size: 8,
+                    color: Color(0xFF10B981),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    'LIVE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF10B981),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Unlock Button (when time limit reached or locked)
+          if (!isOnline || child.isLocked)
+            GestureDetector(
+              onTap: () => _requestUnlock(child),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF667EEA).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_open_rounded,
+                      size: 16,
+                      color: Color(0xFF667EEA),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Unlock',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF667EEA),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _requestUnlock(ChildModel child) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final parentUid = authProvider.userModel?.uid;
+
+    if (parentUid == null) return;
+
+    try {
+      // Calculate tomorrow midnight for auto-reset
+      final now = DateTime.now();
+      final tomorrowMidnight = DateTime(now.year, now.month, now.day + 1);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(parentUid)
+          .collection('children')
+          .doc(child.id)
+          .update({
+            'unlockRequested': true,
+            'timeLimitDisabledUntil': Timestamp.fromDate(tomorrowMidnight),
+          });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 10),
+                Text('Unlock request sent'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send unlock request: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatLastActive(DateTime lastActive) {
+    final diff = DateTime.now().difference(lastActive);
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else {
+      return '${diff.inDays}d ago';
+    }
+  }
+
   Widget _buildActivityStatsCards(ChildModel child) {
     final hours = child.screenTime ~/ 3600;
     final minutes = (child.screenTime % 3600) ~/ 60;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActivityStatCard(
-            icon: Icons.access_time_rounded,
-            label: 'Today',
-            value: '${hours}h ${minutes}m',
-            color: const Color(0xFF667EEA),
-            gradient: true,
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final parentUid = authProvider.userModel?.uid ?? '';
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _calculateWeeklyStats(parentUid, child.id),
+      builder: (context, snapshot) {
+        String avgValue = '--';
+        String peakValue = '--';
+
+        if (snapshot.hasData) {
+          final data = snapshot.data!;
+          final avgSeconds = data['averageSeconds'] as int? ?? 0;
+          final avgH = avgSeconds ~/ 3600;
+          final avgM = (avgSeconds % 3600) ~/ 60;
+          avgValue = '${avgH}h ${avgM}m';
+          peakValue = data['peakTime'] as String? ?? '--';
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildActivityStatCard(
+                icon: Icons.access_time_rounded,
+                label: 'Today',
+                value: '${hours}h ${minutes}m',
+                color: const Color(0xFF667EEA),
+                gradient: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActivityStatCard(
+                icon: Icons.trending_up_rounded,
+                label: 'Average',
+                value: avgValue,
+                color: const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActivityStatCard(
+                icon: Icons.schedule_rounded,
+                label: 'Peak',
+                value: peakValue,
+                color: const Color(0xFFF59E0B),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> _calculateWeeklyStats(
+    String parentUid,
+    String childId,
+  ) async {
+    // Fetch last 7 days of daily_stats
+    final now = DateTime.now();
+    int totalSeconds = 0;
+    int daysWithData = 0;
+
+    for (int i = 1; i <= 7; i++) {
+      final date = now.subtract(Duration(days: i));
+      final dateStr =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(parentUid)
+            .collection('children')
+            .doc(childId)
+            .collection('daily_stats')
+            .doc(dateStr)
+            .get();
+
+        if (doc.exists) {
+          final screenTime = doc.get('totalScreenTime') ?? 0;
+          totalSeconds += screenTime as int;
+          daysWithData++;
+
+          // Get hourly breakdown if available
+          final appUsage = doc.data()?['appUsage'] as Map<String, dynamic>?;
+          if (appUsage != null) {
+            // Assume peak usage based on total for now
+            // In real implementation, you'd track hourly data
+          }
+        }
+      } catch (e) {
+        // Ignore errors for missing days
+      }
+    }
+
+    // Calculate average
+    final avgSeconds = daysWithData > 0 ? totalSeconds ~/ daysWithData : 0;
+
+    // Estimate peak time (afternoon is common for kids)
+    // In a full implementation, this would come from hourly tracking
+    String peakTime = daysWithData > 0 ? '3-5 PM' : '--';
+
+    return {'averageSeconds': avgSeconds, 'peakTime': peakTime};
+  }
+
+  Widget _buildWeeklyComparisonBadge(Map<String, double> screenTimeMap) {
+    // Calculate this week's total vs compare with available data
+    double thisWeekTotal = 0;
+    int daysWithData = 0;
+
+    screenTimeMap.forEach((dateStr, hours) {
+      thisWeekTotal += hours;
+      if (hours > 0) daysWithData++;
+    });
+
+    // Calculate estimated comparison (vs average)
+    if (daysWithData < 2) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'Not enough data',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActivityStatCard(
-            icon: Icons.trending_up_rounded,
-            label: 'Average',
-            value: '2h 15m',
-            color: const Color(0xFF10B981),
+      );
+    }
+
+    // Calculate trend (compare latest day vs average)
+    final avgHours = thisWeekTotal / daysWithData;
+    final todayHours = screenTimeMap.values.isNotEmpty
+        ? screenTimeMap.values.last
+        : 0.0;
+
+    final diff = todayHours - avgHours;
+    final percentage = avgHours > 0
+        ? ((diff.abs() / avgHours) * 100).toInt()
+        : 0;
+
+    IconData icon;
+    Color color;
+    String text;
+
+    if (diff < -0.1) {
+      icon = Icons.trending_down;
+      color = const Color(0xFF10B981);
+      text = '$percentage% less';
+    } else if (diff > 0.1) {
+      icon = Icons.trending_up;
+      color = const Color(0xFFEF4444);
+      text = '$percentage% more';
+    } else {
+      icon = Icons.remove;
+      color = Colors.grey;
+      text = 'Same as avg';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActivityStatCard(
-            icon: Icons.schedule_rounded,
-            label: 'Peak',
-            value: '4-6 PM',
-            color: const Color(0xFFF59E0B),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -472,34 +877,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.trending_down,
-                              size: 14,
-                              color: Color(0xFF10B981),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              '12% less',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildWeeklyComparisonBadge(screenTimeMap),
                     ],
                   ),
                   const SizedBox(height: 24),

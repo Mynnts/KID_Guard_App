@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
@@ -21,6 +22,7 @@ class OverlayService : Service() {
 
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var audioManager: AudioManager? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -29,6 +31,7 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         createNotificationChannel()
         startForeground(1, createNotification())
     }
@@ -39,7 +42,37 @@ class OverlayService : Service() {
         return START_STICKY
     }
 
+    private fun pauseAllMedia() {
+        try {
+            // Request audio focus to pause other apps like YouTube
+            if (audioManager?.isMusicActive == true) {
+                @Suppress("DEPRECATION")
+                audioManager?.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+                )
+            }
+            // Also dispatch media button event to pause
+            val keyEvent = android.view.KeyEvent(
+                android.view.KeyEvent.ACTION_DOWN,
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE
+            )
+            audioManager?.dispatchMediaKeyEvent(keyEvent)
+            val keyEventUp = android.view.KeyEvent(
+                android.view.KeyEvent.ACTION_UP,
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE
+            )
+            audioManager?.dispatchMediaKeyEvent(keyEventUp)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun showOverlay(packageName: String) {
+        // Pause all media when showing overlay
+        pauseAllMedia()
+        
         if (overlayView != null) {
             updateOverlayContent(packageName)
             return

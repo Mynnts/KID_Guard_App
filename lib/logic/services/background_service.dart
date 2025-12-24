@@ -24,6 +24,7 @@ class BackgroundService {
   // Time Limit
   int _dailyTimeLimit = 0;
   int _currentScreenTime = 0;
+  DateTime? _timeLimitDisabledUntil;
   StreamSubscription? _childSubscription;
 
   String? _lastBlockedPackage;
@@ -85,6 +86,22 @@ class BackgroundService {
     // Listen for child settings (Time Limit + Schedules)
     _listenToChildSettings();
 
+    // Set online status and session start time
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentParentId)
+          .collection('children')
+          .doc(_currentChildId)
+          .update({
+            'isOnline': true,
+            'sessionStartTime': FieldValue.serverTimestamp(),
+            'lastActive': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      print('Error setting online status: $e');
+    }
+
     _monitorTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       await _checkForegroundApp();
       _updateScreenTime();
@@ -92,6 +109,24 @@ class BackgroundService {
   }
 
   Future<void> stopMonitoring() async {
+    // Set offline status before stopping
+    if (_currentChildId != null && _currentParentId != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_currentParentId)
+            .collection('children')
+            .doc(_currentChildId)
+            .update({
+              'isOnline': false,
+              'sessionStartTime': null,
+              'lastActive': FieldValue.serverTimestamp(),
+            });
+      } catch (e) {
+        print('Error setting offline status: $e');
+      }
+    }
+
     _monitorTimer?.cancel();
     _blocklistSubscription?.cancel();
     _childSubscription?.cancel();
@@ -145,6 +180,14 @@ class BackgroundService {
                 // Time Limit
                 _dailyTimeLimit = data['dailyTimeLimit'] ?? 0;
                 _currentScreenTime = data['screenTime'] ?? 0;
+
+                // Time Limit Disabled Until (set by parent unlock)
+                if (data['timeLimitDisabledUntil'] != null) {
+                  _timeLimitDisabledUntil =
+                      (data['timeLimitDisabledUntil'] as Timestamp).toDate();
+                } else {
+                  _timeLimitDisabledUntil = null;
+                }
 
                 // Sleep Schedule
                 if (data['sleepSchedule'] != null) {
@@ -266,8 +309,14 @@ class BackgroundService {
         }
       }
 
-      // Check Time Limit
-      if (_dailyTimeLimit > 0 && _currentScreenTime >= _dailyTimeLimit) {
+      // Check Time Limit (skip if disabled by parent)
+      final isTimeLimitDisabled =
+          _timeLimitDisabledUntil != null &&
+          DateTime.now().isBefore(_timeLimitDisabledUntil!);
+
+      if (!isTimeLimitDisabled &&
+          _dailyTimeLimit > 0 &&
+          _currentScreenTime >= _dailyTimeLimit) {
         onTimeLimitReached();
         return;
       }

@@ -491,6 +491,16 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;
 
+    // Calculate progress based on daily time limit
+    final dailyLimit = selectedChild?.dailyTimeLimit ?? 0;
+    double progress = 0.0;
+    if (dailyLimit > 0) {
+      progress = (totalSeconds / dailyLimit).clamp(0.0, 1.0);
+    } else {
+      // No limit set - show 0%
+      progress = 0.0;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -594,11 +604,24 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 0.65),
+                  tween: Tween(begin: 0, end: progress),
                   duration: const Duration(milliseconds: 1000),
                   builder: (context, value, child) {
-                    return CustomPaint(
-                      painter: _MiniProgressPainter(progress: value),
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          painter: _MiniProgressPainter(progress: value),
+                        ),
+                        Text(
+                          '${(value * 100).toInt()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -606,47 +629,106 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             ],
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.trending_down_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    '15% less than yesterday',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Colors.white.withOpacity(0.5),
-                  size: 14,
-                ),
-              ],
-            ),
-          ),
+          _buildYesterdayComparison(selectedChild, totalSeconds),
         ],
       ),
+    );
+  }
+
+  Widget _buildYesterdayComparison(ChildModel? child, int todaySeconds) {
+    if (child == null) {
+      return const SizedBox();
+    }
+
+    final parentUid = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).userModel?.uid;
+    if (parentUid == null) return const SizedBox();
+
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdayStr =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(parentUid)
+          .collection('children')
+          .doc(child.id)
+          .collection('daily_stats')
+          .doc(yesterdayStr)
+          .get(),
+      builder: (context, snapshot) {
+        int yesterdaySeconds = 0;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          yesterdaySeconds = snapshot.data!.get('totalScreenTime') ?? 0;
+        }
+
+        // Calculate difference
+        String comparisonText;
+        IconData icon;
+        Color iconBgColor;
+
+        if (yesterdaySeconds == 0) {
+          comparisonText = 'No data from yesterday';
+          icon = Icons.info_outline_rounded;
+          iconBgColor = Colors.white.withOpacity(0.2);
+        } else {
+          final diff = todaySeconds - yesterdaySeconds;
+          final percentage = ((diff.abs() / yesterdaySeconds) * 100).toInt();
+
+          if (diff < 0) {
+            comparisonText = '$percentage% less than yesterday';
+            icon = Icons.trending_down_rounded;
+            iconBgColor = const Color(0xFF10B981).withOpacity(0.3);
+          } else if (diff > 0) {
+            comparisonText = '$percentage% more than yesterday';
+            icon = Icons.trending_up_rounded;
+            iconBgColor = const Color(0xFFEF4444).withOpacity(0.3);
+          } else {
+            comparisonText = 'Same as yesterday';
+            icon = Icons.remove_rounded;
+            iconBgColor = Colors.white.withOpacity(0.2);
+          }
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  comparisonText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withOpacity(0.5),
+                size: 14,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

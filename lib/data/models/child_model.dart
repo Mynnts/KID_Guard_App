@@ -10,8 +10,11 @@ class ChildModel {
   final bool isLocked;
   final bool isOnline;
   final DateTime? lastActive;
+  final DateTime? sessionStartTime; // When child mode was activated
   final int dailyTimeLimit; // in seconds, 0 means no limit
   final bool isChildModeActive;
+  final bool unlockRequested; // Parent can request unlock remotely
+  final DateTime? timeLimitDisabledUntil; // Time limit disabled until this time
 
   ChildModel({
     required this.id,
@@ -23,8 +26,11 @@ class ChildModel {
     this.isLocked = false,
     this.isOnline = false,
     this.lastActive,
+    this.sessionStartTime,
     this.dailyTimeLimit = 0,
     this.isChildModeActive = false,
+    this.unlockRequested = false,
+    this.timeLimitDisabledUntil,
   });
 
   factory ChildModel.fromMap(Map<String, dynamic> map, String id) {
@@ -40,8 +46,15 @@ class ChildModel {
       lastActive: map['lastActive'] != null
           ? (map['lastActive'] as Timestamp).toDate()
           : null,
+      sessionStartTime: map['sessionStartTime'] != null
+          ? (map['sessionStartTime'] as Timestamp).toDate()
+          : null,
       dailyTimeLimit: map['dailyTimeLimit'] ?? 0,
       isChildModeActive: map['isChildModeActive'] ?? false,
+      unlockRequested: map['unlockRequested'] ?? false,
+      timeLimitDisabledUntil: map['timeLimitDisabledUntil'] != null
+          ? (map['timeLimitDisabledUntil'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -55,8 +68,11 @@ class ChildModel {
       'isLocked': isLocked,
       'isOnline': isOnline,
       'lastActive': lastActive,
+      'sessionStartTime': sessionStartTime,
       'dailyTimeLimit': dailyTimeLimit,
       'isChildModeActive': isChildModeActive,
+      'unlockRequested': unlockRequested,
+      'timeLimitDisabledUntil': timeLimitDisabledUntil,
     };
   }
 }

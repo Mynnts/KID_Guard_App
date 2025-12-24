@@ -11,7 +11,7 @@
 
 
     <application
-        android:label="Kid Guard"
+        android:label="Kid Guard (Beta)"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

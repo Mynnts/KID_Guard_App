@@ -352,6 +352,52 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             _updateNativeBlocklist(blockedPackages);
           });
 
+      // Listen for parent unlock requests
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('children')
+          .doc(child.id)
+          .snapshots()
+          .listen((snapshot) async {
+            if (snapshot.exists) {
+              final unlockRequested =
+                  snapshot.data()?['unlockRequested'] ?? false;
+              if (unlockRequested) {
+                // Parent requested unlock - hide overlay
+                _overlayService.hideOverlay();
+
+                // Clear the unlock request
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .collection('children')
+                    .doc(child.id)
+                    .update({'unlockRequested': false});
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.lock_open, color: Colors.white, size: 18),
+                          SizedBox(width: 10),
+                          Text('ผู้ปกครองปลดล็อคให้แล้ว'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF22C55E),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+                }
+              }
+            }
+          });
+
       _updateOnlineStatus(true);
 
       final childDoc = await FirebaseFirestore.instance
