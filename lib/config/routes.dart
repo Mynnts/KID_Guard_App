@@ -18,6 +18,7 @@ import '../presentation/parent/settings/language_settings_screen.dart';
 import '../presentation/parent/settings/help_center_screen.dart';
 import '../presentation/parent/settings/feedback_screen.dart';
 import '../presentation/parent/settings/about_screen.dart';
+import '../presentation/child/friendly_lock_screen.dart';
 
 class AppRoutes {
   static const String selectUser = '/select_user';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String settingsHelpCenter = '/settings/help-center';
   static const String settingsFeedback = '/settings/feedback';
   static const String settingsAbout = '/settings/about';
+  static const String childFriendlyLock = '/child/friendly-lock';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -61,6 +63,7 @@ class AppRoutes {
       settingsHelpCenter: (context) => const HelpCenterScreen(),
       settingsFeedback: (context) => const FeedbackScreen(),
       settingsAbout: (context) => const AboutScreen(),
+      childFriendlyLock: (context) => const FriendlyLockScreen(),
     };
   }
 }

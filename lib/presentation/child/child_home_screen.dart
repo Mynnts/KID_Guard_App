@@ -10,6 +10,8 @@ import '../../data/local/blocklist_storage.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
 import '../../logic/services/location_service.dart';
+import '../../logic/services/native_settings_sync.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChildHomeScreen extends StatefulWidget {
   const ChildHomeScreen({super.key});
@@ -98,6 +100,13 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       final user = authProvider.userModel;
 
       if (child != null && user != null) {
+        // Sync settings to native Accessibility Service for background operation
+        await NativeSettingsSync().enableChildMode(user.uid, child.id);
+
+        // Write to SharedPreferences so native Accessibility Service can read directly
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isChildModeActive', true);
+
         await _backgroundService.startMonitoring(child.id, user.uid);
         await _locationService.startTracking(user.uid, child.id);
         setState(() => _isChildrenModeActive = true);
@@ -285,6 +294,13 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   }
 
   Future<void> _disableChildMode() async {
+    // Disable native Accessibility Service background operation
+    await NativeSettingsSync().disableChildMode();
+
+    // Write to SharedPreferences so native Accessibility Service stops
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isChildModeActive', false);
+
     await _backgroundService.stopMonitoring();
     _locationService.stopTracking();
 
@@ -395,8 +411,25 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
                   );
                 }
               }
+
+              // Sync all settings changes to native Accessibility Service
+              // This ensures background service has latest settings
+              await NativeSettingsSync().loadFromFirebaseAndSync(
+                user.uid,
+                child.id,
+              );
             }
           });
+
+      // Periodic sync: Read screen time from native and sync to Firebase
+      // This runs every 30 seconds when app is open
+      Timer.periodic(const Duration(seconds: 30), (timer) async {
+        if (!mounted || !_isChildrenModeActive) {
+          timer.cancel();
+          return;
+        }
+        await NativeSettingsSync().syncScreenTimeToFirebase(user.uid, child.id);
+      });
 
       _updateOnlineStatus(true);
 
@@ -412,6 +445,9 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
         if (isActive) {
           bool overlayPerm = await _overlayService.checkPermission();
           if (overlayPerm) {
+            // Sync settings to native for background operation
+            await NativeSettingsSync().enableChildMode(user.uid, child.id);
+
             await _backgroundService.startMonitoring(child.id, user.uid);
             await _locationService.startTracking(user.uid, child.id);
             setState(() => _isChildrenModeActive = true);

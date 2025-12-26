@@ -93,7 +93,19 @@ class OverlayService : Service() {
         params.gravity = Gravity.CENTER
 
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        overlayView = inflater.inflate(R.layout.overlay_layout, null)
+        
+        // Try friendly layout first, fallback to old layout if crash
+        try {
+            overlayView = inflater.inflate(R.layout.friendly_overlay_layout, null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                overlayView = inflater.inflate(R.layout.overlay_layout, null)
+            } catch (e2: Exception) {
+                e2.printStackTrace()
+                return // Can't show overlay
+            }
+        }
 
         updateOverlayContent(packageName)
 
@@ -105,35 +117,21 @@ class OverlayService : Service() {
             startActivity(startMain)
         }
         
-        // Add Unlock Button logic if needed (e.g. long press or specific button)
-        // For now, let's keep it simple. If we want to unlock, we might need a separate button.
-        // Let's assume the user wants to unlock via the app.
-        // But since the overlay blocks everything, they can't open the app easily.
-        // We should add an "Unlock" button to the overlay for Time Limit.
-        
-        if (packageName == "Time Limit Reached") {
-             // Change button text or add another button
-             button?.text = "Unlock with PIN"
+        if (packageName == "Time Limit Reached" || packageName.contains("หมดเวลา") || packageName.contains("⏰")) {
              button?.setOnClickListener {
-                 // Show PIN Dialog (Native) or Open App with specific intent
-                 // Opening app is easier to handle PIN logic in Flutter
-                 val intent = packageManager.getLaunchIntentForPackage(packageName)
-                 if (intent != null) {
-                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                     startActivity(intent)
-                 } else {
-                     // Fallback if we can't find our own package?
-                     // We are in the same package, so:
-                     val appIntent = Intent(this, MainActivity::class.java)
-                     appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                     appIntent.putExtra("action", "unlock_time_limit")
-                     startActivity(appIntent)
-                 }
-                 // We don't hide overlay yet, Flutter will tell us to hide if PIN is correct
+                  val appIntent = Intent(this, MainActivity::class.java)
+                  appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  appIntent.putExtra("action", "unlock_time_limit")
+                  startActivity(appIntent)
+                  overlayView?.visibility = View.GONE
              }
         }
 
-        windowManager?.addView(overlayView, params)
+        try {
+            windowManager?.addView(overlayView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun updateOverlayContent(packageName: String) {
@@ -141,31 +139,53 @@ class OverlayService : Service() {
         val message = overlayView?.findViewById<TextView>(R.id.overlay_message)
         val button = overlayView?.findViewById<Button>(R.id.overlay_button)
 
-        if (packageName == "Time Limit Reached") {
-            title?.text = "หมดเวลาใช้งาน"
-            message?.text = "คุณใช้เวลาหน้าจอครบตามที่กำหนดแล้ว"
-            button?.text = "ปลดล็อคด้วย PIN"
-            button?.setOnClickListener {
-                 val appIntent = Intent(this, MainActivity::class.java)
-                 appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                 appIntent.putExtra("action", "unlock_time_limit")
-                 startActivity(appIntent)
-                 
-                 // HIDE OVERLAY temporarily to allow PIN entry
-                 // We can remove it or set visibility to GONE
-                 // If we remove it, we need to be careful about recreating it if they cancel.
-                 // Setting visibility to GONE is safer if we keep the service running.
-                 overlayView?.visibility = View.GONE
+        // Friendly child-friendly messages based on reason
+        when {
+            packageName == "Time Limit Reached" || packageName.contains("หมดเวลา") || packageName.contains("⏰") -> {
+                title?.text = "เก่งมากวันนี้! ⭐"
+                message?.text = "ได้เวลาพักผ่อนแล้วนะ"
+                button?.text = "ขอเวลาเพิ่ม 💝"
+                button?.setOnClickListener {
+                    val appIntent = Intent(this, MainActivity::class.java)
+                    appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    appIntent.putExtra("action", "unlock_time_limit")
+                    startActivity(appIntent)
+                    overlayView?.visibility = View.GONE
+                }
             }
-        } else {
-            title?.text = "แอพนี้ถูกล็อค"
-            message?.text = "ไม่สามารถเข้าถึงแอพนี้ได้ในขณะนี้"
-            button?.text = "รับทราบ"
-            button?.setOnClickListener {
-                val startMain = Intent(Intent.ACTION_MAIN)
-                startMain.addCategory(Intent.CATEGORY_HOME)
-                startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(startMain)
+            packageName.contains("นอน") || packageName.contains("🌙") -> {
+                title?.text = "ถึงเวลานอนแล้วจ้า 🌙"
+                message?.text = "ราตรีสวัสดิ์ พรุ่งนี้เจอกันนะ"
+                button?.text = "นอนหลับฝันดี 💤"
+                button?.setOnClickListener {
+                    val startMain = Intent(Intent.ACTION_MAIN)
+                    startMain.addCategory(Intent.CATEGORY_HOME)
+                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(startMain)
+                }
+            }
+            packageName.contains("พัก") || packageName.contains("🔕") -> {
+                title?.text = "ช่วงเวลาพักผ่อน 🌸"
+                message?.text = "ไปทำกิจกรรมอื่นกันเถอะ"
+                button?.text = "โอเค 👍"
+                button?.setOnClickListener {
+                    val startMain = Intent(Intent.ACTION_MAIN)
+                    startMain.addCategory(Intent.CATEGORY_HOME)
+                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(startMain)
+                }
+            }
+            else -> {
+                // Blocked app - still friendly
+                title?.text = "แอปนี้ยังไม่พร้อมใช้ 🎮"
+                message?.text = "ลองเล่นอย่างอื่นกันนะ"
+                button?.text = "โอเค 👍"
+                button?.setOnClickListener {
+                    val startMain = Intent(Intent.ACTION_MAIN)
+                    startMain.addCategory(Intent.CATEGORY_HOME)
+                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(startMain)
+                }
             }
         }
     }
