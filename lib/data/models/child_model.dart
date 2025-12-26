@@ -6,7 +6,9 @@ class ChildModel {
   final String name;
   final int age;
   final String? avatar;
-  final int screenTime; // in seconds
+  final int screenTime; // Total screen time today for statistics (seconds)
+  final int
+  limitUsedTime; // Time used towards limit - resettable by parent (seconds)
   final bool isLocked;
   final bool isOnline;
   final DateTime? lastActive;
@@ -23,6 +25,7 @@ class ChildModel {
     required this.age,
     this.avatar,
     this.screenTime = 0,
+    this.limitUsedTime = 0,
     this.isLocked = false,
     this.isOnline = false,
     this.lastActive,
@@ -41,6 +44,10 @@ class ChildModel {
       age: map['age'] ?? 0,
       avatar: map['avatar'],
       screenTime: map['screenTime'] ?? 0,
+      limitUsedTime:
+          map['limitUsedTime'] ??
+          map['screenTime'] ??
+          0, // Fallback to screenTime for existing data
       isLocked: map['isLocked'] ?? false,
       isOnline: map['isOnline'] ?? false,
       lastActive: map['lastActive'] != null
@@ -65,6 +72,7 @@ class ChildModel {
       'age': age,
       'avatar': avatar,
       'screenTime': screenTime,
+      'limitUsedTime': limitUsedTime,
       'isLocked': isLocked,
       'isOnline': isOnline,
       'lastActive': lastActive,

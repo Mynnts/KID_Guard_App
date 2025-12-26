@@ -662,7 +662,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       builder: (context, snapshot) {
         int yesterdaySeconds = 0;
         if (snapshot.hasData && snapshot.data!.exists) {
-          yesterdaySeconds = snapshot.data!.get('totalScreenTime') ?? 0;
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          yesterdaySeconds = data?['totalScreenTime'] ?? 0;
         }
 
         // Calculate difference

@@ -23,7 +23,7 @@ class BackgroundService {
 
   // Time Limit
   int _dailyTimeLimit = 0;
-  int _currentScreenTime = 0;
+  int _currentLimitUsedTime = 0; // For time limit checking
   DateTime? _timeLimitDisabledUntil;
   StreamSubscription? _childSubscription;
 
@@ -179,7 +179,9 @@ class BackgroundService {
               if (data != null) {
                 // Time Limit
                 _dailyTimeLimit = data['dailyTimeLimit'] ?? 0;
-                _currentScreenTime = data['screenTime'] ?? 0;
+                // Use limitUsedTime for limit checking, fallback to screenTime for older data
+                _currentLimitUsedTime =
+                    data['limitUsedTime'] ?? data['screenTime'] ?? 0;
 
                 // Time Limit Disabled Until (set by parent unlock)
                 if (data['timeLimitDisabledUntil'] != null) {
@@ -281,7 +283,7 @@ class BackgroundService {
     if (_isInQuietTime()) {
       return 'เวลาพักผ่อน 🔕';
     }
-    if (_dailyTimeLimit > 0 && _currentScreenTime >= _dailyTimeLimit) {
+    if (_dailyTimeLimit > 0 && _currentLimitUsedTime >= _dailyTimeLimit) {
       return 'หมดเวลาใช้งาน ⏰';
     }
     return '';
@@ -316,7 +318,7 @@ class BackgroundService {
 
       if (!isTimeLimitDisabled &&
           _dailyTimeLimit > 0 &&
-          _currentScreenTime >= _dailyTimeLimit) {
+          _currentLimitUsedTime >= _dailyTimeLimit) {
         onTimeLimitReached();
         return;
       }
@@ -378,7 +380,7 @@ class BackgroundService {
     if (_currentChildId == null || _currentParentId == null) return;
 
     _sessionSeconds++;
-    _currentScreenTime++;
+    _currentLimitUsedTime++;
 
     // Update Firestore every 10 seconds to reduce writes
     if (_sessionSeconds % 10 == 0) {
@@ -389,9 +391,10 @@ class BackgroundService {
             .collection('children')
             .doc(_currentChildId);
 
-        // 1. Update Realtime (Quick View)
+        // 1. Update Realtime (Quick View) - both screenTime and limitUsedTime
         await docRef.update({
-          'screenTime': FieldValue.increment(10),
+          'screenTime': FieldValue.increment(10), // For statistics
+          'limitUsedTime': FieldValue.increment(10), // For limit checking
           'lastActive': FieldValue.serverTimestamp(),
         });
 
