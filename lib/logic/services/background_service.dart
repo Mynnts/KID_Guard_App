@@ -42,6 +42,10 @@ class BackgroundService {
   // Track if currently in restricted time
   bool _isInRestrictedTime = false;
 
+  // Instant Pause / Lock
+  bool _isDeviceLocked = false;
+  DateTime? _pauseUntil;
+
   final Function(String) onBlockedAppDetected;
   final Function() onTimeLimitReached;
   final Function() onAppAllowed;
@@ -212,6 +216,20 @@ class BackgroundService {
                   _quietTimes = [];
                 }
 
+                // Global Lock & Pause
+                _isDeviceLocked = data['isLocked'] ?? false;
+                if (data['pauseUntil'] != null) {
+                  _pauseUntil = DateTime.parse(data['pauseUntil']);
+                } else {
+                  _pauseUntil = null;
+                }
+
+                // Check for auto-unlock
+                if (_pauseUntil != null &&
+                    DateTime.now().isAfter(_pauseUntil!)) {
+                  _unlockDevice();
+                }
+
                 print(
                   'Updated settings: Limit=$_dailyTimeLimit, Sleep=${_sleepScheduleEnabled ? "ON" : "OFF"}, QuietTimes=${_quietTimes.length}',
                 );
@@ -296,11 +314,22 @@ class BackgroundService {
       final inQuiet = _isInQuietTime();
       final isRestricted = inSleep || inQuiet;
 
-      if (isRestricted) {
+      if (isRestricted || _isDeviceLocked) {
         if (!_isInRestrictedTime) {
           // Just entered restricted time
           _isInRestrictedTime = true;
-          onBlockedAppDetected(_getRestrictionReason());
+          onBlockedAppDetected(
+            _isDeviceLocked
+                ? 'อุปกรณ์ถูกระงับชั่วคราว 🔒'
+                : _getRestrictionReason(),
+          );
+        }
+
+        // Auto-unlock check
+        if (_isDeviceLocked &&
+            _pauseUntil != null &&
+            DateTime.now().isAfter(_pauseUntil!)) {
+          _unlockDevice();
         }
         return; // Don't process further, device should be locked
       } else {
@@ -451,5 +480,21 @@ class BackgroundService {
       'isRestricted': _isInRestrictedTime,
       'restrictionReason': _getRestrictionReason(),
     };
+  }
+
+  Future<void> _unlockDevice() async {
+    if (_currentChildId == null || _currentParentId == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentParentId)
+          .collection('children')
+          .doc(_currentChildId)
+          .update({'isLocked': false, 'pauseUntil': null});
+      // Local state will be updated via listener
+    } catch (e) {
+      print('Error unlocking device: $e');
+    }
   }
 }

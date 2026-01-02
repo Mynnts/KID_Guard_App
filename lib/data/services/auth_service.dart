@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../models/child_model.dart';
+import '../../core/utils/security_logger.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,10 +21,16 @@ class AuthService {
       );
       User? user = result.user;
       if (user != null) {
+        await SecurityLogger.logAuth('email_sign_in', true, userId: user.uid);
         return await getUserData(user.uid);
       }
       return null;
     } catch (e) {
+      await SecurityLogger.logAuth('email_sign_in', false);
+      await SecurityLogger.error(
+        'Sign in failed',
+        data: {'error': e.toString()},
+      );
       rethrow;
     }
   }
@@ -61,7 +68,10 @@ class AuthService {
   Future<UserModel?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // User canceled
+      if (googleUser == null) {
+        await SecurityLogger.logAuth('google_sign_in', false);
+        return null; // User canceled
+      }
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -74,6 +84,7 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
+        await SecurityLogger.logAuth('google_sign_in', true, userId: user.uid);
         // Check if user exists, if not create
         DocumentSnapshot doc = await _firestore
             .collection('users')
@@ -90,6 +101,10 @@ class AuthService {
               .collection('users')
               .doc(user.uid)
               .set(newUser.toMap());
+          await SecurityLogger.info(
+            'New user registered via Google',
+            data: {'uid': user.uid},
+          );
           return newUser;
         } else {
           return UserModel.fromMap(
@@ -100,13 +115,19 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print(e.toString());
+      await SecurityLogger.logAuth('google_sign_in', false);
+      await SecurityLogger.error(
+        'Google sign in failed',
+        data: {'error': e.toString()},
+      );
       return null;
     }
   }
 
   // Sign Out
   Future<void> signOut() async {
+    final userId = _auth.currentUser?.uid;
+    await SecurityLogger.logAuth('sign_out', true, userId: userId);
     await _googleSignIn.signOut();
     await _auth.signOut();
   }

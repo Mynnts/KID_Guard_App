@@ -7,8 +7,8 @@ import '../../data/models/child_model.dart';
 import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
-import 'sleep_schedule_screen.dart';
-import 'quiet_time_screen.dart';
+import 'schedule_screen.dart';
+import 'parent_rewards_screen.dart';
 
 /// Parent Home Screen - displays children overview, stats, and quick actions
 class ParentHomeScreen extends StatefulWidget {
@@ -597,8 +597,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               ),
               // Mini Chart
               Container(
-                width: 72,
-                height: 72,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -610,15 +610,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     return Stack(
                       alignment: Alignment.center,
                       children: [
-                        CustomPaint(
-                          painter: _MiniProgressPainter(progress: value),
+                        SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: CustomPaint(
+                            painter: _MiniProgressPainter(progress: value),
+                          ),
                         ),
                         Text(
                           '${(value * 100).toInt()}%',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -863,9 +867,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     List<ChildModel> children,
     ColorScheme colorScheme,
   ) {
-    bool isAnyLocked = children.any((c) => c.isLocked);
-
     final actions = [
+      _QuickAction(
+        icon: Icons.pause_circle_filled_rounded,
+        label: 'Instant Pause',
+        subtitle: 'Pause now',
+        color: const Color(0xFFEF4444),
+        onTap: () => _showInstantPauseDialog(context, children),
+      ),
       _QuickAction(
         icon: Icons.apps_rounded,
         label: 'App Control',
@@ -891,31 +900,21 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         onTap: () => _navigateToLocation(context, children),
       ),
       _QuickAction(
-        icon: isAnyLocked ? Icons.lock_open_rounded : Icons.lock_rounded,
-        label: isAnyLocked ? 'Unlock' : 'Lock',
-        subtitle: 'Device control',
-        color: isAnyLocked ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-        onTap: () => _toggleLock(context, children, isAnyLocked),
-      ),
-      _QuickAction(
-        icon: Icons.bedtime_rounded,
-        label: 'Sleep',
-        subtitle: 'เวลานอน',
+        icon: Icons.calendar_month_rounded,
+        label: 'Schedule',
+        subtitle: 'Sleep & Break',
         color: const Color(0xFF6366F1),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SleepScheduleScreen()),
+          MaterialPageRoute(builder: (_) => const ScheduleScreen()),
         ),
       ),
       _QuickAction(
-        icon: Icons.do_not_disturb_on_rounded,
-        label: 'Quiet Time',
-        subtitle: 'เวลาพัก',
+        icon: Icons.star_rounded,
+        label: 'Rewards',
+        subtitle: 'Points & Goals',
         color: const Color(0xFF8B5CF6),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const QuietTimeScreen()),
-        ),
+        onTap: () => _navigateToRewards(context, children),
       ),
     ];
 
@@ -923,10 +922,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.95,
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.5,
       ),
       itemCount: actions.length,
       itemBuilder: (context, index) {
@@ -983,32 +982,176 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     }
   }
 
-  void _toggleLock(
-    BuildContext context,
-    List<ChildModel> children,
-    bool isLocked,
-  ) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.userModel;
-    if (user != null) {
-      for (var child in children) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('children')
-            .doc(child.id)
-            .update({'isLocked': !isLocked});
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isLocked ? 'Device Unlocked' : 'Device Locked'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+  void _navigateToRewards(BuildContext context, List<ChildModel> children) {
+    if (children.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please add a child first')));
+      return;
+    }
+
+    if (children.length == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ParentRewardsScreen(child: children.first),
         ),
       );
+    } else {
+      _showChildSelector(context, children, (child) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ParentRewardsScreen(child: child)),
+        );
+      });
     }
+  }
+
+  void _showInstantPauseDialog(
+    BuildContext context,
+    List<ChildModel> children,
+  ) {
+    if (children.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please add a child first')));
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.userModel;
+    if (user == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.pause_circle_filled_rounded,
+                color: Color(0xFFEF4444),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Instant Pause',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'หยุดอุปกรณ์ทั้งหมดทันที',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _buildPauseOption(ctx, user.uid, children, 5),
+                const SizedBox(width: 12),
+                _buildPauseOption(ctx, user.uid, children, 10),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildPauseOption(ctx, user.uid, children, 15),
+                const SizedBox(width: 12),
+                _buildPauseOption(ctx, user.uid, children, 30),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPauseOption(
+    BuildContext ctx,
+    String parentUid,
+    List<ChildModel> children,
+    int minutes,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () async {
+          final pauseUntil = DateTime.now().add(Duration(minutes: minutes));
+          for (var child in children) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(parentUid)
+                .collection('children')
+                .doc(child.id)
+                .update({
+                  'pauseUntil': pauseUntil.toIso8601String(),
+                  'isLocked': true,
+                });
+          }
+          Navigator.pop(ctx);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.pause_circle_filled, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('หยุดอุปกรณ์แล้ว $minutes นาที'),
+                ],
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F7),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Text(
+                '$minutes',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
+              Text(
+                'นาที',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showChildSelector(
@@ -1212,58 +1355,70 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
         animation: _hoverController,
         builder: (context, child) {
           return Transform.scale(
-            scale: 1 - (_hoverController.value * 0.05),
+            scale: 1 - (_hoverController.value * 0.03),
             child: child,
           );
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.grey.shade100),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: widget.action.color.withOpacity(0.08),
+                  color: widget.action.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   widget.action.icon,
                   color: widget.action.color,
-                  size: 22,
+                  size: 24,
                 ),
               ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: Text(
-                  widget.action.label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    color: Color(0xFF374151),
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.action.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF1F2937),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.action.subtitle,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Flexible(
-                child: Text(
-                  widget.action.subtitle,
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.grey.shade300,
+                size: 20,
               ),
             ],
           ),
@@ -1282,13 +1437,14 @@ class _MiniProgressPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
+    final radius = size.width / 2 - 4; // Increased padding
 
     // Background circle
     final bgPaint = Paint()
       ..color = Colors.white.withOpacity(0.2)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
+      ..strokeWidth =
+          6 // Thinner stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, bgPaint);
@@ -1297,7 +1453,8 @@ class _MiniProgressPainter extends CustomPainter {
     final progressPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
+      ..strokeWidth =
+          6 // Thinner stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
@@ -1306,27 +1463,6 @@ class _MiniProgressPainter extends CustomPainter {
       2 * math.pi * progress,
       false,
       progressPaint,
-    );
-
-    // Center text
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: '${(progress * 100).toInt()}%',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
-      ),
     );
   }
 

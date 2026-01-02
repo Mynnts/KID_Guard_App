@@ -17,6 +17,7 @@ class ChildModel {
   final bool isChildModeActive;
   final bool unlockRequested; // Parent can request unlock remotely
   final DateTime? timeLimitDisabledUntil; // Time limit disabled until this time
+  final int points;
 
   ChildModel({
     required this.id,
@@ -34,6 +35,7 @@ class ChildModel {
     this.isChildModeActive = false,
     this.unlockRequested = false,
     this.timeLimitDisabledUntil,
+    this.points = 0,
   });
 
   factory ChildModel.fromMap(Map<String, dynamic> map, String id) {
@@ -62,6 +64,7 @@ class ChildModel {
       timeLimitDisabledUntil: map['timeLimitDisabledUntil'] != null
           ? (map['timeLimitDisabledUntil'] as Timestamp).toDate()
           : null,
+      points: map['points'] ?? 0,
     );
   }
 
@@ -81,6 +84,7 @@ class ChildModel {
       'isChildModeActive': isChildModeActive,
       'unlockRequested': unlockRequested,
       'timeLimitDisabledUntil': timeLimitDisabledUntil,
+      'points': points,
     };
   }
 }

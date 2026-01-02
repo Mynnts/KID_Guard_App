@@ -9,8 +9,7 @@ import '../../data/models/child_model.dart';
 import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
-import 'sleep_schedule_screen.dart';
-import 'quiet_time_screen.dart';
+import 'schedule_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -823,8 +822,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
     List<ChildModel> children,
     ColorScheme colorScheme,
   ) {
-    bool isAnyLocked = children.any((c) => c.isLocked);
-
     final actions = [
       _QuickAction(
         icon: Icons.apps_rounded,
@@ -851,30 +848,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
         onTap: () => _navigateToLocation(context, children),
       ),
       _QuickAction(
-        icon: isAnyLocked ? Icons.lock_open_rounded : Icons.lock_rounded,
-        label: isAnyLocked ? 'Unlock' : 'Lock',
-        subtitle: 'Device control',
-        color: isAnyLocked ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-        onTap: () => _toggleLock(context, children, isAnyLocked),
-      ),
-      _QuickAction(
-        icon: Icons.bedtime_rounded,
-        label: 'Sleep',
-        subtitle: 'เวลานอน',
+        icon: Icons.calendar_month_rounded,
+        label: 'Schedule',
+        subtitle: 'Sleep & Break',
         color: const Color(0xFF6366F1),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SleepScheduleScreen()),
-        ),
-      ),
-      _QuickAction(
-        icon: Icons.do_not_disturb_on_rounded,
-        label: 'Quiet Time',
-        subtitle: 'เวลาพัก',
-        color: const Color(0xFF8B5CF6),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const QuietTimeScreen()),
+          MaterialPageRoute(builder: (_) => const ScheduleScreen()),
         ),
       ),
     ];
@@ -883,7 +863,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+        crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         childAspectRatio: 0.95,
@@ -940,34 +920,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
           ),
         );
       });
-    }
-  }
-
-  void _toggleLock(
-    BuildContext context,
-    List<ChildModel> children,
-    bool isLocked,
-  ) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.userModel;
-    if (user != null) {
-      for (var child in children) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('children')
-            .doc(child.id)
-            .update({'isLocked': !isLocked});
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isLocked ? 'Device Unlocked' : 'Device Locked'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
     }
   }
 

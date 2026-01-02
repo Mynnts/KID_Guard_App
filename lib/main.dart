@@ -7,6 +7,8 @@ import 'config/routes.dart';
 import 'logic/providers/auth_provider.dart';
 import 'logic/providers/theme_provider.dart';
 import 'logic/providers/locale_provider.dart';
+import 'data/services/security_service.dart';
+import 'core/utils/security_logger.dart';
 
 import 'package:workmanager/workmanager.dart';
 import 'logic/background_worker.dart';
@@ -20,8 +22,49 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final SecurityService _securityService = SecurityService();
+  bool _securityCheckDone = false;
+  SecurityStatus? _securityStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _performSecurityCheck();
+  }
+
+  Future<void> _performSecurityCheck() async {
+    try {
+      final status = await _securityService.performSecurityCheck();
+      setState(() {
+        _securityStatus = status;
+        _securityCheckDone = true;
+      });
+
+      if (status.hasSecurityIssue) {
+        await SecurityLogger.security(
+          'Security risk detected on startup',
+          data: {
+            'isRooted': status.isRooted,
+            'isEmulator': status.isEmulator,
+            'isDebugged': status.isDebugged,
+            'riskLevel': status.riskLevel,
+          },
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _securityCheckDone = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +91,99 @@ class MyApp extends StatelessWidget {
             initialRoute: AppRoutes.selectUser,
             routes: AppRoutes.getRoutes(),
             debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              // Show security warning dialog if issues detected
+              if (_securityCheckDone &&
+                  _securityStatus != null &&
+                  _securityStatus!.hasSecurityIssue) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _showSecurityWarningDialog(context);
+                });
+              }
+              return child ?? const SizedBox.shrink();
+            },
           );
         },
+      ),
+    );
+  }
+
+  bool _dialogShown = false;
+
+  void _showSecurityWarningDialog(BuildContext context) {
+    if (_dialogShown) return;
+    _dialogShown = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.orange[700],
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            const Text('Security Warning'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Security issues detected on this device:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 12),
+            ..._securityStatus!.details
+                .take(3)
+                .map(
+                  (detail) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            detail,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            const SizedBox(height: 12),
+            Text(
+              'Risk Level: ${_securityStatus!.riskLevel}%',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: _securityStatus!.riskLevel > 50
+                    ? Colors.red
+                    : Colors.orange,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Some features may be restricted for security reasons.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('I Understand'),
+          ),
+        ],
       ),
     );
   }

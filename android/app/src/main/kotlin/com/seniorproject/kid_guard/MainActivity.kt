@@ -11,9 +11,74 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.kidguard/native"
+    private val SECURITY_CHANNEL = "com.kidguard/security"
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Initialize security logger
+        SecurityLogger.init(this)
+        SecurityLogger.info(this, "App started", mapOf("version" to getAppVersion()))
+    }
+
+    private fun getAppVersion(): String {
+        return try {
+            val pInfo = packageManager.getPackageInfo(packageName, 0)
+            pInfo.versionName ?: "unknown"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        
+        // Security Method Channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURITY_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "performSecurityCheck" -> {
+                    val expectedSignature = call.argument<String>("expectedSignature")
+                    val status = SecurityService.performSecurityCheck(this, expectedSignature)
+                    result.success(status.toMap())
+                }
+                "quickRootCheck" -> {
+                    result.success(SecurityService.quickRootCheck())
+                }
+                "quickEmulatorCheck" -> {
+                    result.success(SecurityService.quickEmulatorCheck())
+                }
+                "getLogs" -> {
+                    val logs = SecurityLogger.getLogsAsList(this)
+                    result.success(logs)
+                }
+                "clearLogs" -> {
+                    SecurityLogger.clearLogs(this)
+                    result.success(true)
+                }
+                "exportLogs" -> {
+                    val file = SecurityLogger.exportLogs(this)
+                    result.success(file?.absolutePath)
+                }
+                "logEvent" -> {
+                    val level = call.argument<String>("level") ?: "INFO"
+                    val message = call.argument<String>("message") ?: ""
+                    val data = call.argument<Map<String, Any>>("data")
+                    val logLevel = when (level.uppercase()) {
+                        "DEBUG" -> SecurityLogger.LogLevel.DEBUG
+                        "WARN" -> SecurityLogger.LogLevel.WARN
+                        "ERROR" -> SecurityLogger.LogLevel.ERROR
+                        "SECURITY" -> SecurityLogger.LogLevel.SECURITY
+                        else -> SecurityLogger.LogLevel.INFO
+                    }
+                    SecurityLogger.log(this, logLevel, message, data)
+                    result.success(true)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
+        
+        // Main native Method Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "isAccessibilityEnabled" -> {
@@ -29,6 +94,7 @@ class MainActivity: FlutterActivity() {
                     if (blockedApps != null) {
                         val prefs = getSharedPreferences("KidGuardPrefs", Context.MODE_PRIVATE)
                         prefs.edit().putStringSet("blocked_apps", blockedApps.toSet()).apply()
+                        SecurityLogger.info(this, "Blocklist updated", mapOf("count" to blockedApps.size))
                         result.success(true)
                     } else {
                         result.error("INVALID_ARGUMENT", "Blocked apps list is null", null)
