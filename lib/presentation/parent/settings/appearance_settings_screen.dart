@@ -6,7 +6,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
 
   // Colors
-  static const _accentColor = Color(0xFF6366F1);
+  static const _accentColor = Color(0xFF6B9080);
   static const _bgColor = Color(0xFFF8FAFC);
   static const _textPrimary = Color(0xFF1E293B);
   static const _textSecondary = Color(0xFF64748B);
@@ -31,7 +31,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
       'title': 'System',
       'subtitle': 'ตามระบบ',
       'icon': Icons.settings_suggest,
-      'colors': [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      'colors': [Color(0xFF6B9080), Color(0xFF84A98C)],
     },
   ];
 

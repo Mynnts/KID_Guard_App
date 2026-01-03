@@ -17,122 +17,31 @@ class ParentRewardsScreen extends StatefulWidget {
 
 class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
   int _currentPoints = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentPoints = widget.child.points;
-  }
-
-  void _updateLocalPoints(int newPoints) {
-    setState(() {
-      _currentPoints = newPoints;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          title: const Text('Rewards & Points'),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-          bottom: const TabBar(
-            labelColor: Color(0xFF4F46E5),
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Color(0xFF4F46E5),
-            labelStyle: TextStyle(fontWeight: FontWeight.w600),
-            tabs: [
-              Tab(text: 'Earn & Calendar'),
-              Tab(text: 'Redeem Prizes'),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4F46E5).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Color(0xFF4F46E5),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_currentPoints',
-                      style: const TextStyle(
-                        color: Color(0xFF4F46E5),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        body: TabBarView(
-          children: [
-            _EarnTab(
-              child: widget.child,
-              currentPoints: _currentPoints,
-              onPointsUpdated: _updateLocalPoints,
-            ),
-            _RedeemTab(
-              child: widget.child,
-              currentPoints: _currentPoints,
-              onPointsUpdated: _updateLocalPoints,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// TAB 1: EARN (Calendar View)
-// -----------------------------------------------------------------------------
-class _EarnTab extends StatefulWidget {
-  final ChildModel child;
-  final int currentPoints;
-  final Function(int) onPointsUpdated;
-
-  const _EarnTab({
-    required this.child,
-    required this.currentPoints,
-    required this.onPointsUpdated,
-  });
-
-  @override
-  State<_EarnTab> createState() => _EarnTabState();
-}
-
-class _EarnTabState extends State<_EarnTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<dynamic>> _events = {};
   bool _isLoading = false;
 
+  final List<Map<String, dynamic>> _quickReasons = [
+    {'emoji': '📚', 'label': 'Homework', 'points': 10},
+    {'emoji': '🧹', 'label': 'Chores', 'points': 15},
+    {'emoji': '🌟', 'label': 'Good Behavior', 'points': 20},
+    {'emoji': '🏃', 'label': 'Exercise', 'points': 10},
+  ];
+
+  final List<Map<String, dynamic>> _rewards = [
+    {'emoji': '🍦', 'name': 'Ice Cream', 'cost': 50},
+    {'emoji': '🎮', 'name': 'Game Time', 'cost': 100},
+    {'emoji': '🎬', 'name': 'Movie', 'cost': 150},
+    {'emoji': '🧸', 'name': 'New Toy', 'cost': 300},
+    {'emoji': '🌙', 'name': 'Stay Up', 'cost': 80},
+    {'emoji': '🏞️', 'name': 'Park Trip', 'cost': 200},
+  ];
+
   @override
   void initState() {
     super.initState();
+    _currentPoints = widget.child.points;
     _selectedDay = _focusedDay;
     _fetchHistory();
   }
@@ -142,7 +51,6 @@ class _EarnTabState extends State<_EarnTab> {
     final user = authProvider.userModel;
     if (user == null) return;
 
-    // Fetch history from subcollection
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -150,58 +58,43 @@ class _EarnTabState extends State<_EarnTab> {
         .doc(widget.child.id)
         .collection('point_history')
         .orderBy('date', descending: true)
+        .limit(100)
         .get();
 
     final Map<DateTime, List<dynamic>> newEvents = {};
-
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final date = (data['date'] as Timestamp).toDate();
       final dayKey = DateTime(date.year, date.month, date.day);
-
-      if (newEvents[dayKey] == null) newEvents[dayKey] = [];
-      newEvents[dayKey]!.add({...data, 'id': doc.id});
+      newEvents[dayKey] = [
+        ...(newEvents[dayKey] ?? []),
+        {...data, 'id': doc.id},
+      ];
     }
 
-    if (mounted) {
-      setState(() {
-        _events = newEvents;
-      });
-    }
+    if (mounted) setState(() => _events = newEvents);
   }
 
   List<dynamic> _getEventsForDay(DateTime day) {
-    final dayKey = DateTime(day.year, day.month, day.day);
-    return _events[dayKey] ?? [];
+    return _events[DateTime(day.year, day.month, day.day)] ?? [];
   }
 
   Future<void> _addPoints(int amount, String reason) async {
-    if (_selectedDay == null) return;
     setState(() => _isLoading = true);
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.userModel;
     if (user == null) return;
 
     try {
-      final newPoints = widget.currentPoints + amount;
+      final newPoints = _currentPoints + amount;
+      final entryDate = _selectedDay ?? DateTime.now();
 
-      // 1. Update Child Balance
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('children')
           .doc(widget.child.id)
           .update({'points': newPoints});
-
-      // 2. Add History Entry
-      final entryDate = DateTime(
-        _selectedDay!.year,
-        _selectedDay!.month,
-        _selectedDay!.day,
-        DateTime.now().hour,
-        DateTime.now().minute,
-      );
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -216,530 +109,615 @@ class _EarnTabState extends State<_EarnTab> {
             'date': Timestamp.fromDate(entryDate),
           });
 
-      // Update Local State
-      widget.onPointsUpdated(newPoints);
-      await _fetchHistory(); // Refresh calendar dots
+      setState(() {
+        _currentPoints = newPoints;
+        _isLoading = false;
+      });
+      await _fetchHistory();
 
       if (mounted) {
-        setState(() => _isLoading = false);
-        Navigator.pop(context); // Close dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added $amount points for $reason'),
-            backgroundColor: Colors.green,
+            content: Text('+$amount แต้ม สำหรับ $reason'),
+            backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
-  void _showAddPointsDialog() {
-    final reasonController = TextEditingController();
-    int selectedAmount = 10;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Add Points for ${_formatDate(_selectedDay!)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Select Amount',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [10, 20, 50, 100].map((amount) {
-                  final isSelected = selectedAmount == amount;
-                  return GestureDetector(
-                    onTap: () => setModalState(() => selectedAmount = amount),
-                    child: Container(
-                      width: 70,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF4F46E5)
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF4F46E5)
-                              : Colors.transparent,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '+$amount',
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Reason',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reasonController,
-                decoration: InputDecoration(
-                  hintText: 'e.g., Finished homework, Cleaned room',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (reasonController.text.isEmpty) {
-                      reasonController.text = 'Good Behavior';
-                    }
-                    _addPoints(selectedAmount, reasonController.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Add Points',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
+  Future<void> _redeemReward(Map<String, dynamic> reward) async {
+    if (_currentPoints < reward['cost']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ต้องการอีก ${reward['cost'] - _currentPoints} แต้ม'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
         ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('EEE, MMM d').format(date);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedEvents = _selectedDay != null
-        ? _getEventsForDay(_selectedDay!)
-        : [];
-
-    return Stack(
-      children: [
-        Column(
-          children: [
-            TableCalendar(
-              firstDay: DateTime.utc(2023, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              focusedDay: _focusedDay,
-              calendarFormat: CalendarFormat.month,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              eventLoader: _getEventsForDay,
-              calendarStyle: const CalendarStyle(
-                selectedDecoration: BoxDecoration(
-                  color: Color(0xFF4F46E5),
-                  shape: BoxShape.circle,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: Color(0xFF8B5CF6),
-                  shape: BoxShape.circle,
-                ),
-                markerDecoration: BoxDecoration(
-                  color: Color(0xFF10B981),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-              ),
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _selectedDay != null
-                        ? 'Activity for ${_formatDate(_selectedDay!)}'
-                        : 'Select a date',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (_selectedDay != null)
-                    TextButton.icon(
-                      onPressed: _showAddPointsDialog,
-                      icon: const Icon(Icons.add_circle, size: 20),
-                      label: const Text('Add Points'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF4F46E5),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: selectedEvents.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            size: 48,
-                            color: Colors.grey[300],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No activity on this day',
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: selectedEvents.length,
-                      itemBuilder: (context, index) {
-                        final event = selectedEvents[index];
-                        final isEarn = event['type'] == 'earn';
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: isEarn
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.orange.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isEarn ? Icons.add : Icons.remove,
-                                color: isEarn ? Colors.green : Colors.orange,
-                                size: 20,
-                              ),
-                            ),
-                            title: Text(
-                              event['reason'] ?? 'Unknown',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            trailing: Text(
-                              '${isEarn ? '+' : '-'}${event['amount']}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isEarn ? Colors.green : Colors.orange,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-        if (_isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.3),
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-      ],
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// TAB 2: REDEEM (Catalog View)
-// -----------------------------------------------------------------------------
-class _RedeemTab extends StatelessWidget {
-  final ChildModel child;
-  final int currentPoints;
-  final Function(int) onPointsUpdated;
-
-  _RedeemTab({
-    required this.child,
-    required this.currentPoints,
-    required this.onPointsUpdated,
-  });
-
-  final List<Map<String, dynamic>> _prizes = [
-    {
-      'name': 'Ice Cream',
-      'cost': 100,
-      'icon': Icons.icecream_rounded,
-      'color': Colors.pink,
-    },
-    {
-      'name': '1 hr Game Time',
-      'cost': 200,
-      'icon': Icons.videogame_asset_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'Movie Night',
-      'cost': 500,
-      'icon': Icons.movie_creation_rounded,
-      'color': Colors.purple,
-    },
-    {
-      'name': 'New Toy',
-      'cost': 1000,
-      'icon': Icons.toys_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Park Trip',
-      'cost': 300,
-      'icon': Icons.park_rounded,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Stay Up Late',
-      'cost': 150,
-      'icon': Icons.bedtime_rounded,
-      'color': Colors.indigo,
-    },
-  ];
-
-  Future<void> _redeemPrize(
-    BuildContext context,
-    Map<String, dynamic> prize,
-  ) async {
-    if (currentPoints < prize['cost']) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Not enough points!')));
+      );
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Redeem ${prize['name']}?'),
-        content: Text('This will cost ${prize['cost']} points.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Text(reward['emoji'], style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: 12),
+            Text('แลก ${reward['name']}?'),
+          ],
+        ),
+        content: Text('ใช้ ${reward['cost']} แต้ม'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+              backgroundColor: const Color(0xFF6B9080),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Redeem'),
+            child: const Text('แลกเลย'),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
+      setState(() => _isLoading = true);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final user = authProvider.userModel;
       if (user == null) return;
 
-      final newPoints = currentPoints - (prize['cost'] as int);
+      final newPoints = _currentPoints - (reward['cost'] as int);
 
-      // Update Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('children')
-          .doc(child.id)
+          .doc(widget.child.id)
           .update({'points': newPoints});
 
-      // Add History
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('children')
-          .doc(child.id)
+          .doc(widget.child.id)
           .collection('point_history')
           .add({
-            'amount': prize['cost'],
-            'reason': 'Redeemed: ${prize['name']}',
+            'amount': reward['cost'],
+            'reason': 'แลก: ${reward['name']}',
             'type': 'redeem',
             'date': Timestamp.now(),
           });
 
-      onPointsUpdated(newPoints);
+      setState(() {
+        _currentPoints = newPoints;
+        _isLoading = false;
+      });
+      await _fetchHistory();
 
-      // ignore: use_build_context_synchronously
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          icon: Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
-          title: const Text('Success!'),
-          content: Text('You redeemed ${prize['name']}!'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done'),
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ],
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: _prizes.length,
-      itemBuilder: (context, index) {
-        final prize = _prizes[index];
-        final canAfford = currentPoints >= (prize['cost'] as int);
-
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: (prize['color'] as Color).withOpacity(0.1),
-                  shape: BoxShape.circle,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(reward['emoji'], style: const TextStyle(fontSize: 64)),
+                const SizedBox(height: 16),
+                const Text(
+                  '🎉 สำเร็จ!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                child: Icon(
-                  prize['icon'] as IconData,
-                  color: prize['color'] as Color,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                prize['name'] as String,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${prize['cost']} pts',
-                style: TextStyle(
-                  color: canAfford ? const Color(0xFF4F46E5) : Colors.grey,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: 100,
-                height: 36,
-                child: ElevatedButton(
-                  onPressed: canAfford
-                      ? () => _redeemPrize(context, prize)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(canAfford ? 'Redeem' : 'Need Points'),
+                const SizedBox(height: 8),
+                Text('${widget.child.name} ได้รับ ${reward['name']}'),
+              ],
+            ),
+            actions: [
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('ปิด'),
                 ),
               ),
             ],
           ),
         );
-      },
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6FBF4),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              // App Bar with Points
+              SliverAppBar(
+                expandedHeight: 200,
+                floating: false,
+                pinned: true,
+                backgroundColor: const Color(0xFF6B9080),
+                leading: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 20),
+                          // Child Avatar
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            backgroundImage: widget.child.avatar != null
+                                ? AssetImage(widget.child.avatar!)
+                                : null,
+                            child: widget.child.avatar == null
+                                ? Text(
+                                    widget.child.name[0],
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            widget.child.name,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Points Display
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: Colors.amber,
+                                size: 32,
+                              ),
+                              const SizedBox(width: 8),
+                              TweenAnimationBuilder<int>(
+                                tween: IntTween(begin: 0, end: _currentPoints),
+                                duration: const Duration(milliseconds: 600),
+                                builder: (context, value, child) {
+                                  return Text(
+                                    '$value',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'แต้ม',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Quick Add Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'เพิ่มแต้มด่วน',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final cardWidth =
+                              (constraints.maxWidth - 36) /
+                              4; // 4 cards with 12px gaps
+                          return SizedBox(
+                            height: 100,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: _quickReasons.map((item) {
+                                return GestureDetector(
+                                  onTap: () =>
+                                      _addPoints(item['points'], item['label']),
+                                  child: Container(
+                                    width: cardWidth.clamp(70.0, 90.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.03),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          item['emoji'],
+                                          style: const TextStyle(fontSize: 22),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '+${item['points']}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF10B981),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            item['label'],
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[600],
+                                            ),
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Rewards Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'แลกของรางวัล',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            child: const Text('ดูทั้งหมด'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 130,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _rewards.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final reward = _rewards[index];
+                            final canAfford =
+                                _currentPoints >= (reward['cost'] as int);
+                            return GestureDetector(
+                              onTap: () => _redeemReward(reward),
+                              child: Container(
+                                width: 100,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: canAfford
+                                      ? Colors.white
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: canAfford
+                                        ? const Color(
+                                            0xFF6B9080,
+                                          ).withOpacity(0.3)
+                                        : Colors.grey.shade200,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      reward['emoji'],
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        color: canAfford ? null : Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      reward['name'],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                        color: canAfford
+                                            ? Colors.black87
+                                            : Colors.grey,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: canAfford
+                                            ? const Color(
+                                                0xFF6B9080,
+                                              ).withOpacity(0.1)
+                                            : Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${reward['cost']}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: canAfford
+                                              ? const Color(0xFF6B9080)
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Calendar Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ประวัติแต้ม',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TableCalendar(
+                          firstDay: DateTime.utc(2024, 1, 1),
+                          lastDay: DateTime.utc(2030, 12, 31),
+                          focusedDay: _focusedDay,
+                          calendarFormat: CalendarFormat.week,
+                          selectedDayPredicate: (day) =>
+                              isSameDay(_selectedDay, day),
+                          onDaySelected: (selectedDay, focusedDay) {
+                            setState(() {
+                              _selectedDay = selectedDay;
+                              _focusedDay = focusedDay;
+                            });
+                          },
+                          eventLoader: _getEventsForDay,
+                          calendarStyle: CalendarStyle(
+                            selectedDecoration: const BoxDecoration(
+                              color: Color(0xFF6B9080),
+                              shape: BoxShape.circle,
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: const Color(0xFF6B9080).withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            markerDecoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                            markerSize: 6,
+                            markersMaxCount: 1,
+                          ),
+                          headerStyle: const HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            leftChevronIcon: Icon(Icons.chevron_left, size: 20),
+                            rightChevronIcon: Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                            ),
+                          ),
+                          daysOfWeekHeight: 32,
+                          rowHeight: 48,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Activity List
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildActivityList(),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
+
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF6B9080)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityList() {
+    final events = _selectedDay != null ? _getEventsForDay(_selectedDay!) : [];
+
+    if (events.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.event_note_rounded, size: 40, color: Colors.grey[300]),
+            const SizedBox(height: 12),
+            Text(
+              'ไม่มีกิจกรรมในวันนี้',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: events.map((event) {
+        final isEarn = event['type'] == 'earn';
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isEarn
+                      ? const Color(0xFF10B981).withOpacity(0.1)
+                      : Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isEarn ? Icons.add_rounded : Icons.remove_rounded,
+                  color: isEarn ? const Color(0xFF10B981) : Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  event['reason'] ?? 'ไม่ระบุ',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+              Text(
+                '${isEarn ? '+' : '-'}${event['amount']}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isEarn ? const Color(0xFF10B981) : Colors.orange,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

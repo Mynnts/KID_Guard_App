@@ -61,6 +61,17 @@ class AppAccessibilityService : AccessibilityService() {
     // Current state
     private var isOverlayShowing = false
     private var lastBlockedPackage: String? = null
+    private var currentRestrictionType: RestrictionType = RestrictionType.NONE
+    
+    // Screen Timeout Feature
+    private var screenTimeoutMinutes = 5 // Default 5 minutes, configurable by parent
+    private var lastActivityTime: Long = System.currentTimeMillis()
+    private var screenTimeoutRunnable: Runnable? = null
+    
+    // Restriction type enum for proper tracking
+    enum class RestrictionType {
+        NONE, SLEEP, QUIET, TIME_LIMIT, BLOCKED_APP, DEVICE_LOCKED, SCREEN_TIMEOUT
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -88,6 +99,9 @@ class AppAccessibilityService : AccessibilityService() {
                 handler.postDelayed(this, 5000)
             }
         })
+        
+        // Start screen timeout checking
+        startScreenTimeoutCheck()
         
         Toast.makeText(this, "Kid Guard Protection Active", Toast.LENGTH_SHORT).show()
     }
@@ -195,10 +209,13 @@ class AppAccessibilityService : AccessibilityService() {
                         }
                         quietTimes = list
                     }
+                    
+                    // Screen timeout setting (default 5 minutes, 0 = disabled)
+                    screenTimeoutMinutes = json.optInt("screenTimeoutMinutes", 5)
                 } catch (e: Exception) { e.printStackTrace() }
             }
             
-            println("KidGuard: Settings loaded - ChildMode=$isChildModeActive, Limit=$dailyTimeLimit")
+            println("KidGuard: Settings loaded - ChildMode=$isChildModeActive, Limit=$dailyTimeLimit, Timeout=$screenTimeoutMinutes min")
             
             if (isChildModeActive && !wasActive) startScreenTimeTracking()
             else if (!isChildModeActive && wasActive) stopScreenTimeTracking()
@@ -394,17 +411,68 @@ class AppAccessibilityService : AccessibilityService() {
             
             val reason = getRestrictionReason()
             if (reason.isNotEmpty() && !isOverlayShowing) {
+                // Determine restriction type for tracking
+                currentRestrictionType = when {
+                    isInSleepTime() -> RestrictionType.SLEEP
+                    isInQuietTime() -> RestrictionType.QUIET
+                    dailyTimeLimit > 0 && limitUsedSeconds >= dailyTimeLimit -> RestrictionType.TIME_LIMIT
+                    else -> RestrictionType.NONE
+                }
                 showOverlay(reason)
             } else if (reason.isEmpty() && isOverlayShowing && 
-                       (lastBlockedPackage?.contains("นอน") == true || 
-                        lastBlockedPackage?.contains("พัก") == true ||
-                        lastBlockedPackage?.contains("🌙") == true ||
-                        lastBlockedPackage?.contains("🔕") == true)) {
-                // Schedule ended, hide overlay
+                       currentRestrictionType in listOf(RestrictionType.SLEEP, RestrictionType.QUIET, RestrictionType.TIME_LIMIT)) {
+                // Schedule/time limit ended - hide overlay and re-evaluate
                 hideOverlay()
+                currentRestrictionType = RestrictionType.NONE
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+    
+    /**
+     * Start screen timeout monitoring
+     * Checks inactivity every 30 seconds and locks if idle for too long
+     */
+    private fun startScreenTimeoutCheck() {
+        screenTimeoutRunnable = object : Runnable {
+            override fun run() {
+                if (isChildModeActive && screenTimeoutMinutes > 0) {
+                    val nowMillis = System.currentTimeMillis()
+                    val idleTimeMillis = nowMillis - lastActivityTime
+                    val timeoutMillis = screenTimeoutMinutes * 60 * 1000L
+                    
+                    // If idle for longer than timeout, show lock
+                    if (idleTimeMillis >= timeoutMillis && !isOverlayShowing) {
+                        currentRestrictionType = RestrictionType.SCREEN_TIMEOUT
+                        showOverlay("แอปหลับเพราะไม่ได้เล่น 💤")
+                    }
+                }
+                // Check every 30 seconds
+                handler.postDelayed(this, 30000)
+            }
+        }
+        handler.post(screenTimeoutRunnable!!)
+    }
+    
+    /**
+     * Stop screen timeout monitoring
+     */
+    private fun stopScreenTimeoutCheck() {
+        screenTimeoutRunnable?.let { handler.removeCallbacks(it) }
+        screenTimeoutRunnable = null
+    }
+    
+    /**
+     * Reset activity timer when user interacts with device
+     */
+    private fun resetActivityTimer() {
+        lastActivityTime = System.currentTimeMillis()
+        
+        // If screen timeout overlay was showing, hide it
+        if (isOverlayShowing && currentRestrictionType == RestrictionType.SCREEN_TIMEOUT) {
+            hideOverlay()
+            currentRestrictionType = RestrictionType.NONE
         }
     }
 
@@ -478,6 +546,9 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!isChildModeActive) return
         
+        // Reset activity timer on any accessibility event (user interaction)
+        resetActivityTimer()
+        
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
             
@@ -485,9 +556,15 @@ class AppAccessibilityService : AccessibilityService() {
             if (packageName == applicationContext.packageName) return
             if (packageName.contains("launcher") || packageName.contains("systemui")) return
             
-            // Check schedule restrictions first
+            // Check schedule restrictions first (highest priority)
             val restrictionReason = getRestrictionReason()
             if (restrictionReason.isNotEmpty()) {
+                // Determine restriction type for tracking
+                currentRestrictionType = when {
+                    isInSleepTime() -> RestrictionType.SLEEP
+                    isInQuietTime() -> RestrictionType.QUIET
+                    else -> RestrictionType.TIME_LIMIT
+                }
                 if (!isOverlayShowing) {
                     showOverlay(restrictionReason)
                 }
@@ -496,15 +573,17 @@ class AppAccessibilityService : AccessibilityService() {
             
             // Check blocked apps
             if (isAppBlocked(packageName)) {
-                if (lastBlockedPackage != packageName) {
+                if (lastBlockedPackage != packageName || currentRestrictionType != RestrictionType.BLOCKED_APP) {
+                    currentRestrictionType = RestrictionType.BLOCKED_APP
                     showOverlay(packageName)
                     lastBlockedPackage = packageName
                 }
             } else {
-                if (isOverlayShowing && lastBlockedPackage != null && !getRestrictionReason().isNotEmpty()) {
-                    // App changed to allowed app
+                // App is allowed - hide overlay if it was showing for blocked app
+                if (isOverlayShowing && currentRestrictionType == RestrictionType.BLOCKED_APP) {
                     hideOverlay()
                     lastBlockedPackage = null
+                    currentRestrictionType = RestrictionType.NONE
                 }
             }
         }
@@ -549,6 +628,7 @@ class AppAccessibilityService : AccessibilityService() {
             val intent = Intent(this, OverlayService::class.java)
             stopService(intent)
             isOverlayShowing = false
+            // Note: currentRestrictionType is reset by the caller based on context
         } catch (e: Exception) {
             e.printStackTrace()
             isOverlayShowing = false
@@ -558,12 +638,14 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onInterrupt() {
         fileObserver?.stopWatching()
         stopScreenTimeTracking()
+        stopScreenTimeoutCheck()
     }
     
     override fun onDestroy() {
         super.onDestroy()
         fileObserver?.stopWatching()
         stopScreenTimeTracking()
+        stopScreenTimeoutCheck()
     }
 
     /**

@@ -22,7 +22,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   bool _showConfirmPassword = false;
 
   // Minimal Premium Colors
-  static const _primaryColor = Color(0xFF4F46E5);
+  static const _primaryColor = Color(0xFF6B9080);
   static const _textPrimary = Color(0xFF1A1A2E);
   static const _textSecondary = Color(0xFF6B7280);
   static const _textMuted = Color(0xFF9CA3AF);
@@ -241,7 +241,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             height: 100,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [_primaryColor, Color(0xFF7C3AED)],
+                colors: [_primaryColor, Color(0xFF84A98C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

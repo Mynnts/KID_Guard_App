@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _fadeAnimation;
 
   // Minimal Premium Colors
-  static const _primaryColor = Color(0xFF4F46E5);
+  static const _primaryColor = Color(0xFF6B9080);
   static const _textPrimary = Color(0xFF1A1A2E);
   static const _textSecondary = Color(0xFF6B7280);
   static const _textMuted = Color(0xFF9CA3AF);

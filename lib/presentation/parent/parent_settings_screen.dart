@@ -183,12 +183,20 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
           boxShadow: [
+            // Far soft shadow
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: colorScheme.primary.withOpacity(0.20),
+              blurRadius: 40,
+              offset: const Offset(0, 16),
+              spreadRadius: -8,
+            ),
+            // Near crisp shadow
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -299,13 +307,23 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade200),
+          gradient: const LinearGradient(
+            colors: [Colors.white, Color(0xFFFCFDFC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: -4,
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
@@ -425,9 +443,21 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFFCFDFC)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+            spreadRadius: -4,
+          ),
+        ],
       ),
       child: Column(
         children: items.asMap().entries.map((entry) {

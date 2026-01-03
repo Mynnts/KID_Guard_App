@@ -85,9 +85,9 @@ class OverlayService : Service() {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            // Block ALL touches - kids cannot interact, only parents can unlock via Firebase
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.CENTER
@@ -108,27 +108,31 @@ class OverlayService : Service() {
         }
 
         updateOverlayContent(packageName)
-
-        val button = overlayView?.findViewById<Button>(R.id.overlay_button)
-        button?.setOnClickListener {
-            val startMain = Intent(Intent.ACTION_MAIN)
-            startMain.addCategory(Intent.CATEGORY_HOME)
-            startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(startMain)
-        }
         
-        if (packageName == "Time Limit Reached" || packageName.contains("หมดเวลา") || packageName.contains("⏰")) {
-             button?.setOnClickListener {
-                  val appIntent = Intent(this, MainActivity::class.java)
-                  appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                  appIntent.putExtra("action", "unlock_time_limit")
-                  startActivity(appIntent)
-                  overlayView?.visibility = View.GONE
-             }
-        }
+        // Update clock and date display
+        updateClockDisplay()
+
+        // Button is now hidden/invisible in the new layout
+        // Children cannot dismiss the overlay - only parents can unlock via Firebase
 
         try {
             windowManager?.addView(overlayView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    
+    private fun updateClockDisplay() {
+        try {
+            val clockView = overlayView?.findViewById<TextView>(R.id.clock_display)
+            val dateView = overlayView?.findViewById<TextView>(R.id.date_display)
+            
+            val now = java.util.Calendar.getInstance()
+            val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            val dateFormat = java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.ENGLISH)
+            
+            clockView?.text = timeFormat.format(now.time)
+            dateView?.text = dateFormat.format(now.time)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -137,55 +141,34 @@ class OverlayService : Service() {
     private fun updateOverlayContent(packageName: String) {
         val title = overlayView?.findViewById<TextView>(R.id.overlay_title)
         val message = overlayView?.findViewById<TextView>(R.id.overlay_message)
-        val button = overlayView?.findViewById<Button>(R.id.overlay_button)
 
-        // Friendly child-friendly messages based on reason
+        // Super child-friendly cute messages - NO buttons for kids to dismiss
         when {
             packageName == "Time Limit Reached" || packageName.contains("หมดเวลา") || packageName.contains("⏰") -> {
                 title?.text = "เก่งมากวันนี้! ⭐"
-                message?.text = "ได้เวลาพักผ่อนแล้วนะ"
-                button?.text = "ขอเวลาเพิ่ม 💝"
-                button?.setOnClickListener {
-                    val appIntent = Intent(this, MainActivity::class.java)
-                    appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    appIntent.putExtra("action", "unlock_time_limit")
-                    startActivity(appIntent)
-                    overlayView?.visibility = View.GONE
-                }
+                message?.text = "พักสายตาสักครู่นะ 💕"
             }
             packageName.contains("นอน") || packageName.contains("🌙") -> {
-                title?.text = "ถึงเวลานอนแล้วจ้า 🌙"
-                message?.text = "ราตรีสวัสดิ์ พรุ่งนี้เจอกันนะ"
-                button?.text = "นอนหลับฝันดี 💤"
-                button?.setOnClickListener {
-                    val startMain = Intent(Intent.ACTION_MAIN)
-                    startMain.addCategory(Intent.CATEGORY_HOME)
-                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(startMain)
-                }
+                title?.text = "ฝันดีนะตัวน้อย 🌙"
+                message?.text = "พรุ่งนี้เจอกันใหม่นะ ✨"
             }
             packageName.contains("พัก") || packageName.contains("🔕") -> {
-                title?.text = "ช่วงเวลาพักผ่อน 🌸"
-                message?.text = "ไปทำกิจกรรมอื่นกันเถอะ"
-                button?.text = "โอเค 👍"
-                button?.setOnClickListener {
-                    val startMain = Intent(Intent.ACTION_MAIN)
-                    startMain.addCategory(Intent.CATEGORY_HOME)
-                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(startMain)
-                }
+                title?.text = "พักผ่อนกันเถอะ 🌸"
+                message?.text = "ไปทำกิจกรรมสนุกๆ กันนะ"
+            }
+            packageName.contains("ระงับ") || packageName.contains("🔒") -> {
+                title?.text = "พักสักครู่นะ 🔒"
+                message?.text = "รอพ่อแม่มาปลดล็อคนะ"
+            }
+            packageName.contains("หลับ") || packageName.contains("💤") || packageName.contains("ไม่ได้เล่น") -> {
+                // Screen timeout - device inactive
+                title?.text = "แอปหลับแล้วนะ 💤"
+                message?.text = "กดหน้าจอเพื่อเล่นต่อได้นะ"
             }
             else -> {
-                // Blocked app - still friendly
-                title?.text = "แอปนี้ยังไม่พร้อมใช้ 🎮"
-                message?.text = "ลองเล่นอย่างอื่นกันนะ"
-                button?.text = "โอเค 👍"
-                button?.setOnClickListener {
-                    val startMain = Intent(Intent.ACTION_MAIN)
-                    startMain.addCategory(Intent.CATEGORY_HOME)
-                    startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(startMain)
-                }
+                // Blocked app - friendly message
+                title?.text = "ไปเล่นอย่างอื่นกันนะ 🎮"
+                message?.text = "มีอย่างอื่นเยอะเลย 🌈"
             }
         }
     }

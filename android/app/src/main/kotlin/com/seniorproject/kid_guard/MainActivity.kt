@@ -134,6 +134,70 @@ class MainActivity: FlutterActivity() {
                 }
             }
         }
+        
+        // Child Mode Service Method Channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.kidguard/childmode").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startService" -> {
+                    val childName = call.argument<String>("childName") ?: "ลูก"
+                    val screenTime = call.argument<Int>("screenTime") ?: 0
+                    val dailyLimit = call.argument<Int>("dailyLimit") ?: 0
+                    
+                    // Save to SharedPreferences for service updates
+                    val prefs = getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putString("childName", childName)
+                        .putInt("screenTime", screenTime)
+                        .putInt("dailyLimit", dailyLimit)
+                        .apply()
+                    
+                    val serviceIntent = Intent(this, ChildModeService::class.java).apply {
+                        putExtra(ChildModeService.EXTRA_CHILD_NAME, childName)
+                        putExtra(ChildModeService.EXTRA_SCREEN_TIME, screenTime)
+                        putExtra(ChildModeService.EXTRA_DAILY_LIMIT, dailyLimit)
+                    }
+                    
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                    result.success(true)
+                }
+                "stopService" -> {
+                    val serviceIntent = Intent(this, ChildModeService::class.java)
+                    stopService(serviceIntent)
+                    result.success(true)
+                }
+                "updateService" -> {
+                    val childName = call.argument<String>("childName") ?: "ลูก"
+                    val screenTime = call.argument<Int>("screenTime") ?: 0
+                    val dailyLimit = call.argument<Int>("dailyLimit") ?: 0
+                    
+                    // Update SharedPreferences for next notification update cycle
+                    val prefs = getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putString("childName", childName)
+                        .putInt("screenTime", screenTime)
+                        .putInt("dailyLimit", dailyLimit)
+                        .apply()
+                    
+                    result.success(true)
+                }
+                "isServiceRunning" -> {
+                    result.success(ChildModeService.isServiceRunning())
+                }
+                "getLaunchAction" -> {
+                    val action = intent.getStringExtra("action")
+                    // Clear the action so it doesn't trigger again
+                    intent.removeExtra("action")
+                    result.success(action)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.kid_guard/overlay").setMethodCallHandler { call, result ->
             when (call.method) {

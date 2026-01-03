@@ -19,7 +19,7 @@ class _NotificationsSettingsScreenState
   bool _vibrationEnabled = true;
 
   // Colors
-  static const _accentColor = Color(0xFF6366F1);
+  static const _accentColor = Color(0xFF6B9080);
   static const _bgColor = Color(0xFFF8FAFC);
   static const _textPrimary = Color(0xFF1E293B);
   static const _textSecondary = Color(0xFF64748B);

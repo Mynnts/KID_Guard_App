@@ -67,13 +67,13 @@ class TimeLimitScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF6366F1).withOpacity(0.1),
-                      const Color(0xFF8B5CF6).withOpacity(0.05),
+                      const Color(0xFF6B9080).withOpacity(0.1),
+                      const Color(0xFF84A98C).withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF6366F1).withOpacity(0.2),
+                    color: const Color(0xFF6B9080).withOpacity(0.2),
                   ),
                 ),
                 child: Row(
@@ -81,12 +81,12 @@ class TimeLimitScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.15),
+                        color: const Color(0xFF6B9080).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.timer_outlined,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF6B9080),
                         size: 22,
                       ),
                     ),
@@ -282,7 +282,7 @@ class _ChildListItemState extends State<_ChildListItem> {
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                       ),
                     ),
                     child: CircleAvatar(
@@ -297,7 +297,7 @@ class _ChildListItemState extends State<_ChildListItem> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
-                                color: Color(0xFF6366F1),
+                                color: Color(0xFF6B9080),
                               ),
                             )
                           : null,
@@ -678,7 +678,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                     ),
                   ),
                   child: CircleAvatar(
@@ -689,7 +689,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFF6B9080),
                       ),
                     ),
                   ),
@@ -744,11 +744,11 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF6366F1).withOpacity(0.2),
+                        color: const Color(0xFF6B9080).withOpacity(0.2),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.08),
+                          color: const Color(0xFF6B9080).withOpacity(0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -894,12 +894,12 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            color: const Color(0xFF6B9080).withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -956,7 +956,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                   )
                 : null,
             color: isSelected ? null : const Color(0xFFF8FAFC),

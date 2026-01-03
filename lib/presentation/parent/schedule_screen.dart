@@ -303,7 +303,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF6B9080).withOpacity(0.1),
                   backgroundImage: widget.child.avatar != null
                       ? AssetImage(widget.child.avatar!)
                       : null,
@@ -312,7 +312,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                           widget.child.name[0].toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF6366F1),
+                            color: Color(0xFF6B9080),
                             fontSize: 18,
                           ),
                         )
@@ -353,14 +353,14 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                 decoration: BoxDecoration(
                   color: period.enabled
                       ? (isSleep
-                            ? const Color(0xFF6366F1).withOpacity(0.05)
+                            ? const Color(0xFF6B9080).withOpacity(0.05)
                             : const Color(0xFF10B981).withOpacity(0.05))
                       : const Color(0xFFF5F5F7),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: period.enabled
                         ? (isSleep
-                              ? const Color(0xFF6366F1).withOpacity(0.2)
+                              ? const Color(0xFF6B9080).withOpacity(0.2)
                               : const Color(0xFF10B981).withOpacity(0.2))
                         : const Color(0xFFE5E5EA),
                   ),
@@ -372,7 +372,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                       decoration: BoxDecoration(
                         color: period.enabled
                             ? (isSleep
-                                  ? const Color(0xFF6366F1).withOpacity(0.1)
+                                  ? const Color(0xFF6B9080).withOpacity(0.1)
                                   : const Color(0xFF10B981).withOpacity(0.1))
                             : Colors.grey.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -383,7 +383,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                             : _getIconForName(period.name),
                         color: period.enabled
                             ? (isSleep
-                                  ? const Color(0xFF6366F1)
+                                  ? const Color(0xFF6B9080)
                                   : const Color(0xFF10B981))
                             : Colors.grey,
                         size: 20,
@@ -416,7 +416,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(
-                                        0xFF6366F1,
+                                        0xFF6B9080,
                                       ).withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -424,7 +424,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                       'Sleep',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: Color(0xFF6366F1),
+                                        color: Color(0xFF6B9080),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -439,7 +439,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                 fontSize: 13,
                                 color: period.enabled
                                     ? (isSleep
-                                          ? const Color(0xFF6366F1)
+                                          ? const Color(0xFF6B9080)
                                           : const Color(0xFF10B981))
                                     : Colors.grey,
                                 fontWeight: FontWeight.w500,
@@ -453,7 +453,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                       value: period.enabled,
                       onChanged: (value) => _togglePeriod(index, value),
                       activeColor: isSleep
-                          ? const Color(0xFF6366F1)
+                          ? const Color(0xFF6B9080)
                           : const Color(0xFF10B981),
                     ),
                     if (!isSleep)
@@ -475,10 +475,10 @@ class _ScheduleCardState extends State<_ScheduleCard> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4F46E5).withOpacity(0.05),
+                  color: const Color(0xFF6B9080).withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF4F46E5).withOpacity(0.2),
+                    color: const Color(0xFF6B9080).withOpacity(0.2),
                   ),
                 ),
                 child: Row(
@@ -487,12 +487,12 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4F46E5).withOpacity(0.1),
+                        color: const Color(0xFF6B9080).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
                         Icons.add_rounded,
-                        color: Color(0xFF4F46E5),
+                        color: Color(0xFF6B9080),
                         size: 18,
                       ),
                     ),
@@ -500,7 +500,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                     const Text(
                       'เพิ่มช่วงเวลา',
                       style: TextStyle(
-                        color: Color(0xFF4F46E5),
+                        color: Color(0xFF6B9080),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -653,8 +653,8 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
   Widget build(BuildContext context) {
     final isSleep = widget.period.type == ScheduleType.sleep;
     final primaryColor = isSleep
-        ? const Color(0xFF6366F1)
-        : const Color(0xFF4F46E5);
+        ? const Color(0xFF6B9080)
+        : const Color(0xFF6B9080);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

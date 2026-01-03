@@ -16,8 +16,8 @@ class _SelectUserScreenState extends State<SelectUserScreen>
 
   // Minimal Premium Colors
   static const _primaryColor = Color(0xFF1A1A2E);
-  static const _accentColor = Color(0xFF4F46E5);
-  static const _parentAccent = Color(0xFF4F46E5);
+  static const _accentColor = Color(0xFF6B9080);
+  static const _parentAccent = Color(0xFF6B9080);
   static const _childAccent = Color(0xFFE67E22);
   static const _bgColor = Color(0xFFFAFAFC);
   static const _cardBg = Colors.white;

@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-/// Sleepy Bear Widget - Animated cute bear mascot for lock screen
+/// Ultra Cute Sleepy Bear Widget - Adorable bear mascot for kids lock screen
+/// Features: sleeping on cloud, night cap, heart pillow, rosy cheeks
 class SleepyBearWidget extends StatefulWidget {
   final bool isSleeping;
   final double size;
@@ -15,146 +16,293 @@ class SleepyBearWidget extends StatefulWidget {
 class _SleepyBearWidgetState extends State<SleepyBearWidget>
     with TickerProviderStateMixin {
   late AnimationController _breathController;
-  late AnimationController _eyeController;
+  late AnimationController _floatController;
   late AnimationController _zzzController;
+  late AnimationController _heartController;
   late Animation<double> _breathAnimation;
-  late Animation<double> _eyeAnimation;
+  late Animation<double> _floatAnimation;
+  late Animation<double> _heartAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Breathing animation
+    // Gentle breathing animation
     _breathController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat(reverse: true);
 
-    _breathAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
+    _breathAnimation = Tween<double>(begin: 0.97, end: 1.03).animate(
       CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
     );
 
-    // Eye blinking animation
-    _eyeController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+    // Floating on cloud animation
+    _floatController = AnimationController(
+      duration: const Duration(milliseconds: 4000),
       vsync: this,
+    )..repeat(reverse: true);
+
+    _floatAnimation = Tween<double>(begin: -8, end: 8).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
 
-    _eyeAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.1,
-    ).animate(CurvedAnimation(parent: _eyeController, curve: Curves.easeInOut));
+    // Heart pulse animation
+    _heartController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
 
-    // Occasional blink
-    _startBlinking();
+    _heartAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _heartController, curve: Curves.easeInOut),
+    );
 
     // ZZZ floating animation
     _zzzController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat();
-  }
-
-  void _startBlinking() {
-    Future.delayed(Duration(milliseconds: Random().nextInt(3000) + 2000), () {
-      if (mounted && !widget.isSleeping) {
-        _eyeController.forward().then((_) {
-          _eyeController.reverse().then((_) {
-            _startBlinking();
-          });
-        });
-      } else if (mounted) {
-        _startBlinking();
-      }
-    });
   }
 
   @override
   void dispose() {
     _breathController.dispose();
-    _eyeController.dispose();
+    _floatController.dispose();
     _zzzController.dispose();
+    _heartController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: widget.size,
-      height: widget.size + 40,
+      width: widget.size * 1.4,
+      height: widget.size * 1.3,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Bear body
+          // Floating heart decorations
+          ..._buildFloatingHearts(),
+
+          // Main bear with cloud
           AnimatedBuilder(
-            animation: _breathAnimation,
+            animation: Listenable.merge([_breathAnimation, _floatAnimation]),
             builder: (context, child) {
-              return Transform.scale(
-                scale: _breathAnimation.value,
-                child: _buildBear(),
+              return Transform.translate(
+                offset: Offset(0, _floatAnimation.value),
+                child: Transform.scale(
+                  scale: _breathAnimation.value,
+                  child: _buildBearOnCloud(),
+                ),
               );
             },
           ),
 
           // ZZZ bubbles
-          if (widget.isSleeping) ...[
-            _buildZzz(0, -30, 0.0, 18),
-            _buildZzz(20, -50, 0.3, 22),
-            _buildZzz(45, -75, 0.6, 26),
-          ],
+          if (widget.isSleeping) ..._buildZzzBubbles(),
         ],
       ),
     );
   }
 
-  Widget _buildBear() {
+  List<Widget> _buildFloatingHearts() {
+    return [
+      _buildFloatingHeart(-widget.size * 0.5, -widget.size * 0.3, 0.0, 12),
+      _buildFloatingHeart(widget.size * 0.45, -widget.size * 0.2, 0.3, 10),
+      _buildFloatingHeart(-widget.size * 0.4, widget.size * 0.3, 0.6, 8),
+      _buildFloatingHeart(widget.size * 0.5, widget.size * 0.2, 0.9, 11),
+    ];
+  }
+
+  Widget _buildFloatingHeart(double x, double y, double delay, double size) {
+    return AnimatedBuilder(
+      animation: _heartController,
+      builder: (context, child) {
+        final progress = ((_heartController.value + delay) % 1.0);
+        final opacity = 0.3 + (sin(progress * 3.14159 * 2) * 0.3);
+        final scale = 0.8 + (sin(progress * 3.14159 * 2) * 0.2);
+
+        return Positioned(
+          left: widget.size * 0.7 + x,
+          top: widget.size * 0.5 + y,
+          child: Transform.scale(
+            scale: scale,
+            child: Opacity(
+              opacity: opacity.clamp(0.2, 0.7),
+              child: Icon(
+                Icons.favorite,
+                size: size,
+                color: const Color(0xFFFFB6C1),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBearOnCloud() {
     final size = widget.size;
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Bear body
+        // Cloud pillow (behind bear)
+        Positioned(bottom: 0, child: _buildCloud(size)),
+
+        // Bear sleeping on cloud
+        Positioned(bottom: size * 0.12, child: _buildCuteBear(size)),
+
+        // Heart pillow
+        Positioned(
+          bottom: size * 0.18,
+          left: size * 0.15,
+          child: AnimatedBuilder(
+            animation: _heartAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _heartAnimation.value,
+                child: _buildHeartPillow(size * 0.22),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCloud(double size) {
+    return Container(
+      width: size * 1.3,
+      height: size * 0.45,
+      child: Stack(
+        children: [
+          // Main cloud body
+          Positioned(
+            left: size * 0.15,
+            bottom: 0,
+            child: Container(
+              width: size * 1.0,
+              height: size * 0.35,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.95),
+                    const Color(0xFFF0F4FF).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(size * 0.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE8E0FF).withOpacity(0.5),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Cloud bumps (left)
+          Positioned(
+            left: 0,
+            bottom: size * 0.08,
+            child: Container(
+              width: size * 0.35,
+              height: size * 0.28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          // Cloud bumps (right)
+          Positioned(
+            right: 0,
+            bottom: size * 0.06,
+            child: Container(
+              width: size * 0.32,
+              height: size * 0.26,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          // Cloud bump (center top)
+          Positioned(
+            left: size * 0.45,
+            bottom: size * 0.2,
+            child: Container(
+              width: size * 0.4,
+              height: size * 0.32,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCuteBear(double size) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Bear body (laying down)
         Container(
-          width: size * 0.75,
-          height: size * 0.6,
-          margin: EdgeInsets.only(top: size * 0.35),
+          width: size * 0.55,
+          height: size * 0.4,
+          margin: EdgeInsets.only(top: size * 0.2),
           decoration: BoxDecoration(
-            color: const Color(0xFFDEB887), // Tan/Beige
-            borderRadius: BorderRadius.circular(size * 0.35),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFE8C99B), Color(0xFFD4A574)],
+            ),
+            borderRadius: BorderRadius.circular(size * 0.22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                color: const Color(0xFFD4A574).withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
         ),
 
-        // Bear belly
+        // Bear belly spot
         Container(
-          width: size * 0.45,
-          height: size * 0.35,
-          margin: EdgeInsets.only(top: size * 0.45),
+          width: size * 0.32,
+          height: size * 0.25,
+          margin: EdgeInsets.only(top: size * 0.22),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5DEB3), // Wheat
-            borderRadius: BorderRadius.circular(size * 0.25),
+            color: const Color(0xFFFFF5E6),
+            borderRadius: BorderRadius.circular(size * 0.15),
           ),
         ),
 
         // Bear head
         Container(
-          width: size * 0.7,
-          height: size * 0.6,
-          margin: EdgeInsets.only(bottom: size * 0.3),
+          width: size * 0.52,
+          height: size * 0.48,
+          margin: EdgeInsets.only(bottom: size * 0.25),
           decoration: BoxDecoration(
-            color: const Color(0xFFDEB887),
-            borderRadius: BorderRadius.circular(size * 0.35),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF0D9B5), Color(0xFFE8C99B)],
+            ),
+            borderRadius: BorderRadius.circular(size * 0.26),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+                color: const Color(0xFFD4A574).withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -163,87 +311,62 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
             children: [
               // Left ear
               Positioned(
-                left: size * 0.02,
-                top: -size * 0.05,
-                child: _buildEar(size * 0.18),
+                left: -size * 0.02,
+                top: -size * 0.04,
+                child: _buildEar(size * 0.16),
               ),
-
               // Right ear
               Positioned(
-                right: size * 0.02,
-                top: -size * 0.05,
-                child: _buildEar(size * 0.18),
+                right: -size * 0.02,
+                top: -size * 0.04,
+                child: _buildEar(size * 0.16),
               ),
-
+              // Night cap
+              Positioned(
+                right: -size * 0.08,
+                top: -size * 0.1,
+                child: _buildNightCap(size * 0.28),
+              ),
               // Face
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: size * 0.08),
-
-                  // Eyes row
+                  SizedBox(height: size * 0.06),
+                  // Closed eyes (sleeping)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildEye(size * 0.08, isLeft: true),
-                      SizedBox(width: size * 0.15),
-                      _buildEye(size * 0.08, isLeft: false),
+                      _buildSleepingEye(size * 0.1),
+                      SizedBox(width: size * 0.1),
+                      _buildSleepingEye(size * 0.1),
                     ],
                   ),
-
-                  SizedBox(height: size * 0.03),
-
-                  // Muzzle
-                  Container(
-                    width: size * 0.28,
-                    height: size * 0.18,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5DEB3),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(size * 0.1),
-                        topRight: Radius.circular(size * 0.1),
-                        bottomLeft: Radius.circular(size * 0.14),
-                        bottomRight: Radius.circular(size * 0.14),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Nose
-                        Container(
-                          width: size * 0.08,
-                          height: size * 0.05,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4A3728),
-                            borderRadius: BorderRadius.circular(size * 0.03),
-                          ),
-                        ),
-                        SizedBox(height: size * 0.01),
-                        // Mouth
-                        _buildMouth(size),
-                      ],
-                    ),
-                  ),
+                  SizedBox(height: size * 0.04),
+                  // Cute muzzle with nose
+                  _buildMuzzle(size),
                 ],
               ),
-
-              // Blush cheeks
+              // Rosy cheeks
               Positioned(
-                left: size * 0.08,
-                top: size * 0.32,
-                child: _buildBlush(size * 0.08),
+                left: size * 0.04,
+                top: size * 0.24,
+                child: _buildBlush(size * 0.1),
               ),
               Positioned(
-                right: size * 0.08,
-                top: size * 0.32,
-                child: _buildBlush(size * 0.08),
+                right: size * 0.04,
+                top: size * 0.24,
+                child: _buildBlush(size * 0.1),
               ),
             ],
           ),
         ),
 
-        // Arms holding phone
-        Positioned(top: size * 0.5, child: _buildArmsWithPhone(size)),
+        // Tiny paw reaching forward
+        Positioned(
+          left: size * 0.05,
+          bottom: size * 0.35,
+          child: _buildPaw(size * 0.12),
+        ),
       ],
     );
   }
@@ -253,16 +376,23 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFFDEB887),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF0D9B5), Color(0xFFE8C99B)],
+        ),
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFC4A574), width: 2),
+        border: Border.all(
+          color: const Color(0xFFD4A574).withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Center(
         child: Container(
           width: size * 0.5,
           height: size * 0.5,
           decoration: const BoxDecoration(
-            color: Color(0xFFFFB6C1), // Light pink inner ear
+            color: Color(0xFFFFD4D8),
             shape: BoxShape.circle,
           ),
         ),
@@ -270,67 +400,88 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
     );
   }
 
-  Widget _buildEye(double size, {required bool isLeft}) {
-    if (widget.isSleeping) {
-      // Sleeping eyes - curved lines
-      return SizedBox(
-        width: size * 1.5,
-        height: size,
-        child: CustomPaint(painter: _SleepingEyePainter(isLeft: isLeft)),
-      );
-    }
-
-    // Awake eyes
-    return AnimatedBuilder(
-      animation: _eyeAnimation,
-      builder: (context, child) {
-        return Container(
-          width: size,
-          height: size * _eyeAnimation.value,
-          decoration: BoxDecoration(
-            color: const Color(0xFF2C1810),
-            borderRadius: BorderRadius.circular(size / 2),
+  Widget _buildNightCap(double size) {
+    return Transform.rotate(
+      angle: 0.4,
+      child: Stack(
+        children: [
+          // Cap body
+          CustomPaint(
+            size: Size(size, size * 1.2),
+            painter: _NightCapPainter(),
           ),
-          child: _eyeAnimation.value > 0.5
-              ? Align(
-                  alignment: isLeft
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    width: size * 0.3,
-                    height: size * 0.3,
-                    margin: EdgeInsets.only(
-                      right: isLeft ? size * 0.15 : 0,
-                      left: isLeft ? 0 : size * 0.15,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
+          // Pom pom
+          Positioned(
+            right: 0,
+            top: size * 0.1,
+            child: Container(
+              width: size * 0.3,
+              height: size * 0.3,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE8E0FF).withOpacity(0.5),
+                    blurRadius: 5,
                   ),
-                )
-              : null,
-        );
-      },
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMouth(double size) {
-    if (widget.isSleeping) {
-      // Peaceful sleeping smile
-      return SizedBox(
-        width: size * 0.12,
-        height: size * 0.04,
-        child: CustomPaint(painter: _SmilePainter()),
-      );
-    }
-    // Normal mouth
+  Widget _buildSleepingEye(double size) {
+    return SizedBox(
+      width: size,
+      height: size * 0.5,
+      child: CustomPaint(painter: _CurvyEyePainter()),
+    );
+  }
+
+  Widget _buildMuzzle(double size) {
     return Container(
-      width: size * 0.03,
-      height: size * 0.02,
+      width: size * 0.22,
+      height: size * 0.14,
       decoration: BoxDecoration(
-        color: const Color(0xFF4A3728),
-        borderRadius: BorderRadius.circular(size * 0.01),
+        color: const Color(0xFFFFF5E6),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(size * 0.05),
+          topRight: Radius.circular(size * 0.05),
+          bottomLeft: Radius.circular(size * 0.1),
+          bottomRight: Radius.circular(size * 0.1),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Cute tiny nose
+          Container(
+            width: size * 0.06,
+            height: size * 0.04,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF6B4F3C), Color(0xFF4A3728)],
+              ),
+              borderRadius: BorderRadius.circular(size * 0.02),
+            ),
+          ),
+          SizedBox(height: size * 0.01),
+          // Tiny smile
+          Container(
+            width: size * 0.04,
+            height: size * 0.015,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6B4F3C).withOpacity(0.5),
+              borderRadius: BorderRadius.circular(size * 0.01),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -340,72 +491,41 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
       width: size,
       height: size * 0.6,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFB6C1).withOpacity(0.5),
+        gradient: RadialGradient(
+          colors: [
+            const Color(0xFFFFB6C1).withOpacity(0.6),
+            const Color(0xFFFFB6C1).withOpacity(0.0),
+          ],
+        ),
         borderRadius: BorderRadius.circular(size),
       ),
     );
   }
 
-  Widget _buildArmsWithPhone(double size) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Phone
-        Container(
-          width: size * 0.25,
-          height: size * 0.35,
-          decoration: BoxDecoration(
-            color: const Color(0xFF2C3E50),
-            borderRadius: BorderRadius.circular(size * 0.03),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+  Widget _buildHeartPillow(double size) {
+    return Container(
+      width: size,
+      height: size * 0.9,
+      child: Icon(
+        Icons.favorite,
+        size: size,
+        color: const Color(0xFFFF8FAB),
+        shadows: [
+          Shadow(
+            color: const Color(0xFFFF6B8A).withOpacity(0.4),
+            blurRadius: 8,
           ),
-          child: Container(
-            margin: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: widget.isSleeping
-                  ? const Color(0xFF1a1a2e)
-                  : const Color(0xFF4FC3F7),
-              borderRadius: BorderRadius.circular(size * 0.02),
-            ),
-            child: widget.isSleeping
-                ? Center(
-                    child: Icon(
-                      Icons.bedtime_rounded,
-                      color: Colors.white.withOpacity(0.3),
-                      size: size * 0.1,
-                    ),
-                  )
-                : null,
-          ),
-        ),
-
-        // Left paw
-        Positioned(
-          left: -size * 0.18,
-          child: Transform.rotate(angle: 0.3, child: _buildPaw(size * 0.15)),
-        ),
-
-        // Right paw
-        Positioned(
-          right: -size * 0.18,
-          child: Transform.rotate(angle: -0.3, child: _buildPaw(size * 0.15)),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildPaw(double size) {
     return Container(
       width: size,
-      height: size * 1.3,
+      height: size * 1.2,
       decoration: BoxDecoration(
-        color: const Color(0xFFDEB887),
+        color: const Color(0xFFE8C99B),
         borderRadius: BorderRadius.circular(size * 0.4),
       ),
       child: Align(
@@ -415,12 +535,20 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
           height: size * 0.5,
           margin: EdgeInsets.only(bottom: size * 0.1),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5DEB3),
-            borderRadius: BorderRadius.circular(size * 0.3),
+            color: const Color(0xFFFFF5E6),
+            borderRadius: BorderRadius.circular(size * 0.25),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildZzzBubbles() {
+    return [
+      _buildZzz(widget.size * 0.35, -widget.size * 0.1, 0.0, 14, 0.9),
+      _buildZzz(widget.size * 0.45, -widget.size * 0.25, 0.35, 18, 0.85),
+      _buildZzz(widget.size * 0.55, -widget.size * 0.42, 0.7, 24, 0.8),
+    ];
   }
 
   Widget _buildZzz(
@@ -428,32 +556,45 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
     double offsetY,
     double delay,
     double fontSize,
+    double maxOpacity,
   ) {
     return AnimatedBuilder(
       animation: _zzzController,
       builder: (context, child) {
         final progress = ((_zzzController.value + delay) % 1.0);
-        final opacity = progress < 0.5 ? progress * 2 : (1.0 - progress) * 2;
-        final yOffset = offsetY - (progress * 30);
+        final opacity = progress < 0.4
+            ? (progress / 0.4) * maxOpacity
+            : progress < 0.7
+            ? maxOpacity
+            : ((1.0 - progress) / 0.3) * maxOpacity;
+        final yOffset = offsetY - (progress * 35);
+        final xSway = sin(progress * 3.14159 * 2) * 4;
 
         return Positioned(
-          right: widget.size * 0.15 + offsetX,
-          top: widget.size * 0.15 + yOffset,
+          right: widget.size * 0.2 + offsetX + xSway,
+          top: widget.size * 0.3 + yOffset,
           child: Opacity(
-            opacity: opacity.clamp(0.0, 0.8),
-            child: Text(
-              'z',
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.bold,
-                color: Colors.white.withOpacity(0.9),
-                fontStyle: FontStyle.italic,
-                shadows: [
-                  Shadow(
-                    color: const Color(0xFF7C4DFF).withOpacity(0.5),
-                    blurRadius: 10,
-                  ),
-                ],
+            opacity: opacity.clamp(0.0, maxOpacity),
+            child: Transform.scale(
+              scale: 0.85 + (progress * 0.3),
+              child: Text(
+                'z',
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFE8E0FF),
+                  fontStyle: FontStyle.italic,
+                  shadows: [
+                    Shadow(
+                      color: const Color(0xFFB8A0E8).withOpacity(0.8),
+                      blurRadius: 8,
+                    ),
+                    Shadow(
+                      color: Colors.white.withOpacity(0.5),
+                      blurRadius: 15,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -463,62 +604,106 @@ class _SleepyBearWidgetState extends State<SleepyBearWidget>
   }
 }
 
-// Custom painter for sleeping eyes (curved lines)
-class _SleepingEyePainter extends CustomPainter {
-  final bool isLeft;
-
-  _SleepingEyePainter({required this.isLeft});
-
+// Night cap painter
+class _NightCapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF2C1810)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [const Color(0xFFB8A0E8), const Color(0xFF9B7ED8)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
-
-    if (isLeft) {
-      path.moveTo(0, size.height * 0.3);
-      path.quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.8,
-        size.width,
-        size.height * 0.3,
-      );
-    } else {
-      path.moveTo(0, size.height * 0.3);
-      path.quadraticBezierTo(
-        size.width * 0.5,
-        size.height * 0.8,
-        size.width,
-        size.height * 0.3,
-      );
-    }
+    path.moveTo(0, size.height * 0.8);
+    path.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.9,
+      size.width * 0.5,
+      size.height * 0.3,
+    );
+    path.quadraticBezierTo(size.width * 0.7, 0, size.width, size.height * 0.2);
+    path.lineTo(size.width * 0.8, size.height * 0.5);
+    path.quadraticBezierTo(
+      size.width * 0.5,
+      size.height * 0.6,
+      size.width * 0.2,
+      size.height,
+    );
+    path.close();
 
     canvas.drawPath(path, paint);
+
+    // Stripes on cap
+    final stripePaint = Paint()
+      ..color = Colors.white.withOpacity(0.3)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    for (var i = 0; i < 3; i++) {
+      final stripePath = Path();
+      stripePath.moveTo(size.width * 0.1, size.height * (0.7 - i * 0.15));
+      stripePath.quadraticBezierTo(
+        size.width * 0.4,
+        size.height * (0.6 - i * 0.15),
+        size.width * 0.7,
+        size.height * (0.35 - i * 0.1),
+      );
+      canvas.drawPath(stripePath, stripePaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Custom painter for smile
-class _SmilePainter extends CustomPainter {
+// Curvy sleeping eye painter
+class _CurvyEyePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF4A3728)
-      ..strokeWidth = 2
+      ..color = const Color(0xFF5D4037)
+      ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final path = Path();
-    path.moveTo(0, 0);
-    path.quadraticBezierTo(size.width * 0.5, size.height * 1.5, size.width, 0);
+    path.moveTo(0, size.height * 0.3);
+    path.quadraticBezierTo(
+      size.width * 0.5,
+      size.height,
+      size.width,
+      size.height * 0.3,
+    );
 
     canvas.drawPath(path, paint);
+
+    // Small eyelashes
+    final lashPaint = Paint()
+      ..color = const Color(0xFF5D4037).withOpacity(0.6)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    // Left lash
+    canvas.drawLine(
+      Offset(size.width * 0.15, size.height * 0.5),
+      Offset(size.width * 0.1, size.height * 0.8),
+      lashPaint,
+    );
+    // Middle lash
+    canvas.drawLine(
+      Offset(size.width * 0.5, size.height * 0.7),
+      Offset(size.width * 0.5, size.height * 1.0),
+      lashPaint,
+    );
+    // Right lash
+    canvas.drawLine(
+      Offset(size.width * 0.85, size.height * 0.5),
+      Offset(size.width * 0.9, size.height * 0.8),
+      lashPaint,
+    );
   }
 
   @override

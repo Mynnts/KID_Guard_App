@@ -101,12 +101,25 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
 
         // Calculate total screen time
         int totalSeconds = 0;
+        bool anyChildLocked = false;
+        ChildModel? lockedChild;
         for (var child in children) {
           totalSeconds += child.screenTime;
+          // Check if any child's device is locked
+          if (child.isLocked) {
+            anyChildLocked = true;
+            lockedChild = child;
+          }
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: const Color(0xFFF6FBF4),
+          // Floating unlock button - appears only when child device is locked
+          floatingActionButton: anyChildLocked && lockedChild != null
+              ? _buildUnlockFAB(user.uid, lockedChild, colorScheme)
+              : null,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
           body: SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -251,6 +264,232 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
+  /// Premium animated unlock FAB - appears when child device is locked
+  Widget _buildUnlockFAB(
+    String parentUid,
+    ChildModel lockedChild,
+    ColorScheme colorScheme,
+  ) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        final scale = 1.0 + (_pulseController.value * 0.05);
+        final glowOpacity = 0.3 + (_pulseController.value * 0.2);
+
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                // Animated glow
+                BoxShadow(
+                  color: const Color(0xFFEF4444).withOpacity(glowOpacity),
+                  blurRadius: 30,
+                  spreadRadius: 2,
+                ),
+                // Sharp shadow
+                BoxShadow(
+                  color: const Color(0xFFEF4444).withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showUnlockConfirmDialog(parentUid, lockedChild),
+                borderRadius: BorderRadius.circular(32),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.lock_open_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.5),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${lockedChild.name} Locked',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Tap to unlock device',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Show confirmation dialog before unlocking
+  void _showUnlockConfirmDialog(String parentUid, ChildModel child) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.lock_open_rounded,
+                color: Color(0xFFEF4444),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Unlock ${child.name}\'s Device?',
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'This will allow your child to use their device again. The lock will be removed immediately.',
+          style: TextStyle(color: Colors.grey, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _unlockChildDevice(parentUid, child);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text('Unlock Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Unlock child device by updating Firestore
+  void _unlockChildDevice(String parentUid, ChildModel child) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(parentUid)
+          .collection('children')
+          .doc(child.id)
+          .update({
+            'isLocked': false,
+            'unlockRequested': true,
+            'limitUsedTime':
+                0, // Reset time limit so device doesn't lock again immediately
+          });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('${child.name}\'s device has been unlocked! ✅'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to unlock: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -360,16 +599,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
-                    : null,
-                color: isSelected ? null : Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                    : LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.95),
+                          Colors.white.withOpacity(0.85),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                borderRadius: BorderRadius.circular(28),
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: Colors.white.withOpacity(0.6),
+                        width: 1.5,
+                      ),
                 boxShadow: [
+                  // Far soft shadow
                   BoxShadow(
                     color: isSelected
-                        ? colorScheme.primary.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.05),
-                    blurRadius: isSelected ? 20 : 10,
-                    offset: const Offset(0, 8),
+                        ? colorScheme.primary.withOpacity(0.25)
+                        : Colors.black.withOpacity(0.06),
+                    blurRadius: isSelected ? 30 : 20,
+                    offset: const Offset(0, 12),
+                    spreadRadius: isSelected ? 0 : -4,
+                  ),
+                  // Near crisp shadow
+                  BoxShadow(
+                    color: isSelected
+                        ? colorScheme.primary.withOpacity(0.15)
+                        : Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -505,15 +766,23 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
+          // Primary color-tinted shadow (far, soft)
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.25),
-            blurRadius: 20,
+            color: const Color(0xFF6B9080).withOpacity(0.15),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
+            spreadRadius: -8,
+          ),
+          // Secondary shadow (near, crisp)
+          BoxShadow(
+            color: const Color(0xFF6B9080).withOpacity(0.10),
+            blurRadius: 16,
             offset: const Offset(0, 8),
           ),
         ],
@@ -750,9 +1019,28 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade100),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFFCFDFC)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.grey.shade100.withOpacity(0.8)),
+        boxShadow: [
+          // Soft outer glow
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: -5,
+          ),
+          // Subtle inner highlight
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 8,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -879,7 +1167,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         icon: Icons.apps_rounded,
         label: 'App Control',
         subtitle: 'Manage apps',
-        color: const Color(0xFF4F46E5),
+        color: const Color(0xFF6B9080),
         onTap: () => Navigator.pushNamed(context, '/parent/app_control'),
       ),
       _QuickAction(
@@ -903,7 +1191,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         icon: Icons.calendar_month_rounded,
         label: 'Schedule',
         subtitle: 'Sleep & Break',
-        color: const Color(0xFF6366F1),
+        color: const Color(0xFF6B9080),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ScheduleScreen()),
@@ -913,7 +1201,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         icon: Icons.star_rounded,
         label: 'Rewards',
         subtitle: 'Points & Goals',
-        color: const Color(0xFF8B5CF6),
+        color: const Color(0xFF84A98C),
         onTap: () => _navigateToRewards(context, children),
       ),
     ];
@@ -1213,7 +1501,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
 
   Widget _buildShimmerLoading() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF6FBF4),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -1360,15 +1648,30 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
           );
         },
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade100),
+            gradient: const LinearGradient(
+              colors: [Colors.white, Color(0xFFFAFBFA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.grey.shade100.withOpacity(0.6),
+              width: 1,
+            ),
             boxShadow: [
+              // Soft outer glow
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+                spreadRadius: -5,
+              ),
+              // Near shadow
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
             ],

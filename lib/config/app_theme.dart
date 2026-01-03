@@ -5,15 +5,15 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF4F46E5), // Indigo 600 - Modern & Trustworthy
-      primary: const Color(0xFF4F46E5),
-      secondary: const Color(0xFF0EA5E9), // Sky 500
-      tertiary: const Color(0xFF8B5CF6), // Violet 500
-      background: const Color(0xFFF8FAFC), // Slate 50
+      seedColor: const Color(0xFF6B9080), // Sage Green - Soft & Professional
+      primary: const Color(0xFF6B9080), // Sage Green
+      secondary: const Color(0xFFA4C3B2), // Mint
+      tertiary: const Color(0xFFCCE3DE), // Light Mint
+      background: const Color(0xFFF6FBF4), // Soft Cream
       surface: Colors.white,
       brightness: Brightness.light,
     ),
-    scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+    scaffoldBackgroundColor: const Color(0xFFF6FBF4),
     textTheme: GoogleFonts.outfitTextTheme().apply(
       bodyColor: const Color(0xFF1E293B), // Slate 800
       displayColor: const Color(0xFF0F172A), // Slate 900
@@ -54,7 +54,7 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF6B9080), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -63,7 +63,7 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF4F46E5),
+        backgroundColor: const Color(0xFF6B9080),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
         elevation: 0,
@@ -75,8 +75,8 @@ class AppTheme {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        side: const BorderSide(color: Color(0xFF4F46E5)),
-        foregroundColor: const Color(0xFF4F46E5),
+        side: const BorderSide(color: Color(0xFF6B9080)),
+        foregroundColor: const Color(0xFF6B9080),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
@@ -85,7 +85,9 @@ class AppTheme {
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6366F1), // Indigo 500
+      seedColor: const Color(
+        0xFF84A98C,
+      ), // Soft Sage (slightly brighter for dark mode)
       brightness: Brightness.dark,
       surface: const Color(0xFF1E293B), // Slate 800
       background: const Color(0xFF0F172A), // Slate 900
@@ -120,12 +122,12 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF84A98C), width: 2),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: const Color(0xFF84A98C),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
         elevation: 0,

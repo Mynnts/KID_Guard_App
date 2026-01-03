@@ -182,8 +182,8 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                               gradient: isSelected
                                   ? const LinearGradient(
                                       colors: [
-                                        Color(0xFF667EEA),
-                                        Color(0xFF764BA2),
+                                        Color(0xFF6B9080),
+                                        Color(0xFF84A98C),
                                       ],
                                     )
                                   : null,
@@ -193,7 +193,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                                   ? [
                                       BoxShadow(
                                         color: const Color(
-                                          0xFF667EEA,
+                                          0xFF6B9080,
                                         ).withOpacity(0.3),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
@@ -294,19 +294,29 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFFCFDFC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isOnline
               ? const Color(0xFF10B981).withOpacity(0.3)
-              : Colors.grey.shade200,
+              : Colors.grey.shade200.withOpacity(0.6),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: -5,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -412,7 +422,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF667EEA).withOpacity(0.1),
+                  color: const Color(0xFF6B9080).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -421,7 +431,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                     Icon(
                       Icons.lock_open_rounded,
                       size: 16,
-                      color: Color(0xFF667EEA),
+                      color: Color(0xFF6B9080),
                     ),
                     SizedBox(width: 4),
                     Text(
@@ -429,7 +439,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF667EEA),
+                        color: Color(0xFF6B9080),
                       ),
                     ),
                   ],
@@ -533,7 +543,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                 icon: Icons.access_time_rounded,
                 label: 'Today',
                 value: '${hours}h ${minutes}m',
-                color: const Color(0xFF667EEA),
+                color: const Color(0xFF6B9080),
                 gradient: true,
               ),
             ),
@@ -702,23 +712,34 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
     bool gradient = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: gradient
             ? const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
-            : null,
-        color: gradient ? null : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+            : const LinearGradient(
+                colors: [Colors.white, Color(0xFFFCFDFC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: gradient
-                ? const Color(0xFF667EEA).withOpacity(0.3)
-                : Colors.black.withOpacity(0.04),
-            blurRadius: gradient ? 16 : 10,
+                ? const Color(0xFF6B9080).withOpacity(0.20)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: gradient ? 30 : 16,
+            offset: const Offset(0, 12),
+            spreadRadius: gradient ? 0 : -4,
+          ),
+          BoxShadow(
+            color: gradient
+                ? const Color(0xFF6B9080).withOpacity(0.10)
+                : Colors.black.withOpacity(0.02),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -805,7 +826,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                   toY: hours > 0 ? hours : 0.2,
                   gradient: isSelected
                       ? const LinearGradient(
-                          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         )
@@ -899,7 +920,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                                 }
                               },
                           touchTooltipData: BarTouchTooltipData(
-                            getTooltipColor: (_) => const Color(0xFF667EEA),
+                            getTooltipColor: (_) => const Color(0xFF6B9080),
                             getTooltipItem: (group, groupIndex, rod, rodIndex) {
                               return BarTooltipItem(
                                 '${rod.toY.toStringAsFixed(1)}h',
@@ -955,7 +976,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                                       dayLabels[value.toInt()],
                                       style: TextStyle(
                                         color: isSelected
-                                            ? const Color(0xFF667EEA)
+                                            ? const Color(0xFF6B9080)
                                             : Colors.grey,
                                         fontWeight: isSelected
                                             ? FontWeight.bold
@@ -1071,12 +1092,12 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF667EEA).withOpacity(0.1),
+                            color: const Color(0xFF6B9080).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.android,
-                            color: Color(0xFF667EEA),
+                            color: Color(0xFF6B9080),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -1109,8 +1130,8 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
                                           colors: [
-                                            Color(0xFF667EEA),
-                                            Color(0xFF764BA2),
+                                            Color(0xFF6B9080),
+                                            Color(0xFF84A98C),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(3),
@@ -1127,7 +1148,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen> {
                           timeStr,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF667EEA),
+                            color: Color(0xFF6B9080),
                           ),
                         ),
                       ],

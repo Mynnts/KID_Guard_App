@@ -25,11 +25,11 @@ class _ChildPinScreenState extends State<ChildPinScreen>
   // Ultra Minimal Color Palette
   static const _bgColor = Color(0xFFF8F9FC);
   static const _cardColor = Color(0xFFFFFFFF);
-  static const _primaryColor = Color(0xFF6366F1); // Indigo
+  static const _primaryColor = Color(0xFF6B9080); // Indigo
   static const _textPrimary = Color(0xFF1F2937);
   static const _textSecondary = Color(0xFF9CA3AF);
   static const _dotEmpty = Color(0xFFE5E7EB);
-  static const _dotFilled = Color(0xFF6366F1);
+  static const _dotFilled = Color(0xFF6B9080);
   static const _errorColor = Color(0xFFEF4444);
   static const _keyBg = Color(0xFFF3F4F6);
 

@@ -230,6 +230,24 @@ class BackgroundService {
                   _unlockDevice();
                 }
 
+                // Handle parent unlock request
+                final unlockRequested = data['unlockRequested'] ?? false;
+                if (unlockRequested && !_isDeviceLocked) {
+                  // Parent has unlocked the device - hide overlay and reset
+                  onAppAllowed(); // This calls OverlayService().hideOverlay()
+                  _isInRestrictedTime = false;
+
+                  // Reset unlockRequested flag in Firestore
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(_currentParentId)
+                      .collection('children')
+                      .doc(_currentChildId)
+                      .update({'unlockRequested': false});
+
+                  print('Parent unlock received - hiding overlay');
+                }
+
                 print(
                   'Updated settings: Limit=$_dailyTimeLimit, Sleep=${_sleepScheduleEnabled ? "ON" : "OFF"}, QuietTimes=${_quietTimes.length}',
                 );
@@ -240,6 +258,27 @@ class BackgroundService {
             print('Error listening to child settings: $e');
           },
         );
+  }
+
+  /// Update isLocked status in Firestore so parent can see unlock button
+  Future<void> _setLockedInFirestore(bool isLocked, String reason) async {
+    if (_currentChildId == null || _currentParentId == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentParentId)
+          .collection('children')
+          .doc(_currentChildId)
+          .update({
+            'isLocked': isLocked,
+            'lockReason': reason,
+            'lockedAt': isLocked ? FieldValue.serverTimestamp() : null,
+          });
+      print('Firestore: isLocked=$isLocked, reason=$reason');
+    } catch (e) {
+      print('Error updating isLocked in Firestore: $e');
+    }
   }
 
   /// Check if current time is within sleep schedule
@@ -318,6 +357,13 @@ class BackgroundService {
         if (!_isInRestrictedTime) {
           // Just entered restricted time
           _isInRestrictedTime = true;
+
+          // Set isLocked in Firestore so parent can see unlock button
+          final reason = _isDeviceLocked
+              ? 'pause'
+              : (inSleep ? 'sleep' : 'quiet');
+          _setLockedInFirestore(true, reason);
+
           onBlockedAppDetected(
             _isDeviceLocked
                 ? 'อุปกรณ์ถูกระงับชั่วคราว 🔒'
@@ -334,8 +380,9 @@ class BackgroundService {
         return; // Don't process further, device should be locked
       } else {
         if (_isInRestrictedTime) {
-          // Just exited restricted time
+          // Just exited restricted time - update Firestore
           _isInRestrictedTime = false;
+          _setLockedInFirestore(false, '');
           onAppAllowed();
         }
       }
@@ -348,6 +395,8 @@ class BackgroundService {
       if (!isTimeLimitDisabled &&
           _dailyTimeLimit > 0 &&
           _currentLimitUsedTime >= _dailyTimeLimit) {
+        // Set isLocked in Firestore so parent can see unlock button
+        _setLockedInFirestore(true, 'time_limit');
         onTimeLimitReached();
         return;
       }
