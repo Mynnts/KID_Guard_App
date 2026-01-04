@@ -120,126 +120,137 @@ class _ChildPinScreenState extends State<ChildPinScreen>
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: Column(
-            children: [
-              // Minimal Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: _cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: _textPrimary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Spacer(flex: 2),
-
-              // Simple Icon
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.lock_outline_rounded,
-                  color: _primaryColor,
-                  size: 28,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Title
-              const Text(
-                'Enter PIN',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: _textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                'Ask your parent for the code',
-                style: TextStyle(fontSize: 14, color: _textSecondary),
-              ),
-
-              const SizedBox(height: 32),
-
-              // PIN Dots
-              AnimatedBuilder(
-                animation: _shakeAnimation,
-                builder: (context, child) {
-                  final offset =
-                      math.sin(_shakeAnimation.value * math.pi * 4) *
-                      10 *
-                      (1 - _shakeAnimation.value);
-                  return Transform.translate(
-                    offset: Offset(offset, 0),
-                    child: child,
-                  );
-                },
-                child: _buildPinDots(),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Error text
-              SizedBox(
-                height: 20,
-                child: _hasError
-                    ? const Text(
-                        'Incorrect PIN',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: _errorColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      )
-                    : Consumer<AuthProvider>(
-                        builder: (context, auth, _) {
-                          if (auth.isLoading) {
-                            return const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: _primaryColor,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        // Minimal Header
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: _cardColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_back_rounded,
+                                    color: _textPrimary,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+
+                        const Spacer(flex: 2),
+
+                        // Simple Icon
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: _primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            Icons.lock_outline_rounded,
+                            color: _primaryColor,
+                            size: 28,
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Title
+                        const Text(
+                          'Enter PIN',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: _textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        const Text(
+                          'Ask your parent for the code',
+                          style: TextStyle(fontSize: 14, color: _textSecondary),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // PIN Dots
+                        AnimatedBuilder(
+                          animation: _shakeAnimation,
+                          builder: (context, child) {
+                            final offset =
+                                math.sin(_shakeAnimation.value * math.pi * 4) *
+                                10 *
+                                (1 - _shakeAnimation.value);
+                            return Transform.translate(
+                              offset: Offset(offset, 0),
+                              child: child,
                             );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-              ),
+                          },
+                          child: _buildPinDots(),
+                        ),
 
-              const Spacer(flex: 1),
+                        const SizedBox(height: 16),
 
-              // Keypad
-              _buildKeypad(),
+                        // Error text
+                        SizedBox(
+                          height: 20,
+                          child: _hasError
+                              ? const Text(
+                                  'Incorrect PIN',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _errorColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              : Consumer<AuthProvider>(
+                                  builder: (context, auth, _) {
+                                    if (auth.isLoading) {
+                                      return const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: _primaryColor,
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                        ),
 
-              const SizedBox(height: 32),
-            ],
+                        const Spacer(flex: 1),
+
+                        // Keypad
+                        _buildKeypad(),
+
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

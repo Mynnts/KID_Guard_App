@@ -20,6 +20,10 @@ class ChildModeService : Service() {
     
     private var handler: Handler? = null
     private var updateRunnable: Runnable? = null
+    private var syncRunnable: Runnable? = null
+    
+    // Firebase sync helper for background operation
+    private var firebaseSyncHelper: FirebaseSyncHelper? = null
     
     companion object {
         const val ACTION_STOP_SERVICE = "com.kidguard.ACTION_STOP_CHILD_MODE"
@@ -39,6 +43,17 @@ class ChildModeService : Service() {
         createNotificationChannel()
         handler = Handler(Looper.getMainLooper())
         isRunning = true
+        
+        // Initialize Firebase sync helper
+        firebaseSyncHelper = FirebaseSyncHelper(this).apply {
+            initialize()
+            onUnlockRequested = {
+                // Hide overlay when parent unlocks
+                val overlayIntent = Intent(this@ChildModeService, OverlayService::class.java)
+                stopService(overlayIntent)
+                println("ChildModeService: Parent unlock received, hiding overlay")
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -48,8 +63,14 @@ class ChildModeService : Service() {
         
         startForeground(NOTIFICATION_ID, createNotification(childName, screenTime, dailyLimit))
         
-        // Schedule periodic updates
+        // Schedule periodic updates for notification
         scheduleUpdates()
+        
+        // Schedule Firebase sync (every 60 seconds)
+        scheduleFirebaseSync()
+        
+        // Do initial sync immediately
+        firebaseSyncHelper?.syncFromFirestore()
         
         return START_STICKY
     }
@@ -72,6 +93,27 @@ class ChildModeService : Service() {
             }
         }
         handler?.postDelayed(updateRunnable!!, 30000)
+    }
+    
+    /**
+     * Schedule periodic Firebase sync for background operation
+     * This allows the service to receive updates even when Flutter app is closed
+     */
+    private fun scheduleFirebaseSync() {
+        syncRunnable?.let { handler?.removeCallbacks(it) }
+        
+        syncRunnable = object : Runnable {
+            override fun run() {
+                // Sync from Firebase
+                firebaseSyncHelper?.syncFromFirestore()
+                println("ChildModeService: Firebase sync executed")
+                
+                // Sync every 60 seconds
+                handler?.postDelayed(this, 60000)
+            }
+        }
+        // Start after 60 seconds (initial sync is done immediately in onStartCommand)
+        handler?.postDelayed(syncRunnable!!, 60000)
     }
     
     private fun updateNotification(childName: String, screenTime: Int, dailyLimit: Int) {
@@ -152,7 +194,13 @@ class ChildModeService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
+        
+        // Set offline status
+        firebaseSyncHelper?.setOfflineStatus()
+        
+        // Cancel all runnables
         updateRunnable?.let { handler?.removeCallbacks(it) }
+        syncRunnable?.let { handler?.removeCallbacks(it) }
         handler = null
     }
     
@@ -172,3 +220,4 @@ class ChildModeService : Service() {
         }
     }
 }
+

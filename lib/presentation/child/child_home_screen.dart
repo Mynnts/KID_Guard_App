@@ -6,6 +6,7 @@ import 'dart:async';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/services/app_service.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/device_service.dart';
 import '../../data/local/blocklist_storage.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
@@ -29,8 +30,10 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   final OverlayService _overlayService = OverlayService();
   final LocationService _locationService = LocationService();
   final AppService _appService = AppService();
+  final DeviceService _deviceService = DeviceService();
   bool _isChildrenModeActive = false;
   StreamSubscription<bool>? _syncRequestSubscription;
+  StreamSubscription<List<String>>? _blockedAppsSubscription;
 
   // Modern Sage Green Theme Colors
   static const _primaryColor = Color(0xFF6B9080);
@@ -83,6 +86,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _syncRequestSubscription?.cancel();
+    _blockedAppsSubscription?.cancel();
     _updateOnlineStatus(false);
     super.dispose();
   }
@@ -109,6 +113,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   Future<void> _toggleChildMode(bool value) async {
     if (value) {
+      // Check overlay permission
       bool overlayPerm = await _overlayService.checkPermission();
       if (!overlayPerm) {
         await _overlayService.requestPermission();
@@ -116,11 +121,74 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
         if (!overlayPerm) return;
       }
 
+      // Check Accessibility Service permission
+      final isAccessibilityEnabled = await platform.invokeMethod(
+        'isAccessibilityEnabled',
+      );
+      if (isAccessibilityEnabled != true) {
+        // Show dialog to enable Accessibility Service
+        if (mounted) {
+          final shouldOpen = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.accessibility_new, color: _primaryColor),
+                  SizedBox(width: 12),
+                  Text('ต้องเปิด Accessibility'),
+                ],
+              ),
+              content: const Text(
+                'กรุณาเปิด Accessibility Service เพื่อให้แอพทำงานเบื้องหลังและบล็อคแอพได้\n\n'
+                'ไป Settings → Accessibility → Kid Guard → เปิด',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('ยกเลิก'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                  ),
+                  child: const Text(
+                    'ไปตั้งค่า',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldOpen == true) {
+            await platform.invokeMethod('openAccessibilitySettings');
+          }
+        }
+        return;
+      }
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final child = authProvider.currentChild;
       final user = authProvider.userModel;
 
       if (child != null && user != null) {
+        // Sync blocklist immediately before enabling child mode
+        await _deviceService.registerDevice(user.uid, child.id);
+        await _appService.syncAppsForDevice(user.uid, child.id);
+
+        // Get and save blocklist to local file immediately
+        final blockedApps = await _appService
+            .streamBlockedApps(user.uid, child.id)
+            .first;
+        await _updateNativeBlocklist(blockedApps);
+        debugPrint(
+          'Initial blocklist synced: ${blockedApps.length} blocked apps',
+        );
+
         await NativeSettingsSync().enableChildMode(user.uid, child.id);
 
         final prefs = await SharedPreferences.getInstance();
@@ -387,29 +455,24 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     final user = authProvider.userModel;
 
     if (child != null && user != null) {
-      await _appService.syncApps(user.uid, child.id);
+      // Register this device and sync apps
+      await _deviceService.registerDevice(user.uid, child.id);
+      await _appService.syncAppsForDevice(user.uid, child.id);
 
-      _syncRequestSubscription = _appService
+      // Listen for sync requests for this device
+      _syncRequestSubscription = _deviceService
           .streamSyncRequest(user.uid, child.id)
           .listen((syncRequested) async {
             if (syncRequested) {
-              await _appService.syncApps(user.uid, child.id);
-              await _appService.clearSyncRequest(user.uid, child.id);
+              await _appService.syncAppsForDevice(user.uid, child.id);
+              await _deviceService.clearSyncRequest(user.uid, child.id);
             }
           });
 
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc(child.id)
-          .collection('apps')
-          .where('isLocked', isEqualTo: true)
-          .snapshots()
-          .listen((snapshot) {
-            final blockedPackages = snapshot.docs
-                .map((doc) => doc['packageName'] as String)
-                .toList();
+      // Listen for blocked apps from all devices
+      _blockedAppsSubscription = _appService
+          .streamBlockedApps(user.uid, child.id)
+          .listen((blockedPackages) {
             _updateNativeBlocklist(blockedPackages);
           });
 
@@ -531,6 +594,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
     if (child != null && user != null) {
       await AuthService().updateChildStatus(user.uid, child.id, isOnline);
+      // Also update device status
+      await _deviceService.updateDeviceStatus(user.uid, child.id, isOnline);
     }
   }
 

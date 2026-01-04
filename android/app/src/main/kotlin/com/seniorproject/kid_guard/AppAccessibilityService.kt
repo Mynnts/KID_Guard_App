@@ -68,6 +68,10 @@ class AppAccessibilityService : AccessibilityService() {
     private var lastActivityTime: Long = System.currentTimeMillis()
     private var screenTimeoutRunnable: Runnable? = null
     
+    // Auto-exit blocked app after countdown (10 seconds)
+    private var autoExitRunnable: Runnable? = null
+    private val autoExitDelayMs = 10000L // 10 seconds
+    
     // Restriction type enum for proper tracking
     enum class RestrictionType {
         NONE, SLEEP, QUIET, TIME_LIMIT, BLOCKED_APP, DEVICE_LOCKED, SCREEN_TIMEOUT
@@ -608,6 +612,9 @@ class AppAccessibilityService : AccessibilityService() {
             }
             isOverlayShowing = true
             lastBlockedPackage = reason
+            
+            // Start auto-exit timer for blocked apps (10 seconds)
+            startAutoExitTimer()
         } catch (e: Exception) {
             e.printStackTrace()
             // Fallback: just go home and show toast
@@ -619,12 +626,42 @@ class AppAccessibilityService : AccessibilityService() {
             }
         }
     }
+    
+    /**
+     * Start 10-second countdown then automatically go home
+     */
+    private fun startAutoExitTimer() {
+        // Cancel any existing timer
+        cancelAutoExitTimer()
+        
+        autoExitRunnable = Runnable {
+            if (isOverlayShowing) {
+                try {
+                    // Go to home screen after 10 seconds
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    println("KidGuard: Auto-exit triggered after ${autoExitDelayMs/1000}s")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        handler.postDelayed(autoExitRunnable!!, autoExitDelayMs)
+    }
+    
+    /**
+     * Cancel auto-exit timer
+     */
+    private fun cancelAutoExitTimer() {
+        autoExitRunnable?.let { handler.removeCallbacks(it) }
+        autoExitRunnable = null
+    }
 
     /**
      * Hide overlay
      */
     private fun hideOverlay() {
         try {
+            cancelAutoExitTimer() // Cancel auto-exit when overlay is hidden
             val intent = Intent(this, OverlayService::class.java)
             stopService(intent)
             isOverlayShowing = false
