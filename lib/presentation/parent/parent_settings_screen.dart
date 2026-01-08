@@ -41,6 +41,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             expandedHeight: 100,
             floating: true,
             pinned: true,
+            automaticallyImplyLeading: false,
             backgroundColor: colorScheme.background,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
@@ -137,9 +138,26 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     _SettingItem(
                       icon: Icons.info_outline,
                       title: 'About',
-                      subtitle: 'Version 1.0.0',
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRoutes.settingsAbout),
+                      subtitle: 'Coming Soon',
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Soon',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      onTap: () {},
                     ),
                   ]),
 
