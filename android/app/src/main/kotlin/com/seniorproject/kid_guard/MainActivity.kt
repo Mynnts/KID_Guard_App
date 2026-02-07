@@ -1,5 +1,6 @@
 package com.seniorproject.kid_guard
 
+// ==================== นำเข้า Libraries ====================
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -9,17 +10,30 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
+/**
+ * ==================== MainActivity ====================
+ * หน้าหลักของแอพ - เชื่อมต่อระหว่าง Flutter และ Native Android
+ * 
+ * MethodChannels ที่ใช้:
+ * 1. com.kidguard/security - ตรวจสอบความปลอดภัย, จัดการ log
+ * 2. com.kidguard/native - จัดการแอพ, blocklist, accessibility
+ * 3. com.kidguard/childmode - ควบคุม foreground service
+ * 4. com.example.kid_guard/overlay - แสดง/ซ่อน overlay บล็อกแอพ
+ */
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.kidguard/native"
     private val SECURITY_CHANNEL = "com.kidguard/security"
 
+    // ==================== Lifecycle Methods ====================
+    
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        // Initialize security logger
+        // เริ่มต้นระบบ log
         SecurityLogger.init(this)
         SecurityLogger.info(this, "App started", mapOf("version" to getAppVersion()))
     }
 
+    /** ดึงเวอร์ชันแอพ */
     private fun getAppVersion(): String {
         return try {
             val pInfo = packageManager.getPackageInfo(packageName, 0)
@@ -29,35 +43,45 @@ class MainActivity: FlutterActivity() {
         }
     }
 
+    // ==================== MethodChannel Configuration ====================
+    
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
-        // Security Method Channel
+        // ==================== Security Channel ====================
+        // ใช้สำหรับ: ตรวจสอบ root, emulator, จัดการ security logs
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURITY_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                // ตรวจสอบความปลอดภัยของเครื่อง (root, emulator, debugger, signature)
                 "performSecurityCheck" -> {
                     val expectedSignature = call.argument<String>("expectedSignature")
                     val status = SecurityService.performSecurityCheck(this, expectedSignature)
                     result.success(status.toMap())
                 }
+                // ตรวจสอบ root แบบรวดเร็ว
                 "quickRootCheck" -> {
                     result.success(SecurityService.quickRootCheck())
                 }
+                // ตรวจสอบ emulator แบบรวดเร็ว
                 "quickEmulatorCheck" -> {
                     result.success(SecurityService.quickEmulatorCheck())
                 }
+                // ดึงรายการ log ทั้งหมด
                 "getLogs" -> {
                     val logs = SecurityLogger.getLogsAsList(this)
                     result.success(logs)
                 }
+                // ล้าง log ทั้งหมด
                 "clearLogs" -> {
                     SecurityLogger.clearLogs(this)
                     result.success(true)
                 }
+                // export log เป็นไฟล์ text
                 "exportLogs" -> {
                     val file = SecurityLogger.exportLogs(this)
                     result.success(file?.absolutePath)
                 }
+                // บันทึก log จาก Flutter
                 "logEvent" -> {
                     val level = call.argument<String>("level") ?: "INFO"
                     val message = call.argument<String>("message") ?: ""
@@ -78,17 +102,21 @@ class MainActivity: FlutterActivity() {
             }
         }
         
-        // Main native Method Channel
+        // ==================== Native Channel ====================
+        // ใช้สำหรับ: จัดการ accessibility, blocklist, ดึงรายการแอพ
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
+                // ตรวจสอบว่า Accessibility Service เปิดอยู่หรือไม่
                 "isAccessibilityEnabled" -> {
                     result.success(isAccessibilitySettingsOn(this))
                 }
+                // เปิดหน้าตั้งค่า Accessibility
                 "openAccessibilitySettings" -> {
                     val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                     startActivity(intent)
                     result.success(true)
                 }
+                // อัปเดตรายการแอพที่ถูกบล็อก
                 "updateBlocklist" -> {
                     val blockedApps = call.argument<List<String>>("blockedApps")
                     if (blockedApps != null) {
@@ -100,6 +128,7 @@ class MainActivity: FlutterActivity() {
                         result.error("INVALID_ARGUMENT", "Blocked apps list is null", null)
                     }
                 }
+                // ดึงรายการแอพทั้งหมดที่ติดตั้ง (launcher apps)
                 "getLauncherApps" -> {
                     val pm = packageManager
                     val mainIntent = Intent(Intent.ACTION_MAIN, null)
@@ -122,10 +151,12 @@ class MainActivity: FlutterActivity() {
                     }
                     result.success(appList)
                 }
+                // ดึง action ที่เปิดแอพมา (เช่น unlock_time_limit)
                 "getLaunchIntentAction" -> {
                     val action = intent.getStringExtra("action")
                     result.success(action)
                 }
+                // ดึง path ของโฟลเดอร์ files
                 "getFilesDir" -> {
                     result.success(applicationContext.filesDir.absolutePath)
                 }
@@ -135,15 +166,19 @@ class MainActivity: FlutterActivity() {
             }
         }
         
-        // Child Mode Service Method Channel
+        // ==================== Child Mode Service Channel ====================
+        // ใช้สำหรับ: ควบคุม foreground service ของโหมดเด็ก
+        // - แสดง notification ถาวร
+        // - รีสตาร์ทอัตโนมัติเมื่อแอพถูกปิด
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.kidguard/childmode").setMethodCallHandler { call, result ->
             when (call.method) {
+                // เริ่ม foreground service พร้อมแสดง notification
                 "startService" -> {
                     val childName = call.argument<String>("childName") ?: "ลูก"
                     val screenTime = call.argument<Int>("screenTime") ?: 0
                     val dailyLimit = call.argument<Int>("dailyLimit") ?: 0
                     
-                    // Save to SharedPreferences for service updates
+                    // บันทึกลง SharedPreferences เพื่อให้ service อ่านได้
                     val prefs = getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
                     prefs.edit()
                         .putString("childName", childName)
@@ -164,17 +199,19 @@ class MainActivity: FlutterActivity() {
                     }
                     result.success(true)
                 }
+                // หยุด foreground service
                 "stopService" -> {
                     val serviceIntent = Intent(this, ChildModeService::class.java)
                     stopService(serviceIntent)
                     result.success(true)
                 }
+                // อัปเดตข้อมูลใน notification
                 "updateService" -> {
                     val childName = call.argument<String>("childName") ?: "ลูก"
                     val screenTime = call.argument<Int>("screenTime") ?: 0
                     val dailyLimit = call.argument<Int>("dailyLimit") ?: 0
                     
-                    // Update SharedPreferences for next notification update cycle
+                    // อัปเดต SharedPreferences สำหรับรอบ notification ถัดไป
                     val prefs = getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
                     prefs.edit()
                         .putString("childName", childName)
@@ -184,12 +221,14 @@ class MainActivity: FlutterActivity() {
                     
                     result.success(true)
                 }
+                // ตรวจสอบว่า service กำลังทำงานอยู่หรือไม่
                 "isServiceRunning" -> {
                     result.success(ChildModeService.isServiceRunning())
                 }
+                // ดึง action ที่เปิดมา (เช่น จากการกด notification)
                 "getLaunchAction" -> {
                     val action = intent.getStringExtra("action")
-                    // Clear the action so it doesn't trigger again
+                    // ล้าง action เพื่อไม่ให้ทำงานซ้ำ
                     intent.removeExtra("action")
                     result.success(action)
                 }
@@ -199,8 +238,11 @@ class MainActivity: FlutterActivity() {
             }
         }
 
+        // ==================== Overlay Channel ====================
+        // ใช้สำหรับ: แสดง/ซ่อน overlay บล็อกแอพ (หน้าจอเต็มเมื่อเปิดแอพที่ถูกบล็อก)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.kid_guard/overlay").setMethodCallHandler { call, result ->
             when (call.method) {
+                // ตรวจสอบ permission การแสดง overlay
                 "checkPermission" -> {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                         result.success(Settings.canDrawOverlays(this))
@@ -208,6 +250,7 @@ class MainActivity: FlutterActivity() {
                         result.success(true)
                     }
                 }
+                // ขอ permission การแสดง overlay
                 "requestPermission" -> {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                         if (!Settings.canDrawOverlays(this)) {
@@ -217,6 +260,7 @@ class MainActivity: FlutterActivity() {
                     }
                     result.success(true)
                 }
+                // แสดง overlay บล็อกแอพ
                 "showOverlay" -> {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
                         result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
@@ -232,6 +276,7 @@ class MainActivity: FlutterActivity() {
                     }
                     result.success(true)
                 }
+                // ซ่อน overlay
                 "hideOverlay" -> {
                     val intent = Intent(this, OverlayService::class.java)
                     stopService(intent)
@@ -244,6 +289,13 @@ class MainActivity: FlutterActivity() {
         }
     }
 
+    // ==================== Helper Functions ====================
+    
+    /**
+     * ตรวจสอบว่า Accessibility Service เปิดใช้งานอยู่หรือไม่
+     * - ใช้ตรวจสอบว่า AppAccessibilityService กำลังทำงาน
+     * - จำเป็นสำหรับการบล็อกแอพและติดตามการใช้งาน
+     */
     private fun isAccessibilitySettingsOn(mContext: Context): Boolean {
         var accessibilityEnabled = 0
         val service = packageName + "/" + AppAccessibilityService::class.java.canonicalName

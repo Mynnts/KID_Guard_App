@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import '../../config/routes.dart';
+import '../../logic/providers/auth_provider.dart';
 
 class SelectUserScreen extends StatefulWidget {
   const SelectUserScreen({super.key});
@@ -13,6 +16,8 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _isCheckingAuth = true;
+  bool _hasNavigated = false;
 
   // Minimal Premium Colors
   static const _primaryColor = Color(0xFF1A1A2E);
@@ -43,6 +48,44 @@ class _SelectUserScreenState extends State<SelectUserScreen>
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     _animController.forward();
+
+    // Check auth state after frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthState();
+    });
+  }
+
+  Future<void> _checkAuthState() async {
+    // Use Firebase Auth directly to check if user is logged in
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+
+    if (!mounted) return;
+
+    if (firebaseUser != null) {
+      // User is logged in, wait for AuthProvider to load user data
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Wait for AuthProvider to sync with Firebase (max 3 seconds)
+      int attempts = 0;
+      while (authProvider.userModel == null && attempts < 30) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+        if (!mounted) return;
+      }
+
+      // Redirect to parent dashboard
+      if (mounted && !_hasNavigated) {
+        _hasNavigated = true;
+        Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
+      }
+    } else {
+      // User is not logged in, show select user screen
+      if (mounted) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
+    }
   }
 
   @override
@@ -53,6 +96,37 @@ class _SelectUserScreenState extends State<SelectUserScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show loading while checking auth state
+    if (_isCheckingAuth) {
+      return Scaffold(
+        backgroundColor: _bgColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: _accentColor,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(
+                  Icons.shield_outlined,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(_accentColor),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(

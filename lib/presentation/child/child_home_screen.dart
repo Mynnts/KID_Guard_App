@@ -34,6 +34,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   bool _isChildrenModeActive = false;
   StreamSubscription<bool>? _syncRequestSubscription;
   StreamSubscription<List<String>>? _blockedAppsSubscription;
+  StreamSubscription<DocumentSnapshot>? _childDocSubscription;
+  Timer? _screenTimeTimer;
 
   // Modern Sage Green Theme Colors
   static const _primaryColor = Color(0xFF6B9080);
@@ -87,6 +89,8 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     WidgetsBinding.instance.removeObserver(this);
     _syncRequestSubscription?.cancel();
     _blockedAppsSubscription?.cancel();
+    _childDocSubscription?.cancel();
+    _screenTimeTimer?.cancel();
     _updateOnlineStatus(false);
     super.dispose();
   }
@@ -455,9 +459,14 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     final user = authProvider.userModel;
 
     if (child != null && user != null) {
-      // Register this device and sync apps
+      // Register this device and sync apps immediately when child opens home screen
+      final deviceId = await _deviceService.getDeviceId();
+      debugPrint(
+        '📱 ChildHome: Registering device $deviceId for child ${child.name}',
+      );
       await _deviceService.registerDevice(user.uid, child.id);
       await _appService.syncAppsForDevice(user.uid, child.id);
+      debugPrint('✅ ChildHome: Apps synced for device $deviceId');
 
       // Listen for sync requests for this device
       _syncRequestSubscription = _deviceService
@@ -476,7 +485,9 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             _updateNativeBlocklist(blockedPackages);
           });
 
-      FirebaseFirestore.instance
+      // Cancel previous listener if exists to prevent duplicates
+      await _childDocSubscription?.cancel();
+      _childDocSubscription = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('children')
@@ -524,7 +535,11 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
             }
           });
 
-      Timer.periodic(const Duration(seconds: 30), (timer) async {
+      // Cancel previous timer if exists
+      _screenTimeTimer?.cancel();
+      _screenTimeTimer = Timer.periodic(const Duration(seconds: 30), (
+        timer,
+      ) async {
         if (!mounted || !_isChildrenModeActive) {
           timer.cancel();
           return;

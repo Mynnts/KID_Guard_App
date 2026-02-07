@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../../data/services/auth_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/child_model.dart';
@@ -15,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   // Initialize auth state
   List<ChildModel> _children = [];
   ChildModel? _currentChild;
+  StreamSubscription<DocumentSnapshot>? _currentChildSubscription;
 
   List<ChildModel> get children => _children;
   ChildModel? get currentChild => _currentChild;
@@ -154,12 +157,34 @@ class AuthProvider with ChangeNotifier {
   Future<void> selectChild(ChildModel child) async {
     _currentChild = child;
     notifyListeners();
+
+    // Cancel previous subscription if exists
+    await _currentChildSubscription?.cancel();
+
+    // Subscribe to realtime updates for this child
     if (_userModel != null) {
+      _currentChildSubscription = FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userModel!.uid)
+          .collection('children')
+          .doc(child.id)
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              _currentChild = ChildModel.fromMap(snapshot.data()!, snapshot.id);
+              notifyListeners();
+            }
+          });
+
       await _authService.updateChildStatus(_userModel!.uid, child.id, true);
     }
   }
 
   Future<void> logoutChild() async {
+    // Cancel realtime subscription
+    await _currentChildSubscription?.cancel();
+    _currentChildSubscription = null;
+
     if (_userModel != null && _currentChild != null) {
       await _authService.updateChildStatus(
         _userModel!.uid,

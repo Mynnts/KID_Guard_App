@@ -57,7 +57,17 @@ class BackgroundService {
   });
 
   Future<void> startMonitoring(String childId, String parentId) async {
-    if (_isMonitoring) return;
+    // If already monitoring same child, skip
+    if (_isMonitoring &&
+        _currentChildId == childId &&
+        _currentParentId == parentId) {
+      return;
+    }
+
+    // If monitoring different child, stop first then restart
+    if (_isMonitoring) {
+      await stopMonitoring();
+    }
 
     _currentChildId = childId;
     _currentParentId = parentId;
@@ -504,6 +514,10 @@ class BackgroundService {
             .collection('daily_stats')
             .doc(dateStr)
             .set(appUpdates, SetOptions(merge: true));
+
+        print(
+          '📊 BackgroundService: Saved app usage - ${appUpdates.keys.where((k) => k.startsWith('apps.')).length} apps, screenTime incremented, date: $dateStr',
+        );
 
         // Clear session buffer
         _appUsageSession.clear();

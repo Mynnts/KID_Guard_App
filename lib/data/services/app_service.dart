@@ -1,3 +1,4 @@
+// ==================== นำเข้า Packages ====================
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:installed_apps/installed_apps.dart';
@@ -6,24 +7,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/app_info_model.dart';
 import 'device_service.dart';
 
+// ==================== AppService ====================
+/// บริการจัดการแอพที่ติดตั้งในเครื่อง
+///
+/// ฟังก์ชันหลัก:
+/// - fetchInstalledApps() - ดึงรายการแอพทั้งหมดในเครื่อง
+/// - syncAppsForDevice() - sync รายการแอพไปยัง Firestore
+/// - streamApps() - stream แอพจาก Firestore (ตามอุปกรณ์)
+/// - streamAllDevicesApps() - รวมแอพจากทุกอุปกรณ์
+/// - toggleAppLock() - ล็อก/ปลดล็อกแอพ
+///
+/// โครงสร้าง Firestore:
+/// /users/{parentUid}/children/{childId}/devices/{deviceId}/apps/{appId}
 class AppService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DeviceService _deviceService = DeviceService();
   static const platform = MethodChannel('com.kidguard/native');
 
+  // ==================== ดึงรายการแอพ ====================
+  /// ดึงรายการแอพที่ติดตั้งในเครื่อง
+  /// - ใช้ InstalledApps plugin ดึงข้อมูลแอพ
+  /// - กรองเฉพาะ launcher apps (แอพที่ผู้ใช้เปิดได้)
+  /// - แปลง icon เป็น base64 สำหรับบันทึก
   Future<List<AppInfoModel>> fetchInstalledApps() async {
     try {
-      // 1. Get all installed apps with icons from the plugin
+      // ดึงแอพทั้งหมดพร้อม icon
       List<AppInfo> allApps = await InstalledApps.getInstalledApps(
         withIcon: true,
       );
 
-      // 2. Get list of launcher apps (user-facing) and system status from Native
+      // ดึง launcher apps จาก native (กรองแอพที่ผู้ใช้เปิดได้)
       final List<dynamic> launcherAppsData = await platform.invokeMethod(
         'getLauncherApps',
       );
 
-      // Create a map for quick lookup of system status by package name
+      // สร้าง map เพื่อตรวจสอบว่าเป็น system app หรือไม่
       final Map<String, bool> systemAppMap = {};
       for (var data in launcherAppsData) {
         if (data is Map) {
@@ -31,7 +49,7 @@ class AppService {
         }
       }
 
-      // 3. Filter and Map
+      // กรองและแปลงข้อมูล
       List<AppInfoModel> filteredApps = [];
 
       for (var app in allApps) {
@@ -60,7 +78,10 @@ class AppService {
     }
   }
 
-  /// Sync apps for this device to Firestore
+  // ==================== Sync แอพไปยัง Firestore ====================
+  /// บันทึกรายการแอพของอุปกรณ์นี้ไปยัง Firestore
+  /// - ใช้ batch write เพื่อประสิทธิภาพ
+  /// - ไม่ overwrite isLocked เพื่อรักษาการตั้งค่าของผู้ปกครอง
   Future<void> syncAppsForDevice(String parentUid, String childId) async {
     try {
       final deviceId = await _deviceService.getDeviceId();
@@ -82,7 +103,7 @@ class AppService {
       int count = 0;
 
       for (var app in apps) {
-        // Sanitize package name for use as document ID
+        // แปลง package name เป็น document ID (แทน . ด้วย _)
         final docId = app.packageName.replaceAll('.', '_');
         final docRef = collectionRef.doc(docId);
 
@@ -91,12 +112,13 @@ class AppService {
           'name': app.name,
           'isSystemApp': app.isSystemApp,
           'iconBase64': app.iconBase64,
-          // We do NOT overwrite isLocked to preserve parent's setting
+          // ไม่ overwrite isLocked เพื่อรักษาการตั้งค่าของผู้ปกครอง
         };
 
         batch.set(docRef, data, SetOptions(merge: true));
 
         count++;
+        // Firestore จำกัด 500 operations ต่อ batch
         if (count >= 400) {
           await batch.commit();
           batch = _firestore.batch();

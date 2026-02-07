@@ -1,35 +1,65 @@
 package com.seniorproject.kid_guard
 
+// ==================== นำเข้า Libraries ====================
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileInputStream
+import java.security.KeyStore
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 import android.util.Base64
 
 /**
- * SecurityLogger - Encrypted logging system for Kid Guard
- * Features:
- * - Encrypted log storage
- * - Log rotation
- * - Size limits
- * - Different log levels
+ * ==================== SecurityLogger ====================
+ * ระบบบันทึก Log แบบเข้ารหัสสำหรับ Kid Guard
+ * 
+ * คุณสมบัติ:
+ * - เก็บ Log แบบเข้ารหัสโดยใช้ Android Keystore (ปลอดภัย ดึง key ออกไม่ได้)
+ * - ใช้ AES-GCM encryption (มี authentication ป้องกันการแก้ไข)
+ * - หมุนเวียนไฟล์ Log อัตโนมัติ (log rotation)
+ * - จำกัดขนาดไฟล์
+ * - รองรับหลายระดับ log (DEBUG, INFO, WARN, ERROR, SECURITY)
+ * 
+ * การใช้งาน:
+ *   SecurityLogger.init(context)  // เรียกครั้งแรก
+ *   SecurityLogger.info(context, "ข้อความ")
+ *   SecurityLogger.error(context, "เกิดข้อผิดพลาด", mapOf("key" to value))
  */
 object SecurityLogger {
     
+    // ==================== ค่าคงที่ (Constants) ====================
     private const val TAG = "SecurityLogger"
-    private const val LOG_DIR = "security_logs"
-    private const val MAX_LOG_SIZE = 5 * 1024 * 1024 // 5MB
-    private const val MAX_LOG_FILES = 5
-    private const val ENCRYPTION_KEY = "K1dGu4rdS3cur1ty" // 16 bytes for AES-128
+    private const val LOG_DIR = "security_logs"           // โฟลเดอร์เก็บ log
+    private const val MAX_LOG_SIZE = 5 * 1024 * 1024      // ขนาดสูงสุด 5MB ต่อไฟล์
+    private const val MAX_LOG_FILES = 5                    // เก็บไฟล์สูงสุด 5 ไฟล์
+    private const val KEYSTORE_ALIAS = "KidGuardLogKey"   // ชื่อ key ใน Keystore
+    private const val GCM_IV_LENGTH = 12                   // ความยาว IV สำหรับ GCM
+    private const val GCM_TAG_LENGTH = 128                 // ความยาว authentication tag
     
+    // ==================== ระดับความรุนแรงของ Log ====================
     enum class LogLevel {
-        DEBUG, INFO, WARN, ERROR, SECURITY
+        DEBUG,    // ข้อมูล debug สำหรับนักพัฒนา
+        INFO,     // ข้อมูลทั่วไป
+        WARN,     // คำเตือน
+        ERROR,    // ข้อผิดพลาด
+        SECURITY  // เหตุการณ์ด้านความปลอดภัย
     }
     
+    // ==================== โครงสร้างข้อมูล Log ====================
+    /**
+     * LogEntry - โครงสร้างสำหรับเก็บข้อมูล log แต่ละรายการ
+     * @param timestamp เวลาที่บันทึก (milliseconds)
+     * @param level ระดับความรุนแรง
+     * @param message ข้อความ log
+     * @param data ข้อมูลเพิ่มเติม (optional)
+     */
     data class LogEntry(
         val timestamp: Long,
         val level: LogLevel,
@@ -44,8 +74,12 @@ object SecurityLogger {
         }
     }
     
+    // ==================== ฟังก์ชันสาธารณะ (Public Functions) ====================
+    
     /**
-     * Initialize logger
+     * เริ่มต้นระบบ Logger
+     * - สร้างโฟลเดอร์เก็บ log (ถ้ายังไม่มี)
+     * - หมุนเวียนไฟล์เก่าออก
      */
     fun init(context: Context) {
         val logDir = getLogDir(context)
@@ -56,7 +90,10 @@ object SecurityLogger {
     }
     
     /**
-     * Log a message with specified level
+     * บันทึก log พร้อมระบุระดับ
+     * @param level ระดับ log (DEBUG, INFO, WARN, ERROR, SECURITY)
+     * @param message ข้อความที่ต้องการบันทึก
+     * @param data ข้อมูลเพิ่มเติม (optional)
      */
     fun log(context: Context, level: LogLevel, message: String, data: Map<String, Any>? = null) {
         val entry = LogEntry(
@@ -68,23 +105,19 @@ object SecurityLogger {
         writeLog(context, entry)
     }
     
-    /**
-     * Log debug message
-     */
+    // ==================== ฟังก์ชันลัดสำหรับแต่ละระดับ ====================
+    
+    /** บันทึก log ระดับ DEBUG */
     fun debug(context: Context, message: String, data: Map<String, Any>? = null) {
         log(context, LogLevel.DEBUG, message, data)
     }
     
-    /**
-     * Log info message
-     */
+    /** บันทึก log ระดับ INFO */
     fun info(context: Context, message: String, data: Map<String, Any>? = null) {
         log(context, LogLevel.INFO, message, data)
     }
     
-    /**
-     * Log warning message
-     */
+    /** บันทึก log ระดับ WARN */
     fun warn(context: Context, message: String, data: Map<String, Any>? = null) {
         log(context, LogLevel.WARN, message, data)
     }
@@ -197,12 +230,14 @@ object SecurityLogger {
         }
     }
     
-    // ==================== Private Methods ====================
+    // ==================== ฟังก์ชันภายใน (Private Methods) ====================
     
+    /** ดึง path ของโฟลเดอร์เก็บ log */
     private fun getLogDir(context: Context): File {
         return File(context.filesDir, LOG_DIR)
     }
     
+    /** ดึง path ของไฟล์ log วันนี้ */
     private fun getCurrentLogFile(context: Context): File {
         val logDir = getLogDir(context)
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -210,6 +245,11 @@ object SecurityLogger {
         return File(logDir, fileName)
     }
     
+    /**
+     * เขียน log entry ลงไฟล์
+     * - ตรวจสอบขนาดไฟล์ ถ้าเกินจะ rotate
+     * - อ่านข้อมูลเก่า, เพิ่มข้อมูลใหม่, เข้ารหัสและเขียนกลับ
+     */
     private fun writeLog(context: Context, entry: LogEntry) {
         try {
             val logFile = getCurrentLogFile(context)
@@ -246,27 +286,79 @@ object SecurityLogger {
         }
     }
     
+    // ==================== ระบบเข้ารหัส (Encryption System) ====================
+    
+    /**
+     * ดึงหรือสร้าง key จาก Android Keystore
+     * - Key ถูกเก็บใน hardware security module
+     * - ไม่สามารถดึงออกมาได้ (ปลอดภัยสูง)
+     * - ใช้ AES-256 bits
+     */
+    private fun getOrCreateSecretKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        
+        // ตรวจสอบว่ามี key อยู่แล้วหรือไม่
+        keyStore.getKey(KEYSTORE_ALIAS, null)?.let {
+            return it as SecretKey
+        }
+        
+        // สร้าง key ใหม่ถ้ายังไม่มี
+        val keyGenerator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES,
+            "AndroidKeyStore"
+        )
+        keyGenerator.init(
+            KeyGenParameterSpec.Builder(
+                KEYSTORE_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .setKeySize(256)
+            .build()
+        )
+        return keyGenerator.generateKey()
+    }
+    
     private fun encryptAndWrite(file: File, content: String) {
-        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-        val keySpec = SecretKeySpec(ENCRYPTION_KEY.toByteArray(), "AES")
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec)
-        
-        val encrypted = cipher.doFinal(content.toByteArray())
-        val encoded = Base64.encodeToString(encrypted, Base64.DEFAULT)
-        
-        FileOutputStream(file).use { it.write(encoded.toByteArray()) }
+        try {
+            val secretKey = getOrCreateSecretKey()
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+            
+            val iv = cipher.iv // GCM generates random IV automatically
+            val encrypted = cipher.doFinal(content.toByteArray(Charsets.UTF_8))
+            
+            // Prepend IV to encrypted data (IV + encrypted content)
+            val combined = iv + encrypted
+            val encoded = Base64.encodeToString(combined, Base64.NO_WRAP)
+            
+            FileOutputStream(file).use { it.write(encoded.toByteArray()) }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Encryption failed: ${e.message}")
+        }
     }
     
     private fun decryptFile(file: File): String {
-        val encoded = FileInputStream(file).bufferedReader().use { it.readText() }
-        val encrypted = Base64.decode(encoded, Base64.DEFAULT)
-        
-        val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
-        val keySpec = SecretKeySpec(ENCRYPTION_KEY.toByteArray(), "AES")
-        cipher.init(Cipher.DECRYPT_MODE, keySpec)
-        
-        val decrypted = cipher.doFinal(encrypted)
-        return String(decrypted)
+        return try {
+            val encoded = FileInputStream(file).bufferedReader().use { it.readText() }
+            val combined = Base64.decode(encoded, Base64.NO_WRAP)
+            
+            // Extract IV (first 12 bytes) and encrypted content
+            val iv = combined.copyOfRange(0, GCM_IV_LENGTH)
+            val encrypted = combined.copyOfRange(GCM_IV_LENGTH, combined.size)
+            
+            val secretKey = getOrCreateSecretKey()
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val spec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
+            
+            String(cipher.doFinal(encrypted), Charsets.UTF_8)
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Decryption failed: ${e.message}")
+            "" // Return empty string if decryption fails (old logs may use old key)
+        }
     }
     
     private fun performLogRotation(context: Context) {

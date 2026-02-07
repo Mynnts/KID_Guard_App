@@ -1,3 +1,4 @@
+// ==================== นำเข้า Packages ====================
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,15 +14,26 @@ import 'core/utils/security_logger.dart';
 import 'package:workmanager/workmanager.dart';
 import 'logic/background_worker.dart';
 
+// ==================== จุดเริ่มต้นแอพ ====================
+/// ฟังก์ชัน main() - จุดเริ่มต้นของแอพ
+/// 1. Initialize Firebase
+/// 2. Initialize WorkManager สำหรับ background tasks
+/// 3. รัน MyApp widget
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
+  // ตั้งค่า WorkManager สำหรับงาน background (sync, tracking)
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
   runApp(const MyApp());
 }
 
+// ==================== Widget หลัก ====================
+/// MyApp - Widget หลักที่ครอบทั้งแอพ
+/// - ตรวจสอบความปลอดภัยของเครื่องเมื่อเริ่มแอพ
+/// - ตั้งค่า Providers (Auth, Theme, Locale)
+/// - ตั้งค่า routes และ themes
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -31,15 +43,20 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final SecurityService _securityService = SecurityService();
-  bool _securityCheckDone = false;
-  SecurityStatus? _securityStatus;
+  bool _securityCheckDone = false; // ตรวจสอบเสร็จแล้วหรือยัง
+  SecurityStatus? _securityStatus; // ผลการตรวจสอบความปลอดภัย
 
   @override
   void initState() {
     super.initState();
-    _performSecurityCheck();
+    _performSecurityCheck(); // ตรวจสอบความปลอดภัยทันทีเมื่อเปิดแอพ
   }
 
+  // ==================== ตรวจสอบความปลอดภัย ====================
+  /// ตรวจสอบว่าเครื่องมีความเสี่ยงหรือไม่
+  /// - Root detection
+  /// - Emulator detection
+  /// - Debugger detection
   Future<void> _performSecurityCheck() async {
     try {
       final status = await _securityService.performSecurityCheck();
@@ -48,6 +65,7 @@ class _MyAppState extends State<MyApp> {
         _securityCheckDone = true;
       });
 
+      // บันทึก log ถ้าพบปัญหาความปลอดภัย
       if (status.hasSecurityIssue) {
         await SecurityLogger.security(
           'Security risk detected on startup',
@@ -66,9 +84,14 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // ==================== สร้าง UI ====================
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+      // ==================== Providers ====================
+      // AuthProvider - จัดการ login, user data, children data
+      // ThemeProvider - จัดการ light/dark mode
+      // LocaleProvider - จัดการภาษา (ไทย/อังกฤษ)
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
@@ -88,11 +111,12 @@ class _MyAppState extends State<MyApp> {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            initialRoute: AppRoutes.selectUser,
+            initialRoute:
+                AppRoutes.selectUser, // เริ่มที่หน้าเลือก parent/child
             routes: AppRoutes.getRoutes(),
             debugShowCheckedModeBanner: false,
             builder: (context, child) {
-              // Show security warning dialog if issues detected
+              // แสดง dialog เตือนความปลอดภัยถ้าพบปัญหา
               if (_securityCheckDone &&
                   _securityStatus != null &&
                   _securityStatus!.hasSecurityIssue) {
@@ -107,6 +131,8 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+
+  // ==================== Dialog เตือนความปลอดภัย ====================
 
   bool _dialogShown = false;
 
