@@ -363,9 +363,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                             ],
                           ),
                           const SizedBox(height: 2),
-                          const Text(
-                            'Tap to unlock device',
-                            style: TextStyle(
+                          Text(
+                            _getLockReasonText(lockedChild.lockReason),
+                            style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
@@ -487,6 +487,26 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           ),
         );
       }
+    }
+  }
+
+  /// Get user-friendly text for lock reason
+  String _getLockReasonText(String lockReason) {
+    switch (lockReason) {
+      case 'blocked_app':
+        return 'App Blocked • Tap to unlock';
+      case 'time_limit':
+        return 'Time Limit Reached • Tap to unlock';
+      case 'sleep':
+        return 'Sleep Time • Tap to unlock';
+      case 'quiet':
+        return 'Quiet Time • Tap to unlock';
+      case 'screen_timeout':
+        return 'Screen Timeout • Tap to unlock';
+      case 'pause':
+        return 'Device Paused • Tap to unlock';
+      default:
+        return 'Tap to unlock device';
     }
   }
 

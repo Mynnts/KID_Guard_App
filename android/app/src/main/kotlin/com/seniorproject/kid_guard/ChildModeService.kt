@@ -20,7 +20,6 @@ class ChildModeService : Service() {
     
     private var handler: Handler? = null
     private var updateRunnable: Runnable? = null
-    private var syncRunnable: Runnable? = null
     
     // Firebase sync helper for background operation
     private var firebaseSyncHelper: FirebaseSyncHelper? = null
@@ -66,11 +65,8 @@ class ChildModeService : Service() {
         // Schedule periodic updates for notification
         scheduleUpdates()
         
-        // Schedule Firebase sync (every 60 seconds)
-        scheduleFirebaseSync()
-        
-        // Do initial sync immediately
-        firebaseSyncHelper?.syncFromFirestore()
+        // Start real-time Firestore listeners (instant updates, replaces old 60s polling)
+        firebaseSyncHelper?.startRealtimeListeners()
         
         return START_STICKY
     }
@@ -95,26 +91,6 @@ class ChildModeService : Service() {
         handler?.postDelayed(updateRunnable!!, 30000)
     }
     
-    /**
-     * Schedule periodic Firebase sync for background operation
-     * This allows the service to receive updates even when Flutter app is closed
-     */
-    private fun scheduleFirebaseSync() {
-        syncRunnable?.let { handler?.removeCallbacks(it) }
-        
-        syncRunnable = object : Runnable {
-            override fun run() {
-                // Sync from Firebase
-                firebaseSyncHelper?.syncFromFirestore()
-                println("ChildModeService: Firebase sync executed")
-                
-                // Sync every 60 seconds
-                handler?.postDelayed(this, 60000)
-            }
-        }
-        // Start after 60 seconds (initial sync is done immediately in onStartCommand)
-        handler?.postDelayed(syncRunnable!!, 60000)
-    }
     
     private fun updateNotification(childName: String, screenTime: Int, dailyLimit: Int) {
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -195,12 +171,12 @@ class ChildModeService : Service() {
         super.onDestroy()
         isRunning = false
         
-        // Set offline status
+        // Stop realtime listeners and set offline status
+        firebaseSyncHelper?.stopListeners()
         firebaseSyncHelper?.setOfflineStatus()
         
         // Cancel all runnables
         updateRunnable?.let { handler?.removeCallbacks(it) }
-        syncRunnable?.let { handler?.removeCallbacks(it) }
         handler = null
     }
     

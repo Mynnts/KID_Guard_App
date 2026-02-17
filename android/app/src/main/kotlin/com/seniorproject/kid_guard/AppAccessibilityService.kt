@@ -17,6 +17,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
+import com.google.firebase.firestore.FirebaseFirestore
 
 /**
  * Enhanced Accessibility Service that runs in the background
@@ -76,6 +77,9 @@ class AppAccessibilityService : AccessibilityService() {
     enum class RestrictionType {
         NONE, SLEEP, QUIET, TIME_LIMIT, BLOCKED_APP, DEVICE_LOCKED, SCREEN_TIMEOUT
     }
+
+    // Firestore reference for updating lock status
+    private val firestore = FirebaseFirestore.getInstance()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -613,6 +617,9 @@ class AppAccessibilityService : AccessibilityService() {
             isOverlayShowing = true
             lastBlockedPackage = reason
             
+            // Update Firestore so parent sees unlock FAB
+            setLockedInFirestore(true, currentRestrictionType.name.lowercase())
+            
             // Start auto-exit timer for blocked apps (10 seconds)
             startAutoExitTimer()
         } catch (e: Exception) {
@@ -665,10 +672,49 @@ class AppAccessibilityService : AccessibilityService() {
             val intent = Intent(this, OverlayService::class.java)
             stopService(intent)
             isOverlayShowing = false
+            
+            // Clear lock in Firestore for temporary blocks (blocked app, screen timeout)
+            if (currentRestrictionType == RestrictionType.BLOCKED_APP || 
+                currentRestrictionType == RestrictionType.SCREEN_TIMEOUT) {
+                setLockedInFirestore(false, "")
+            }
             // Note: currentRestrictionType is reset by the caller based on context
         } catch (e: Exception) {
             e.printStackTrace()
             isOverlayShowing = false
+        }
+    }
+
+    /**
+     * Update isLocked status in Firestore so parent can see unlock FAB
+     * This makes the unlock button appear on parent's device for ALL blocking events
+     */
+    private fun setLockedInFirestore(isLocked: Boolean, reason: String) {
+        if (parentId.isEmpty() || childId.isEmpty()) return
+        
+        try {
+            val updates = mutableMapOf<String, Any?>(
+                "isLocked" to isLocked,
+                "lockReason" to reason
+            )
+            
+            if (isLocked) {
+                updates["lockedAt"] = com.google.firebase.firestore.FieldValue.serverTimestamp()
+            }
+            
+            firestore.collection("users")
+                .document(parentId)
+                .collection("children")
+                .document(childId)
+                .update(updates as Map<String, Any>)
+                .addOnSuccessListener {
+                    println("KidGuard: Firestore isLocked=$isLocked, reason=$reason")
+                }
+                .addOnFailureListener { e ->
+                    println("KidGuard: Failed to update lock status: ${e.message}")
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

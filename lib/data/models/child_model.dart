@@ -17,6 +17,8 @@ class ChildModel {
   final bool isChildModeActive;
   final bool unlockRequested; // Parent can request unlock remotely
   final DateTime? timeLimitDisabledUntil; // Time limit disabled until this time
+  final String
+  lockReason; // Reason for lock (blocked_app, time_limit, sleep, quiet, screen_timeout)
   final int points;
 
   ChildModel({
@@ -35,6 +37,7 @@ class ChildModel {
     this.isChildModeActive = false,
     this.unlockRequested = false,
     this.timeLimitDisabledUntil,
+    this.lockReason = '',
     this.points = 0,
   });
 
@@ -64,6 +67,7 @@ class ChildModel {
       timeLimitDisabledUntil: map['timeLimitDisabledUntil'] != null
           ? (map['timeLimitDisabledUntil'] as Timestamp).toDate()
           : null,
+      lockReason: map['lockReason'] ?? '',
       points: map['points'] ?? 0,
     );
   }
@@ -84,6 +88,7 @@ class ChildModel {
       'isChildModeActive': isChildModeActive,
       'unlockRequested': unlockRequested,
       'timeLimitDisabledUntil': timeLimitDisabledUntil,
+      'lockReason': lockReason,
       'points': points,
     };
   }

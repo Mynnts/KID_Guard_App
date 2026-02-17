@@ -3,12 +3,14 @@ package com.seniorproject.kid_guard
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
 /**
  * Helper class to sync Firebase data in background for ChildModeService
+ * Uses Firestore real-time snapshot listeners for instant updates
  * This allows the child device to receive updates without Flutter app running
  */
 class FirebaseSyncHelper(private val context: Context) {
@@ -18,6 +20,11 @@ class FirebaseSyncHelper(private val context: Context) {
     
     private var parentId: String = ""
     private var childId: String = ""
+    
+    // Realtime listener registrations
+    private var settingsListener: ListenerRegistration? = null
+    private var blockedAppsListeners: MutableList<ListenerRegistration> = mutableListOf()
+    private var devicesListener: ListenerRegistration? = null
     
     // Callback for unlock request
     var onUnlockRequested: (() -> Unit)? = null
@@ -51,23 +58,83 @@ class FirebaseSyncHelper(private val context: Context) {
     }
     
     /**
-     * Sync all data from Firestore
+     * Start real-time Firestore listeners for instant updates
+     * Replaces the old polling-based syncFromFirestore()
      */
-    fun syncFromFirestore() {
+    fun startRealtimeListeners() {
         if (parentId.isEmpty() || childId.isEmpty()) {
-            println("FirebaseSyncHelper: No IDs, skipping sync")
+            println("FirebaseSyncHelper: No IDs, skipping realtime listeners")
             return
         }
         
-        syncBlockedApps()
-        syncChildSettings()
+        // Stop any existing listeners first
+        stopListeners()
+        
+        // Start real-time listeners
+        listenToBlockedApps()
+        listenToChildSettings()
         updateOnlineStatus()
+        
+        println("FirebaseSyncHelper: Realtime listeners started")
     }
     
     /**
-     * Sync blocked apps from all devices
+     * Listen to blocked apps across all devices in real-time
+     * When parent blocks/unblocks an app, the change is reflected instantly
      */
-    private fun syncBlockedApps() {
+    private fun listenToBlockedApps() {
+        val devicesRef = firestore.collection("users")
+            .document(parentId)
+            .collection("children")
+            .document(childId)
+            .collection("devices")
+        
+        // Listen for device changes first, then listen to each device's apps
+        devicesListener = devicesRef.addSnapshotListener { devicesSnapshot, error ->
+            if (error != null) {
+                println("FirebaseSyncHelper: Error listening to devices: ${error.message}")
+                return@addSnapshotListener
+            }
+            
+            if (devicesSnapshot == null) return@addSnapshotListener
+            
+            // Clear old per-device app listeners
+            blockedAppsListeners.forEach { it.remove() }
+            blockedAppsListeners.clear()
+            
+            val allBlockedPackages = mutableSetOf<String>()
+            val deviceCount = devicesSnapshot.documents.size
+            var devicesProcessed = 0
+            
+            if (deviceCount == 0) {
+                saveBlocklistToFile(emptyList())
+                return@addSnapshotListener
+            }
+            
+            // Listen to each device's apps collection for real-time blocked app updates
+            for (deviceDoc in devicesSnapshot.documents) {
+                val listener = deviceDoc.reference.collection("apps")
+                    .whereEqualTo("isLocked", true)
+                    .addSnapshotListener { appsSnapshot, appsError ->
+                        if (appsError != null) {
+                            println("FirebaseSyncHelper: Error listening to apps: ${appsError.message}")
+                            return@addSnapshotListener
+                        }
+                        
+                        // Rebuild complete blocked list from all devices
+                        // We need to re-query all devices to get complete picture
+                        rebuildBlockedApps()
+                    }
+                blockedAppsListeners.add(listener)
+            }
+        }
+    }
+    
+    /**
+     * Rebuild blocked apps list from all devices
+     * Called whenever any device's app status changes
+     */
+    private fun rebuildBlockedApps() {
         firestore.collection("users")
             .document(parentId)
             .collection("children")
@@ -108,23 +175,79 @@ class FirebaseSyncHelper(private val context: Context) {
                 }
             }
             .addOnFailureListener { e ->
-                println("FirebaseSyncHelper: Failed to sync blocked apps: ${e.message}")
+                println("FirebaseSyncHelper: Failed to rebuild blocked apps: ${e.message}")
             }
     }
     
-    private fun saveBlocklistToFile(blockedApps: List<String>) {
-        try {
-            val file = File(context.filesDir, "blocked_apps.json")
-            val jsonArray = JSONArray(blockedApps)
-            file.writeText(jsonArray.toString())
-            println("FirebaseSyncHelper: Saved ${blockedApps.size} blocked apps to file")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    /**
+     * Listen to child settings document in real-time
+     * Detects unlock requests, time limit changes, schedule changes instantly
+     */
+    private fun listenToChildSettings() {
+        settingsListener = firestore.collection("users")
+            .document(parentId)
+            .collection("children")
+            .document(childId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    println("FirebaseSyncHelper: Error listening to settings: ${error.message}")
+                    return@addSnapshotListener
+                }
+                
+                if (snapshot == null || !snapshot.exists()) return@addSnapshotListener
+                
+                val data = snapshot.data ?: return@addSnapshotListener
+                
+                // Handle unlock request (instant response)
+                val unlockRequested = data["unlockRequested"] as? Boolean ?: false
+                val isLocked = data["isLocked"] as? Boolean ?: false
+                
+                if (unlockRequested && !isLocked) {
+                    // Parent has unlocked - notify and clear flag
+                    onUnlockRequested?.invoke()
+                    clearUnlockRequest()
+                    println("FirebaseSyncHelper: Parent unlock detected in realtime!")
+                }
+                
+                // Save settings to file for AccessibilityService
+                saveSettingsToFile(data)
+                
+                println("FirebaseSyncHelper: Settings updated in realtime")
+            }
     }
     
     /**
-     * Sync child settings (time limit, schedules, unlock request)
+     * Stop all real-time listeners
+     */
+    fun stopListeners() {
+        settingsListener?.remove()
+        settingsListener = null
+        
+        devicesListener?.remove()
+        devicesListener = null
+        
+        blockedAppsListeners.forEach { it.remove() }
+        blockedAppsListeners.clear()
+        
+        println("FirebaseSyncHelper: All listeners stopped")
+    }
+    
+    /**
+     * Legacy method - still useful for manual sync / fallback
+     */
+    fun syncFromFirestore() {
+        if (parentId.isEmpty() || childId.isEmpty()) {
+            println("FirebaseSyncHelper: No IDs, skipping sync")
+            return
+        }
+        
+        rebuildBlockedApps()
+        syncChildSettings()
+        updateOnlineStatus()
+    }
+    
+    /**
+     * One-time sync of child settings (fallback)
      */
     private fun syncChildSettings() {
         firestore.collection("users")
@@ -142,12 +265,10 @@ class FirebaseSyncHelper(private val context: Context) {
                 val isLocked = data["isLocked"] as? Boolean ?: false
                 
                 if (unlockRequested && !isLocked) {
-                    // Parent has unlocked - notify and clear flag
                     onUnlockRequested?.invoke()
                     clearUnlockRequest()
                 }
                 
-                // Save settings to file for AccessibilityService
                 saveSettingsToFile(data)
             }
             .addOnFailureListener { e ->
@@ -161,6 +282,17 @@ class FirebaseSyncHelper(private val context: Context) {
             .collection("children")
             .document(childId)
             .update("unlockRequested", false)
+    }
+    
+    private fun saveBlocklistToFile(blockedApps: List<String>) {
+        try {
+            val file = File(context.filesDir, "blocked_apps.json")
+            val jsonArray = JSONArray(blockedApps)
+            file.writeText(jsonArray.toString())
+            println("FirebaseSyncHelper: Saved ${blockedApps.size} blocked apps to file (realtime)")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
     
     private fun saveSettingsToFile(data: Map<String, Any>) {
@@ -201,7 +333,6 @@ class FirebaseSyncHelper(private val context: Context) {
             json.put("lastUpdate", System.currentTimeMillis())
             
             file.writeText(json.toString())
-            println("FirebaseSyncHelper: Settings saved to file")
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -210,7 +341,9 @@ class FirebaseSyncHelper(private val context: Context) {
     /**
      * Update online status in Firestore
      */
-    private fun updateOnlineStatus() {
+    fun updateOnlineStatus() {
+        if (parentId.isEmpty() || childId.isEmpty()) return
+        
         firestore.collection("users")
             .document(parentId)
             .collection("children")
@@ -224,6 +357,35 @@ class FirebaseSyncHelper(private val context: Context) {
             }
             .addOnFailureListener { e ->
                 println("FirebaseSyncHelper: Failed to update online status: ${e.message}")
+            }
+    }
+    
+    /**
+     * Set locked status in Firestore so parent can see unlock FAB
+     * Called by AppAccessibilityService when overlay is shown/hidden
+     */
+    fun setLockedStatus(isLocked: Boolean, reason: String) {
+        if (parentId.isEmpty() || childId.isEmpty()) return
+        
+        val updates = mutableMapOf<String, Any?>(
+            "isLocked" to isLocked,
+            "lockReason" to reason
+        )
+        
+        if (isLocked) {
+            updates["lockedAt"] = com.google.firebase.firestore.FieldValue.serverTimestamp()
+        }
+        
+        firestore.collection("users")
+            .document(parentId)
+            .collection("children")
+            .document(childId)
+            .update(updates as Map<String, Any>)
+            .addOnSuccessListener {
+                println("FirebaseSyncHelper: isLocked=$isLocked, reason=$reason - updated in Firestore")
+            }
+            .addOnFailureListener { e ->
+                println("FirebaseSyncHelper: Failed to update lock status: ${e.message}")
             }
     }
     
