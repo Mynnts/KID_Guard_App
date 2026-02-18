@@ -14,6 +14,9 @@ import '../../logic/services/location_service.dart';
 import '../../logic/services/native_settings_sync.dart';
 import '../../logic/services/child_mode_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 
 class ChildHomeScreen extends StatefulWidget {
   const ChildHomeScreen({super.key});
@@ -638,68 +641,86 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
         ? (dailyLimit - limitUsedTime).clamp(0, dailyLimit)
         : 0;
 
-    return Scaffold(
-      backgroundColor: _bgColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              children: [
-                // Points Card
-                _buildPointsCard(points, childName),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (Platform.isAndroid) {
+          const intent = AndroidIntent(
+            action: 'android.intent.action.MAIN',
+            category: 'android.intent.category.HOME',
+            flags: [Flag.FLAG_ACTIVITY_NEW_TASK],
+          );
+          try {
+            await intent.launch();
+          } catch (e) {
+            debugPrint("Failed to launch home intent: $e");
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                children: [
+                  // Points Card
+                  _buildPointsCard(points, childName),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Shield Icon
-                _buildShieldIcon(),
+                  // Shield Icon
+                  _buildShieldIcon(),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Title & Subtitle
-                Text(
-                  'สวัสดี $childName',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: _textPrimary,
-                    letterSpacing: -0.5,
+                  // Title & Subtitle
+                  Text(
+                    'สวัสดี $childName',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _isChildrenModeActive
-                      ? 'โหมดป้องกันกำลังทำงาน'
-                      : 'เปิดใช้งานเพื่อเริ่มการป้องกัน',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: _textSecondary,
-                    height: 1.5,
+                  const SizedBox(height: 8),
+                  Text(
+                    _isChildrenModeActive
+                        ? 'โหมดป้องกันกำลังทำงาน'
+                        : 'เปิดใช้งานเพื่อเริ่มการป้องกัน',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: _textSecondary,
+                      height: 1.5,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
-                // Toggle Switch
-                _buildToggleSwitch(),
+                  // Toggle Switch
+                  _buildToggleSwitch(),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // Status Badge
-                _buildStatusBadge(),
+                  // Status Badge
+                  _buildStatusBadge(),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Screen Time Info - pass both values
-                if (dailyLimit > 0 || screenTime > 0 || limitUsedTime > 0)
-                  _buildScreenTimeCard(
-                    screenTime,
-                    limitUsedTime,
-                    remainingTime,
-                    dailyLimit,
-                  ),
-              ],
+                  // Screen Time Info - pass both values
+                  if (dailyLimit > 0 || screenTime > 0 || limitUsedTime > 0)
+                    _buildScreenTimeCard(
+                      screenTime,
+                      limitUsedTime,
+                      remainingTime,
+                      dailyLimit,
+                    ),
+                ],
+              ),
             ),
           ),
         ),
