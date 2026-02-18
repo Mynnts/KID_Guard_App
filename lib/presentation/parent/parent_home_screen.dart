@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
+import 'account_profile_screen.dart';
 import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
@@ -235,27 +236,33 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         ),
         const SizedBox(width: 12),
         // Profile Avatar
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.primary.withOpacity(0.8),
-                colorScheme.tertiary.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AccountProfileScreen()),
           ),
-          child: Center(
-            child: Text(
-              userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                fontSize: 18,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.tertiary.withOpacity(0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
               ),
             ),
           ),
