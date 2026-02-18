@@ -11,6 +11,9 @@ import 'child_location_screen.dart';
 import 'schedule_screen.dart';
 import 'parent_rewards_screen.dart';
 
+import 'package:kidguard/data/models/notification_model.dart';
+import 'package:kidguard/data/services/notification_service.dart';
+
 /// Parent Home Screen - displays children overview, stats, and quick actions
 class ParentHomeScreen extends StatefulWidget {
   const ParentHomeScreen({super.key});
@@ -26,6 +29,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   late AnimationController _fadeController;
   late AnimationController _pulseController;
   late Animation<double> _fadeAnimation;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
@@ -91,6 +95,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             )
             .toList();
 
+        // Ensure notifications are seeded for these children if needed
+        if (children.isNotEmpty) {
+          _checkAndSeedNotifications(user.uid, children);
+        }
+
         // Set default selected child
         if (_selectedChildIndex == null && children.isNotEmpty) {
           _selectedChildIndex = 0;
@@ -137,6 +146,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       userName,
                       colorScheme,
                       children,
+                      user.uid,
                     ),
 
                     const SizedBox(height: 28),
@@ -179,11 +189,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
+  // Trigger initial notification check/seed once per session or on load
+  void _checkAndSeedNotifications(String uid, List<ChildModel> children) {
+    // Only verify if we have children and haven't checked recently,
+    // or just let the service handle the "if empty" check efficiently.
+    _notificationService.seedInitialNotifications(uid, children);
+  }
+
   Widget _buildEnhancedHeader(
     BuildContext context,
     String userName,
     ColorScheme colorScheme,
     List<ChildModel> children,
+    String userId,
   ) {
     return Row(
       children: [
@@ -214,45 +232,53 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           ),
         ),
         // Notification Bell
-        GestureDetector(
-          onTap: () => _showNotifications(context, children),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade100),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_none_rounded,
-                  color: Colors.grey.shade600,
-                  size: 24,
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+        StreamBuilder<List<NotificationModel>>(
+          stream: _notificationService.getNotifications(userId),
+          builder: (context, snapshot) {
+            final hasUnread = snapshot.data?.any((n) => !n.isRead) ?? false;
+
+            return GestureDetector(
+              onTap: () => _showNotifications(context, userId),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+                child: Stack(
+                  children: [
+                    Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.grey.shade600,
+                      size: 24,
+                    ),
+                    if (hasUnread)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(width: 12),
         // Profile Avatar
@@ -291,34 +317,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
-  void _showNotifications(BuildContext context, List<ChildModel> children) {
-    // Generate notification items
-    final notifications = <NotificationItem>[
-      NotificationItem(
-        title: 'Settings Updated',
-        message: 'System settings have been successfully updated.',
-        time: DateTime.now().subtract(const Duration(hours: 2)),
-        icon: Icons.settings_rounded,
-        color: Colors.orange,
-      ),
-    ];
-
-    // Add notifications for children
-    for (var child in children) {
-      notifications.add(
-        NotificationItem(
-          title: 'Child Added',
-          message: '${child.name} has been added to the family group.',
-          time: DateTime.now().subtract(const Duration(days: 1)),
-          icon: Icons.person_add_rounded,
-          color: Colors.blue,
-        ),
-      );
-    }
-
-    // Sort by time (newest first)
-    notifications.sort((a, b) => b.time.compareTo(a.time));
-
+  void _showNotifications(BuildContext context, String userId) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -365,8 +364,17 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             ),
             const Divider(height: 1),
             Expanded(
-              child: notifications.isEmpty
-                  ? Center(
+              child: StreamBuilder<List<NotificationModel>>(
+                stream: _notificationService.getNotifications(userId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final notifications = snapshot.data ?? [];
+
+                  if (notifications.isEmpty) {
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -385,22 +393,54 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                           ),
                         ],
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(24),
-                      itemCount: notifications.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final item = notifications[index];
-                        return Container(
+                    );
+                  }
+
+                  // Mark all as read when opened (optional, or specific items)
+                  // For now, let's just show them.
+                  // Could call _notificationService.markAllAsRead(userId);
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: notifications.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final item = notifications[index];
+                      return Dismissible(
+                        key: Key(item.id), // Unique key for Dismissible
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (direction) {
+                          _notificationService.deleteNotification(
+                            userId,
+                            item.id,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Notification dismissed'),
+                            ),
+                          );
+                        },
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(
+                            Icons.delete_outline,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                        child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: item.isUnread
+                            color: !item.isRead
                                 ? const Color(0xFFF0FDF4)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: item.isUnread
+                              color: !item.isRead
                                   ? const Color(0xFF10B981).withOpacity(0.3)
                                   : Colors.grey.shade200,
                             ),
@@ -445,7 +485,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                                           ),
                                         ),
                                         Text(
-                                          _formatTime(item.time),
+                                          _formatTime(item.timestamp),
                                           style: TextStyle(
                                             color: Colors.grey.shade500,
                                             fontSize: 12,
@@ -467,9 +507,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -2019,22 +2062,4 @@ class _MiniProgressPainter extends CustomPainter {
   bool shouldRepaint(covariant _MiniProgressPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
-}
-
-class NotificationItem {
-  final String title;
-  final String message;
-  final DateTime time;
-  final IconData icon;
-  final Color color;
-  final bool isUnread;
-
-  NotificationItem({
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.icon,
-    required this.color,
-    this.isUnread = true,
-  });
 }

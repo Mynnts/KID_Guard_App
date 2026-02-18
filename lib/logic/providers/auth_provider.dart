@@ -5,6 +5,8 @@ import 'dart:async';
 import '../../data/services/auth_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/child_model.dart';
+import '../../data/services/notification_service.dart';
+import '../../data/models/notification_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -142,6 +144,20 @@ class AuthProvider with ChangeNotifier {
           role: _userModel!.role,
           childIds: _userModel!.childIds,
           pin: pin,
+        );
+
+        // Notify user about PIN change
+        await NotificationService().addNotification(
+          _userModel!.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'PIN Updated',
+            message: 'Your connection PIN has been regenerated.',
+            timestamp: DateTime.now(),
+            type: 'system',
+            iconName: 'vpn_key_rounded',
+            colorValue: Colors.orange.value,
+          ),
         );
       }
       return pin;

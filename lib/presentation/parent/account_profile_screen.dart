@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../data/services/notification_service.dart';
+import '../../data/models/notification_model.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({super.key});
@@ -92,10 +94,28 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     final success = await authProvider.updateDisplayName(name);
 
     if (success) {
-      setState(() => _isEditingName = false);
-      _showSnackBar('อัปเดตชื่อเรียบร้อยแล้ว');
+      if (mounted) setState(() => _isEditingName = false);
+
+      // Send notification
+      final user = authProvider.userModel;
+      if (user != null) {
+        await NotificationService().addNotification(
+          user.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'Profile Updated',
+            message: 'Your display name has been changed to "$name".',
+            timestamp: DateTime.now(),
+            type: 'system',
+            iconName: 'check_circle_rounded',
+            colorValue: Colors.blue.value,
+          ),
+        );
+      }
+
+      if (mounted) _showSnackBar('อัปเดตชื่อเรียบร้อยแล้ว');
     } else {
-      _showSnackBar('เกิดข้อผิดพลาด กรุณาลองใหม่', isError: true);
+      if (mounted) _showSnackBar('เกิดข้อผิดพลาด กรุณาลองใหม่', isError: true);
     }
   }
 
@@ -124,15 +144,35 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     );
 
     if (success) {
-      setState(() {
-        _isChangingPassword = false;
-        _currentPasswordController.clear();
-        _newPasswordController.clear();
-        _confirmPasswordController.clear();
-      });
-      _showSnackBar('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+      if (mounted) {
+        setState(() {
+          _isChangingPassword = false;
+          _currentPasswordController.clear();
+          _newPasswordController.clear();
+          _confirmPasswordController.clear();
+        });
+
+        // Send notification
+        final user = authProvider.userModel;
+        if (user != null) {
+          await NotificationService().addNotification(
+            user.uid,
+            NotificationModel(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              title: 'Security Alert',
+              message: 'Your password was changed successfully.',
+              timestamp: DateTime.now(),
+              type: 'alert',
+              iconName: 'warning_rounded',
+              colorValue: Colors.red.value,
+            ),
+          );
+        }
+
+        _showSnackBar('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+      }
     } else {
-      _showSnackBar('รหัสผ่านปัจจุบันไม่ถูกต้อง', isError: true);
+      if (mounted) _showSnackBar('รหัสผ่านปัจจุบันไม่ถูกต้อง', isError: true);
     }
   }
 

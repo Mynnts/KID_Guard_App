@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/providers/theme_provider.dart';
+import '../../../data/services/notification_service.dart';
+import '../../../data/models/notification_model.dart';
+import '../../../logic/providers/auth_provider.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -143,18 +146,41 @@ class AppearanceSettingsScreen extends StatelessWidget {
     final isSelected = selectedTheme == theme['id'];
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        if (isSelected) return; // Verify change
+
         themeProvider.setThemeMode(theme['id']);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เปลี่ยนเป็น ${theme['title']} แล้ว'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+
+        // Send notification
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final user = authProvider.userModel;
+        if (user != null) {
+          await NotificationService().addNotification(
+            user.uid,
+            NotificationModel(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              title: 'Theme Changed',
+              message: 'App theme has been updated to ${theme['title']}.',
+              timestamp: DateTime.now(),
+              type: 'system',
+              iconName: 'settings_rounded',
+              colorValue: Colors.purple.value,
             ),
-            duration: const Duration(seconds: 1),
-          ),
-        );
+          );
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('เปลี่ยนเป็น ${theme['title']} แล้ว'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

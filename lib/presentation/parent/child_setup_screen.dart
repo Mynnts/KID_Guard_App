@@ -1,4 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../logic/providers/auth_provider.dart';
+import '../../data/models/child_model.dart';
+import '../../data/models/notification_model.dart';
+import '../../data/services/notification_service.dart';
 
 class ChildSetupScreen extends StatefulWidget {
   const ChildSetupScreen({super.key});
@@ -116,16 +122,99 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             ),
             const SizedBox(height: 48),
             ElevatedButton(
-              onPressed: () {
-                // TODO: Save child profile
-                Navigator.pop(context);
-              },
+              onPressed: _saveChildProfile,
               child: const Text('Create Profile'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _saveChildProfile() async {
+    final name = _nameController.text.trim();
+    final ageText = _ageController.text.trim();
+
+    if (name.isEmpty || ageText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    final age = int.tryParse(ageText);
+    if (age == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a valid age')));
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.userModel;
+
+    if (user == null) return;
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final childId = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('children')
+          .doc()
+          .id;
+
+      final newChild = ChildModel(
+        id: childId,
+        parentId: user.uid,
+        name: name,
+        age: age,
+        dailyTimeLimit: _dailyTimeLimit * 60, // Convert minutes to seconds
+        isLocked: false,
+        // Default values for other fields
+      );
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('children')
+          .doc(childId)
+          .set(newChild.toMap());
+
+      // Send Notification
+      await NotificationService().addNotification(
+        user.uid,
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: 'Child Added',
+          message: '$name has been added to your family.',
+          timestamp: DateTime.now(),
+          type: 'system',
+          iconName: 'person_add_rounded',
+          colorValue: Colors.green.value,
+        ),
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Pop loading dialog
+        Navigator.pop(context); // Pop screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile for $name created successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Pop loading dialog
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating profile: $e')));
+      }
+    }
   }
 
   Widget _buildModeOption(
