@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../parent/parent_home_screen.dart';
 import '../parent/parent_activity_screen.dart';
 import '../parent/parent_settings_screen.dart';
@@ -14,6 +15,19 @@ class ParentShell extends StatefulWidget {
 class _ParentShellState extends State<ParentShell> {
   int _selectedIndex = 0;
 
+  Future<bool> _onWillPop() async {
+    if (_selectedIndex != 0) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+      return false;
+    }
+
+    // Exit app but keep background services running
+    await SystemNavigator.pop();
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -24,53 +38,56 @@ class _ParentShellState extends State<ParentShell> {
       ParentSettingsScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: NavigationBar(
-          elevation: 0,
-          height: 70,
-          backgroundColor: colorScheme.surface,
-          indicatorColor: colorScheme.primaryContainer,
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) =>
-              setState(() => _selectedIndex = index),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined, color: Colors.grey[600]),
-              selectedIcon: Icon(
-                Icons.home_rounded,
-                color: colorScheme.primary,
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        body: IndexedStack(index: _selectedIndex, children: screens),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
               ),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.insights_outlined, color: Colors.grey[600]),
-              selectedIcon: Icon(
-                Icons.insights_rounded,
-                color: colorScheme.primary,
+            ],
+          ),
+          child: NavigationBar(
+            elevation: 0,
+            height: 70,
+            backgroundColor: colorScheme.surface,
+            indicatorColor: colorScheme.primaryContainer,
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (index) =>
+                setState(() => _selectedIndex = index),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined, color: Colors.grey[600]),
+                selectedIcon: Icon(
+                  Icons.home_rounded,
+                  color: colorScheme.primary,
+                ),
+                label: 'Home',
               ),
-              label: 'Activity',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
-              selectedIcon: Icon(
-                Icons.settings_rounded,
-                color: colorScheme.primary,
+              NavigationDestination(
+                icon: Icon(Icons.insights_outlined, color: Colors.grey[600]),
+                selectedIcon: Icon(
+                  Icons.insights_rounded,
+                  color: colorScheme.primary,
+                ),
+                label: 'Activity',
               ),
-              label: 'Settings',
-            ),
-          ],
+              NavigationDestination(
+                icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
+                selectedIcon: Icon(
+                  Icons.settings_rounded,
+                  color: colorScheme.primary,
+                ),
+                label: 'Settings',
+              ),
+            ],
+          ),
         ),
       ),
     );
