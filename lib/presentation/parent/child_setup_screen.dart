@@ -7,30 +7,55 @@ import '../../data/models/notification_model.dart';
 import '../../data/services/notification_service.dart';
 
 class ChildSetupScreen extends StatefulWidget {
-  const ChildSetupScreen({super.key});
+  final ChildModel? child;
+  const ChildSetupScreen({super.key, this.child});
 
   @override
   State<ChildSetupScreen> createState() => _ChildSetupScreenState();
 }
 
 class _ChildSetupScreenState extends State<ChildSetupScreen> {
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _ageController;
   int _dailyTimeLimit = 0; // in minutes
 
   @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.child?.name ?? '');
+    _ageController = TextEditingController(
+      text: widget.child?.age.toString() ?? '',
+    );
+    if (widget.child != null) {
+      _dailyTimeLimit = (widget.child!.dailyTimeLimit / 60).round();
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isEditing = widget.child != null;
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Child Profile')),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Child Profile' : 'Add Child Profile'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Create a profile for your child to manage their device usage.',
+            Text(
+              isEditing
+                  ? 'Update your child\'s profile settings.'
+                  : 'Create a profile for your child to manage their device usage.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 32),
             Center(
@@ -41,7 +66,12 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                     backgroundColor: Theme.of(
                       context,
                     ).colorScheme.primaryContainer,
-                    child: const Icon(Icons.person, size: 50),
+                    backgroundImage: widget.child?.avatar != null
+                        ? AssetImage(widget.child!.avatar!)
+                        : null,
+                    child: widget.child?.avatar == null
+                        ? const Icon(Icons.person, size: 50)
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -105,6 +135,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            // TODO: Implement actual mode selection logic. currently just UI
             _buildModeOption(
               context,
               title: 'Strict Mode',
@@ -123,7 +154,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             const SizedBox(height: 48),
             ElevatedButton(
               onPressed: _saveChildProfile,
-              child: const Text('Create Profile'),
+              child: Text(isEditing ? 'Save Changes' : 'Create Profile'),
             ),
           ],
         ),
@@ -162,21 +193,37 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      final childId = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc()
-          .id;
+      final isEditing = widget.child != null;
+      final childId = isEditing
+          ? widget.child!.id
+          : FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('children')
+                .doc()
+                .id;
 
-      final newChild = ChildModel(
+      final childToSave = ChildModel(
         id: childId,
         parentId: user.uid,
         name: name,
         age: age,
         dailyTimeLimit: _dailyTimeLimit * 60, // Convert minutes to seconds
-        isLocked: false,
-        // Default values for other fields
+        isLocked: isEditing ? widget.child!.isLocked : false,
+        // Preserve existing values if editing, or defaults
+        avatar: isEditing ? widget.child!.avatar : null,
+        screenTime: isEditing ? widget.child!.screenTime : 0,
+        limitUsedTime: isEditing ? widget.child!.limitUsedTime : 0,
+        isOnline: isEditing ? widget.child!.isOnline : false,
+        lastActive: isEditing ? widget.child!.lastActive : null,
+        sessionStartTime: isEditing ? widget.child!.sessionStartTime : null,
+        isChildModeActive: isEditing ? widget.child!.isChildModeActive : false,
+        unlockRequested: isEditing ? widget.child!.unlockRequested : false,
+        timeLimitDisabledUntil: isEditing
+            ? widget.child!.timeLimitDisabledUntil
+            : null,
+        lockReason: isEditing ? widget.child!.lockReason : '',
+        points: isEditing ? widget.child!.points : 0,
       );
 
       await FirebaseFirestore.instance
@@ -184,27 +231,51 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           .doc(user.uid)
           .collection('children')
           .doc(childId)
-          .set(newChild.toMap());
+          .set(
+            childToSave.toMap(),
+          ); // set with merge usually better effectively but toMap returns full object so set is fine
 
-      // Send Notification
-      await NotificationService().addNotification(
-        user.uid,
-        NotificationModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          title: 'Child Added',
-          message: '$name has been added to your family.',
-          timestamp: DateTime.now(),
-          type: 'system',
-          iconName: 'person_add_rounded',
-          colorValue: Colors.green.value,
-        ),
-      );
+      // Send Notification only on create
+      if (!isEditing) {
+        await NotificationService().addNotification(
+          user.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'Child Added',
+            message: '$name has been added to your family.',
+            timestamp: DateTime.now(),
+            type: 'system',
+            iconName: 'person_add_rounded',
+            colorValue: Colors.green.value,
+          ),
+        );
+      } else {
+        // Notification for profile update? Maybe effectively
+        await NotificationService().addNotification(
+          user.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'Profile Updated',
+            message: '$name\'s profile has been updated.',
+            timestamp: DateTime.now(),
+            type: 'system',
+            iconName: 'edit_rounded',
+            colorValue: Colors.blue.value,
+          ),
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context); // Pop loading dialog
         Navigator.pop(context); // Pop screen
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile for $name created successfully!')),
+          SnackBar(
+            content: Text(
+              isEditing
+                  ? 'Profile updated successfully!'
+                  : 'Profile for $name created successfully!',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -212,7 +283,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
         Navigator.pop(context); // Pop loading dialog
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error creating profile: $e')));
+        ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
       }
     }
   }

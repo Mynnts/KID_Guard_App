@@ -10,6 +10,7 @@ import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
 import 'schedule_screen.dart';
 import 'parent_rewards_screen.dart';
+import 'all_children_screen.dart';
 
 import 'package:kidguard/data/models/notification_model.dart';
 import 'package:kidguard/data/services/notification_service.dart';
@@ -153,7 +154,17 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
 
                     // Children Carousel
                     if (children.isNotEmpty) ...[
-                      _buildSectionHeader('My Children', onSeeAll: () {}),
+                      _buildSectionHeader(
+                        'My Children',
+                        onSeeAll: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AllChildrenScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 16),
                       _buildChildrenCarousel(children, colorScheme),
                       const SizedBox(height: 28),
