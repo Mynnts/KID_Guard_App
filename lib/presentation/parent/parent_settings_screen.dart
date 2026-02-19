@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
+import 'package:kidguard/l10n/app_localizations.dart';
 
 class ParentSettingsScreen extends StatefulWidget {
   const ParentSettingsScreen({super.key});
@@ -46,7 +47,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
-                'Settings',
+                AppLocalizations.of(context)!.settings,
                 style: TextStyle(
                   color: colorScheme.onBackground,
                   fontWeight: FontWeight.bold,
@@ -71,19 +72,19 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   const SizedBox(height: 24),
 
                   // PIN Section
-                  _buildSectionTitle('Connection'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.connection),
                   const SizedBox(height: 12),
                   _buildPinCard(pin, authProvider.isLoading, authProvider),
 
                   const SizedBox(height: 24),
 
                   // General Settings Section
-                  _buildSectionTitle('General'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.general),
                   const SizedBox(height: 12),
                   _buildSettingsGroup([
                     _SettingItem(
                       icon: Icons.notifications_outlined,
-                      title: 'Notifications',
+                      title: AppLocalizations.of(context)!.notifications,
                       subtitle: 'Manage alerts',
                       trailing: const _StatusDot(isActive: true),
                       onTap: () => Navigator.pushNamed(
@@ -93,8 +94,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     ),
                     _SettingItem(
                       icon: Icons.palette_outlined,
-                      title: 'Appearance',
-                      subtitle: 'Theme & colors',
+                      title: AppLocalizations.of(context)!.appearance,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.appearanceSubtitle,
                       onTap: () => Navigator.pushNamed(
                         context,
                         AppRoutes.settingsAppearance,
@@ -102,8 +105,11 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     ),
                     _SettingItem(
                       icon: Icons.language_outlined,
-                      title: 'Language',
-                      subtitle: 'ไทย',
+                      title: AppLocalizations.of(context)!.language,
+                      subtitle:
+                          Localizations.localeOf(context).languageCode == 'th'
+                          ? 'ไทย'
+                          : 'English',
                       onTap: () => Navigator.pushNamed(
                         context,
                         AppRoutes.settingsLanguage,
@@ -114,12 +120,12 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   const SizedBox(height: 24),
 
                   // Support Section
-                  _buildSectionTitle('Support'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.support),
                   const SizedBox(height: 12),
                   _buildSettingsGroup([
                     _SettingItem(
                       icon: Icons.help_outline,
-                      title: 'Help Center',
+                      title: AppLocalizations.of(context)!.helpCenter,
                       subtitle: 'FAQ & guides',
                       onTap: () => Navigator.pushNamed(
                         context,
@@ -128,7 +134,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     ),
                     _SettingItem(
                       icon: Icons.feedback_outlined,
-                      title: 'Send Feedback',
+                      title: AppLocalizations.of(context)!.sendFeedback,
                       subtitle: 'Report issues',
                       onTap: () => Navigator.pushNamed(
                         context,
@@ -137,7 +143,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     ),
                     _SettingItem(
                       icon: Icons.info_outline,
-                      title: 'About',
+                      title: AppLocalizations.of(context)!.about,
                       subtitle: 'Coming Soon',
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
@@ -164,7 +170,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   const SizedBox(height: 24),
 
                   // Danger Zone
-                  _buildSectionTitle('Account'),
+                  _buildSectionTitle(AppLocalizations.of(context)!.account),
                   const SizedBox(height: 12),
                   _buildSignOutButton(authProvider),
 
@@ -564,8 +570,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             ),
             child: const Icon(Icons.logout, color: Colors.red, size: 22),
           ),
-          title: const Text(
-            'Sign Out',
+          title: Text(
+            AppLocalizations.of(context)!.signOut,
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
           ),
           subtitle: Text(

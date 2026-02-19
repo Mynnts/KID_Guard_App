@@ -2,6 +2,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:kidguard/l10n/app_localizations.dart' show AppLocalizations;
 import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
 import 'config/routes.dart';
@@ -107,6 +108,7 @@ class _MyAppState extends State<MyApp> {
             locale: localeProvider.locale,
             supportedLocales: const [Locale('th'), Locale('en')],
             localizationsDelegates: const [
+              AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,

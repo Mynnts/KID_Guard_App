@@ -5,6 +5,7 @@ import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../data/models/notification_model.dart';
 import '../../data/services/notification_service.dart';
+import 'package:kidguard/l10n/app_localizations.dart';
 
 class ChildSetupScreen extends StatefulWidget {
   final ChildModel? child;
@@ -43,7 +44,11 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
     final isEditing = widget.child != null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Child Profile' : 'Add Child Profile'),
+        title: Text(
+          isEditing
+              ? AppLocalizations.of(context)!.editChildProfile
+              : AppLocalizations.of(context)!.addChildProfile,
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -52,8 +57,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           children: [
             Text(
               isEditing
-                  ? 'Update your child\'s profile settings.'
-                  : 'Create a profile for your child to manage their device usage.',
+                  ? AppLocalizations.of(context)!.updateProfileDesc
+                  : AppLocalizations.of(context)!.createProfileDesc,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),
@@ -92,23 +97,23 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             const SizedBox(height: 32),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Child\'s Name',
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.childName,
+                prefixIcon: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _ageController,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                prefixIcon: Icon(Icons.cake_outlined),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.childAge,
+                prefixIcon: const Icon(Icons.cake_outlined),
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 32),
             Text(
-              'Daily Time Limit: ${_dailyTimeLimit == 0 ? "Unlimited" : "${(_dailyTimeLimit / 60).toStringAsFixed(1)} hours"}',
+              '${AppLocalizations.of(context)!.dailyTimeLimit}: ${_dailyTimeLimit == 0 ? AppLocalizations.of(context)!.unlimited : "${(_dailyTimeLimit / 60).toStringAsFixed(1)} ${AppLocalizations.of(context)!.hours}"}',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -119,8 +124,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
               max: 480, // 8 hours
               divisions: 16, // 30 min steps
               label: _dailyTimeLimit == 0
-                  ? 'Unlimited'
-                  : '${(_dailyTimeLimit / 60).toStringAsFixed(1)} h',
+                  ? AppLocalizations.of(context)!.unlimited
+                  : '${(_dailyTimeLimit / 60).toStringAsFixed(1)} ${AppLocalizations.of(context)!.hours}',
               onChanged: (value) {
                 setState(() {
                   _dailyTimeLimit = value.toInt();
@@ -129,7 +134,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             ),
             const SizedBox(height: 32),
             Text(
-              'Select Mode',
+              AppLocalizations.of(context)!.selectMode,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -138,23 +143,27 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             // TODO: Implement actual mode selection logic. currently just UI
             _buildModeOption(
               context,
-              title: 'Strict Mode',
-              description: 'Block all apps except allowed ones.',
+              title: AppLocalizations.of(context)!.strictMode,
+              description: AppLocalizations.of(context)!.strictModeDesc,
               icon: Icons.lock_outline,
               isSelected: true,
             ),
             const SizedBox(height: 12),
             _buildModeOption(
               context,
-              title: 'Flexible Mode',
-              description: 'Allow all apps except blocked ones.',
+              title: AppLocalizations.of(context)!.flexibleMode,
+              description: AppLocalizations.of(context)!.flexibleModeDesc,
               icon: Icons.lock_open_outlined,
               isSelected: false,
             ),
             const SizedBox(height: 48),
             ElevatedButton(
               onPressed: _saveChildProfile,
-              child: Text(isEditing ? 'Save Changes' : 'Create Profile'),
+              child: Text(
+                isEditing
+                    ? AppLocalizations.of(context)!.saveChanges
+                    : AppLocalizations.of(context)!.createProfile,
+              ),
             ),
           ],
         ),
@@ -168,16 +177,16 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
 
     if (name.isEmpty || ageText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.fillAllFields)),
       );
       return;
     }
 
     final age = int.tryParse(ageText);
     if (age == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a valid age')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.enterValidAge)),
+      );
       return;
     }
 
@@ -241,8 +250,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           user.uid,
           NotificationModel(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: 'Child Added',
-            message: '$name has been added to your family.',
+            title: AppLocalizations.of(context)!.childAddedTitle,
+            message: AppLocalizations.of(context)!.childAddedMessage(name),
             timestamp: DateTime.now(),
             type: 'system',
             iconName: 'person_add_rounded',
@@ -255,8 +264,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           user.uid,
           NotificationModel(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: 'Profile Updated',
-            message: '$name\'s profile has been updated.',
+            title: AppLocalizations.of(context)!.profileUpdatedTitle,
+            message: AppLocalizations.of(context)!.profileUpdatedMessage(name),
             timestamp: DateTime.now(),
             type: 'system',
             iconName: 'edit_rounded',
@@ -272,8 +281,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           SnackBar(
             content: Text(
               isEditing
-                  ? 'Profile updated successfully!'
-                  : 'Profile for $name created successfully!',
+                  ? AppLocalizations.of(context)!.profileUpdated
+                  : AppLocalizations.of(context)!.profileCreated(name),
             ),
           ),
         );
@@ -281,9 +290,13 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Pop loading dialog
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving profile: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorSavingProfile(e.toString()),
+            ),
+          ),
+        );
       }
     }
   }

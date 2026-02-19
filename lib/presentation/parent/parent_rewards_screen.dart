@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/child_model.dart';
 import '../../logic/providers/auth_provider.dart';
+import 'package:kidguard/l10n/app_localizations.dart';
 
 class ParentRewardsScreen extends StatefulWidget {
   final ChildModel child;
@@ -22,21 +23,59 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
   Map<DateTime, List<dynamic>> _events = {};
   bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _quickReasons = [
-    {'emoji': '📚', 'label': 'Homework', 'points': 10},
-    {'emoji': '🧹', 'label': 'Chores', 'points': 15},
-    {'emoji': '🌟', 'label': 'Good Behavior', 'points': 20},
-    {'emoji': '🏃', 'label': 'Exercise', 'points': 10},
-  ];
+  // Helper method to get localized quick reasons
+  List<Map<String, dynamic>> _getQuickReasons(BuildContext context) {
+    return [
+      {
+        'emoji': '📚',
+        'label': AppLocalizations.of(context)!.homework,
+        'points': 10,
+      },
+      {
+        'emoji': '🧹',
+        'label': AppLocalizations.of(context)!.chores,
+        'points': 15,
+      },
+      {
+        'emoji': '🌟',
+        'label': AppLocalizations.of(context)!.goodBehavior,
+        'points': 20,
+      },
+      {
+        'emoji': '🏃',
+        'label': AppLocalizations.of(context)!.exercise,
+        'points': 10,
+      },
+    ];
+  }
 
-  final List<Map<String, dynamic>> _rewards = [
-    {'emoji': '🍦', 'name': 'Ice Cream', 'cost': 50},
-    {'emoji': '🎮', 'name': 'Game Time', 'cost': 100},
-    {'emoji': '🎬', 'name': 'Movie', 'cost': 150},
-    {'emoji': '🧸', 'name': 'New Toy', 'cost': 300},
-    {'emoji': '🌙', 'name': 'Stay Up', 'cost': 80},
-    {'emoji': '🏞️', 'name': 'Park Trip', 'cost': 200},
-  ];
+  // Helper method to get localized rewards
+  List<Map<String, dynamic>> _getRewards(BuildContext context) {
+    return [
+      {
+        'emoji': '🍦',
+        'name': AppLocalizations.of(context)!.iceCream,
+        'cost': 50,
+      },
+      {
+        'emoji': '🎮',
+        'name': AppLocalizations.of(context)!.gameTime,
+        'cost': 100,
+      },
+      {'emoji': '🎬', 'name': AppLocalizations.of(context)!.movie, 'cost': 150},
+      {
+        'emoji': '🧸',
+        'name': AppLocalizations.of(context)!.newToy,
+        'cost': 300,
+      },
+      {'emoji': '🌙', 'name': AppLocalizations.of(context)!.stayUp, 'cost': 80},
+      {
+        'emoji': '🏞️',
+        'name': AppLocalizations.of(context)!.parkTrip,
+        'cost': 200,
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -118,7 +157,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('+$amount แต้ม สำหรับ $reason'),
+            content: Text(
+              AppLocalizations.of(context)!.pointsEarned(amount, reason),
+            ),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -136,7 +177,11 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
     if (_currentPoints < reward['cost']) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ต้องการอีก ${reward['cost'] - _currentPoints} แต้ม'),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.needMorePoints(reward['cost'] - _currentPoints),
+          ),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -152,14 +197,14 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
           children: [
             Text(reward['emoji'], style: const TextStyle(fontSize: 32)),
             const SizedBox(width: 12),
-            Text('แลก ${reward['name']}?'),
+            Text(AppLocalizations.of(context)!.redeemConfirm(reward['name'])),
           ],
         ),
-        content: Text('ใช้ ${reward['cost']} แต้ม'),
+        content: Text(AppLocalizations.of(context)!.redeemCost(reward['cost'])),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('ยกเลิก'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -170,7 +215,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('แลกเลย'),
+            child: Text(AppLocalizations.of(context)!.redeemNow),
           ),
         ],
       ),
@@ -199,7 +244,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
           .collection('point_history')
           .add({
             'amount': reward['cost'],
-            'reason': 'แลก: ${reward['name']}',
+            'reason': AppLocalizations.of(context)!.redeemed(reward['name']),
             'type': 'redeem',
             'date': Timestamp.now(),
           });
@@ -222,19 +267,26 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               children: [
                 Text(reward['emoji'], style: const TextStyle(fontSize: 64)),
                 const SizedBox(height: 16),
-                const Text(
-                  '🎉 สำเร็จ!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                Text(
+                  AppLocalizations.of(context)!.success,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                Text('${widget.child.name} ได้รับ ${reward['name']}'),
+                Text(
+                  AppLocalizations.of(
+                    context,
+                  )!.earnedReward(widget.child.name, reward['name']),
+                ),
               ],
             ),
             actions: [
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('ปิด'),
+                  child: Text(AppLocalizations.of(context)!.close),
                 ),
               ),
             ],
@@ -331,9 +383,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                                 },
                               ),
                               const SizedBox(width: 4),
-                              const Text(
-                                'แต้ม',
-                                style: TextStyle(
+                              Text(
+                                AppLocalizations.of(context)!.points,
+                                style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 18,
                                 ),
@@ -354,9 +406,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'เพิ่มแต้มด่วน',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.quickAdd,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1F2937),
@@ -372,7 +424,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                             height: 100,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: _quickReasons.map((item) {
+                              children: _getQuickReasons(context).map((item) {
                                 return GestureDetector(
                                   onTap: () =>
                                       _addPoints(item['points'], item['label']),
@@ -450,9 +502,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'แลกของรางวัล',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.redeemRewards,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF1F2937),
@@ -460,7 +512,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                           ),
                           TextButton(
                             onPressed: () {},
-                            child: const Text('ดูทั้งหมด'),
+                            child: Text(AppLocalizations.of(context)!.seeAll),
                           ),
                         ],
                       ),
@@ -469,11 +521,11 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                         height: 130,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _rewards.length,
+                          itemCount: _getRewards(context).length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(width: 12),
                           itemBuilder: (context, index) {
-                            final reward = _rewards[index];
+                            final reward = _getRewards(context)[index];
                             final canAfford =
                                 _currentPoints >= (reward['cost'] as int);
                             return GestureDetector(
@@ -560,9 +612,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'ประวัติแต้ม',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context)!.pointHistory,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1F2937),
@@ -664,7 +716,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
             Icon(Icons.event_note_rounded, size: 40, color: Colors.grey[300]),
             const SizedBox(height: 12),
             Text(
-              'ไม่มีกิจกรรมในวันนี้',
+              AppLocalizations.of(context)!.noActivity,
               style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
           ],
@@ -702,7 +754,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  event['reason'] ?? 'ไม่ระบุ',
+                  event['reason'] ?? '',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ),

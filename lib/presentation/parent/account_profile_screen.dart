@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/services/notification_service.dart';
 import '../../data/models/notification_model.dart';
+import 'package:kidguard/l10n/app_localizations.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({super.key});
@@ -82,11 +83,17 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   Future<void> _updateDisplayName() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showSnackBar('กรุณากรอกชื่อที่แสดง', isError: true);
+      _showSnackBar(
+        AppLocalizations.of(context)!.enterDisplayName,
+        isError: true,
+      );
       return;
     }
     if (name.length < 2) {
-      _showSnackBar('ชื่อต้องมีอย่างน้อย 2 ตัวอักษร', isError: true);
+      _showSnackBar(
+        AppLocalizations.of(context)!.nameLengthError,
+        isError: true,
+      );
       return;
     }
 
@@ -103,8 +110,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           user.uid,
           NotificationModel(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: 'Profile Updated',
-            message: 'Your display name has been changed to "$name".',
+            title: AppLocalizations.of(context)!.profileUpdated,
+            message: AppLocalizations.of(context)!.displayNameChanged(name),
             timestamp: DateTime.now(),
             type: 'system',
             iconName: 'check_circle_rounded',
@@ -113,9 +120,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         );
       }
 
-      if (mounted) _showSnackBar('อัปเดตชื่อเรียบร้อยแล้ว');
+      if (mounted) _showSnackBar(AppLocalizations.of(context)!.updateSuccess);
     } else {
-      if (mounted) _showSnackBar('เกิดข้อผิดพลาด กรุณาลองใหม่', isError: true);
+      if (mounted)
+        _showSnackBar(AppLocalizations.of(context)!.updateError, isError: true);
     }
   }
 
@@ -125,15 +133,24 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (currentPassword.isEmpty) {
-      _showSnackBar('กรุณากรอกรหัสผ่านปัจจุบัน', isError: true);
+      _showSnackBar(
+        AppLocalizations.of(context)!.enterCurrentPassword,
+        isError: true,
+      );
       return;
     }
     if (newPassword.length < 6) {
-      _showSnackBar('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร', isError: true);
+      _showSnackBar(
+        AppLocalizations.of(context)!.passwordLengthError,
+        isError: true,
+      );
       return;
     }
     if (newPassword != confirmPassword) {
-      _showSnackBar('รหัสผ่านไม่ตรงกัน', isError: true);
+      _showSnackBar(
+        AppLocalizations.of(context)!.passwordMismatchError,
+        isError: true,
+      );
       return;
     }
 
@@ -159,8 +176,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             user.uid,
             NotificationModel(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
-              title: 'Security Alert',
-              message: 'Your password was changed successfully.',
+              title: AppLocalizations.of(context)!.securityAlert,
+              message: AppLocalizations.of(context)!.passwordChangedSuccess,
               timestamp: DateTime.now(),
               type: 'alert',
               iconName: 'warning_rounded',
@@ -169,10 +186,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           );
         }
 
-        _showSnackBar('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+        _showSnackBar(AppLocalizations.of(context)!.passwordChangeSuccessMsg);
       }
     } else {
-      if (mounted) _showSnackBar('รหัสผ่านปัจจุบันไม่ถูกต้อง', isError: true);
+      if (mounted)
+        _showSnackBar(
+          AppLocalizations.of(context)!.currentPasswordIncorrect,
+          isError: true,
+        );
     }
   }
 
@@ -201,7 +222,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     const SizedBox(height: 32),
 
                     // Display Name Section
-                    _buildSectionTitle('ข้อมูลโปรไฟล์'),
+                    _buildSectionTitle(
+                      AppLocalizations.of(context)!.displayName,
+                    ),
                     const SizedBox(height: 16),
                     _buildNameCard(user?.displayName ?? ''),
 
@@ -213,7 +236,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     const SizedBox(height: 32),
 
                     // Password Section
-                    _buildSectionTitle('ความปลอดภัย'),
+                    _buildSectionTitle(AppLocalizations.of(context)!.password),
                     const SizedBox(height: 16),
                     _buildPasswordCard(),
 
@@ -258,9 +281,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Text(
-            'บัญชีของฉัน',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context)!.accountProfile,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: _textPrimary,
@@ -312,14 +335,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               color: _primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, color: _primaryColor, size: 16),
-                SizedBox(width: 6),
+                const Icon(Icons.verified, color: _primaryColor, size: 16),
+                const SizedBox(width: 6),
                 Text(
-                  'Parent Account',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.parentAccount,
+                  style: const TextStyle(
                     color: _primaryColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -383,22 +406,22 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ชื่อที่แสดง',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.displayName,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                         color: _textPrimary,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'ชื่อที่จะแสดงในแอป',
-                      style: TextStyle(fontSize: 12, color: _textMuted),
+                      AppLocalizations.of(context)!.displayNameDesc,
+                      style: const TextStyle(fontSize: 12, color: _textMuted),
                     ),
                   ],
                 ),
@@ -415,9 +438,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       color: _primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      'แก้ไข',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.edit,
+                      style: const TextStyle(
                         color: _primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -437,7 +460,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 color: _textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: 'กรอกชื่อที่แสดง',
+                hintText: AppLocalizations.of(context)!.enterDisplayName,
                 hintStyle: const TextStyle(color: _textMuted),
                 filled: true,
                 fillColor: _inputBg,
@@ -478,10 +501,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: _borderColor),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'ยกเลิก',
-                          style: TextStyle(
+                          AppLocalizations.of(context)!.cancel,
+                          style: const TextStyle(
                             color: _textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -517,9 +540,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'บันทึก',
-                                style: TextStyle(
+                            : Text(
+                                AppLocalizations.of(context)!.save,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -540,7 +563,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 border: Border.all(color: _borderColor),
               ),
               child: Text(
-                currentName.isNotEmpty ? currentName : 'ยังไม่ได้ตั้งชื่อ',
+                currentName.isNotEmpty
+                    ? currentName
+                    : AppLocalizations.of(context)!.notSet,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
@@ -587,13 +612,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'อีเมล',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.email,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                         color: _textPrimary,
@@ -601,8 +626,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'ไม่สามารถเปลี่ยนได้',
-                      style: TextStyle(fontSize: 12, color: _textMuted),
+                      AppLocalizations.of(context)!.cannotBeChanged,
+                      style: const TextStyle(fontSize: 12, color: _textMuted),
                     ),
                   ],
                 ),
@@ -622,8 +647,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     Icon(Icons.check_circle, color: _successColor, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      'ยืนยันแล้ว',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.verified,
+                      style: const TextStyle(
                         color: _successColor,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -692,13 +717,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'รหัสผ่าน',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.password,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                         color: _textPrimary,
@@ -706,8 +731,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'เปลี่ยนรหัสผ่านของคุณ',
-                      style: TextStyle(fontSize: 12, color: _textMuted),
+                      AppLocalizations.of(context)!.changePasswordDesc,
+                      style: const TextStyle(fontSize: 12, color: _textMuted),
                     ),
                   ],
                 ),
@@ -724,9 +749,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       color: _primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      'เปลี่ยน',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.change,
+                      style: const TextStyle(
                         color: _primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -740,7 +765,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             const SizedBox(height: 20),
             _buildPasswordField(
               controller: _currentPasswordController,
-              label: 'รหัสผ่านปัจจุบัน',
+              label: AppLocalizations.of(context)!.currentPassword,
               isVisible: _showCurrentPassword,
               onToggleVisibility: () =>
                   setState(() => _showCurrentPassword = !_showCurrentPassword),
@@ -748,7 +773,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             const SizedBox(height: 14),
             _buildPasswordField(
               controller: _newPasswordController,
-              label: 'รหัสผ่านใหม่',
+              label: AppLocalizations.of(context)!.newPassword,
               isVisible: _showNewPassword,
               onToggleVisibility: () =>
                   setState(() => _showNewPassword = !_showNewPassword),
@@ -756,7 +781,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             const SizedBox(height: 14),
             _buildPasswordField(
               controller: _confirmPasswordController,
-              label: 'ยืนยันรหัสผ่านใหม่',
+              label: AppLocalizations.of(context)!.confirmNewPassword,
               isVisible: _showConfirmPassword,
               onToggleVisibility: () =>
                   setState(() => _showConfirmPassword = !_showConfirmPassword),
@@ -781,10 +806,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: _borderColor),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'ยกเลิก',
-                          style: TextStyle(
+                          AppLocalizations.of(context)!.cancel,
+                          style: const TextStyle(
                             color: _textSecondary,
                             fontWeight: FontWeight.w600,
                           ),

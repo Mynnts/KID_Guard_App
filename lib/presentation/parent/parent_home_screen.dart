@@ -12,6 +12,7 @@ import 'schedule_screen.dart';
 import 'parent_rewards_screen.dart';
 import 'all_children_screen.dart';
 
+import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:kidguard/data/models/notification_model.dart';
 import 'package:kidguard/data/services/notification_service.dart';
 
@@ -59,11 +60,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     super.dispose();
   }
 
-  String _getGreeting() {
+  String _getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return AppLocalizations.of(context)!.goodMorning;
+    if (hour < 17) return AppLocalizations.of(context)!.goodAfternoon;
+    return AppLocalizations.of(context)!.goodEvening;
   }
 
   @override
@@ -155,7 +156,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     // Children Carousel
                     if (children.isNotEmpty) ...[
                       _buildSectionHeader(
-                        'My Children',
+                        AppLocalizations.of(context)!.myChildren,
                         onSeeAll: () {
                           Navigator.push(
                             context,
@@ -185,7 +186,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     const SizedBox(height: 28),
 
                     // Quick Actions
-                    _buildSectionHeader('Quick Actions'),
+                    _buildSectionHeader(
+                      AppLocalizations.of(context)!.quickActions,
+                    ),
                     const SizedBox(height: 16),
                     _buildEnhancedQuickActions(context, children, colorScheme),
 
@@ -221,7 +224,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _getGreeting(),
+                _getGreeting(context),
                 style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 15,
@@ -358,8 +361,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Notifications',
+                  Text(
+                    AppLocalizations.of(context)!.notifications,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -807,7 +810,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           GestureDetector(
             onTap: onSeeAll,
             child: Text(
-              'See All',
+              AppLocalizations.of(context)!.seeAll,
               style: TextStyle(
                 color: Colors.grey.shade500,
                 fontSize: 14,
