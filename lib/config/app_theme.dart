@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const String _fontFamily = 'CkPuzzleDemo';
+  static const String _fontFamily = 'Itim-Regular';
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,

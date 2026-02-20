@@ -59,6 +59,6 @@ flutter:
     - assets/avatars/girl_2.png
 
   fonts:
-    - family: CkPuzzleDemo
+    - family: Itim-Regular
       fonts:
-        - asset: assets/fonts/CkPuzzleDemo.ttf
+        - asset: assets/fonts/Itim-Regular.ttf

@@ -1473,21 +1473,21 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     final actions = [
       _QuickAction(
         icon: Icons.pause_circle_filled_rounded,
-        label: 'Instant Pause',
+        label: 'Pause',
         subtitle: 'Pause now',
         color: const Color(0xFFEF4444),
         onTap: () => _showInstantPauseDialog(context, children),
       ),
       _QuickAction(
         icon: Icons.apps_rounded,
-        label: 'App Control',
+        label: 'Apps',
         subtitle: 'Manage apps',
         color: const Color(0xFF6B9080),
         onTap: () => Navigator.pushNamed(context, '/parent/app_control'),
       ),
       _QuickAction(
         icon: Icons.timer_rounded,
-        label: 'Time Limits',
+        label: 'Timer',
         subtitle: 'Set limits',
         color: const Color(0xFFF59E0B),
         onTap: () => Navigator.push(
@@ -1525,10 +1525,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: ResponsiveHelper.of(context).gridCrossAxisCount,
-        crossAxisSpacing: ResponsiveHelper.of(context).wp(16),
-        mainAxisSpacing: ResponsiveHelper.of(context).hp(16),
-        childAspectRatio: ResponsiveHelper.of(context).quickActionAspectRatio,
+        crossAxisCount: 3,
+        crossAxisSpacing: ResponsiveHelper.of(context).wp(12),
+        mainAxisSpacing: ResponsiveHelper.of(context).hp(12),
+        childAspectRatio: 1.0,
       ),
       itemCount: actions.length,
       itemBuilder: (context, index) {
@@ -1958,12 +1958,11 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
         animation: _hoverController,
         builder: (context, child) {
           return Transform.scale(
-            scale: 1 - (_hoverController.value * 0.03),
+            scale: 1 - (_hoverController.value * 0.05),
             child: child,
           );
         },
         child: Container(
-          padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(18)),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Colors.white, Color(0xFFFAFBFA)],
@@ -1971,76 +1970,53 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(
-              ResponsiveHelper.of(context).radius(24),
+              ResponsiveHelper.of(context).radius(22),
             ),
             border: Border.all(
-              color: Colors.grey.shade100.withOpacity(0.6),
+              color: Colors.grey.shade100.withOpacity(0.8),
               width: 1,
             ),
             boxShadow: [
-              // Soft outer glow
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-                spreadRadius: -5,
-              ),
-              // Near shadow
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+                spreadRadius: -4,
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(12)),
+                padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(14)),
                 decoration: BoxDecoration(
                   color: widget.action.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveHelper.of(context).radius(14),
-                  ),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   widget.action.icon,
                   color: widget.action.color,
-                  size: ResponsiveHelper.of(context).iconSize(24),
+                  size: ResponsiveHelper.of(context).iconSize(26),
                 ),
               ),
-              SizedBox(width: ResponsiveHelper.of(context).wp(14)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      widget.action.label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: ResponsiveHelper.of(context).sp(14),
-                        color: const Color(0xFF1F2937),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: ResponsiveHelper.of(context).hp(2)),
-                    Text(
-                      widget.action.subtitle,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: ResponsiveHelper.of(context).sp(12),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              SizedBox(height: ResponsiveHelper.of(context).hp(10)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.of(context).wp(6),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.shade300,
-                size: ResponsiveHelper.of(context).iconSize(20),
+                child: Text(
+                  widget.action.label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: ResponsiveHelper.of(context).sp(11),
+                    color: const Color(0xFF3F4E4F),
+                    letterSpacing: 0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
