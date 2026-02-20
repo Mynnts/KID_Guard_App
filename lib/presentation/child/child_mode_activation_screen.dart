@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ChildModeActivationScreen extends StatefulWidget {
   const ChildModeActivationScreen({super.key});
@@ -44,6 +45,7 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final child = authProvider.currentChild;
     final childName = child?.name ?? 'น้อง';
@@ -59,32 +61,38 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
       canPop: !_isChildrenModeActive,
       onPopInvokedWithResult: (didPop, result) {
         if (_isChildrenModeActive && didPop == false) {
-          // แสดง dialog บอกว่าต้องกรอก PIN เพื่อปิดโหมด
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (context) => AlertDialog(
               backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Row(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(r.radius(24)),
+              ),
+              title: Row(
                 children: [
-                  Icon(Icons.shield_rounded, color: _primaryColor),
-                  SizedBox(width: 12),
-                  Text('ต้องปิดโหมดเด็ก'),
+                  Icon(
+                    Icons.shield_rounded,
+                    color: _primaryColor,
+                    size: r.iconSize(24),
+                  ),
+                  SizedBox(width: r.wp(12)),
+                  Text('ต้องปิดโหมดเด็ก', style: TextStyle(fontSize: r.sp(18))),
                 ],
               ),
-              content: const Text(
+              content: Text(
                 'ต้องกรอก PIN ผู้ปกครองเพื่อปิดโหมดเด็กให้ได้',
-                style: TextStyle(color: _textSecondary, fontSize: 14),
+                style: TextStyle(color: _textSecondary, fontSize: r.sp(14)),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
+                  child: Text(
                     'ยืนยัน',
                     style: TextStyle(
                       color: _primaryColor,
                       fontWeight: FontWeight.w600,
+                      fontSize: r.sp(14),
                     ),
                   ),
                 ),
@@ -98,55 +106,42 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.wp(24),
+                vertical: r.hp(20),
+              ),
               child: Column(
                 children: [
-                  // Points Card
                   _buildPointsCard(points, childName),
-
-                  const SizedBox(height: 32),
-
-                  // Shield Icon
+                  SizedBox(height: r.hp(32)),
                   _buildShieldIcon(),
-
-                  const SizedBox(height: 32),
-
-                  // Title & Subtitle
+                  SizedBox(height: r.hp(32)),
                   Text(
                     'สวัสดี $childName',
-                    style: const TextStyle(
-                      fontSize: 28,
+                    style: TextStyle(
+                      fontSize: r.sp(28),
                       fontWeight: FontWeight.w700,
                       color: _textPrimary,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: r.hp(8)),
                   Text(
                     _isChildrenModeActive
                         ? 'โหมดป้องกันกำลังทำงาน'
                         : 'เปิดใช้งานเพื่อเริ่มการป้องกัน',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: r.sp(15),
                       color: _textSecondary,
                       height: 1.5,
                     ),
                   ),
-
-                  const SizedBox(height: 40),
-
-                  // Toggle Switch
+                  SizedBox(height: r.hp(40)),
                   _buildToggleSwitch(),
-
-                  const SizedBox(height: 20),
-
-                  // Status Badge
+                  SizedBox(height: r.hp(20)),
                   _buildStatusBadge(),
-
-                  const SizedBox(height: 32),
-
-                  // Screen Time Info - pass both values
+                  SizedBox(height: r.hp(32)),
                   if (dailyLimit > 0 || screenTime > 0 || limitUsedTime > 0)
                     _buildScreenTimeCard(
                       screenTime,
@@ -164,15 +159,16 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
   }
 
   Widget _buildPointsCard(int points, String childName) {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(r.wp(20)),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [_primaryColor, _secondaryColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(r.radius(28)),
         boxShadow: [
           BoxShadow(
             color: _primaryColor.withValues(alpha: 0.25),
@@ -189,22 +185,20 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
       ),
       child: Row(
         children: [
-          // Star Icon
           Container(
-            width: 56,
-            height: 56,
+            width: r.wp(56),
+            height: r.wp(56),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(r.radius(16)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.star_rounded,
               color: Colors.white,
-              size: 32,
+              size: r.iconSize(32),
             ),
           ),
-          const SizedBox(width: 16),
-          // Points Text
+          SizedBox(width: r.wp(16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,20 +207,20 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                   'แต้มสะสม',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 14,
+                    fontSize: r.sp(14),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: r.hp(4)),
                 TweenAnimationBuilder<int>(
                   tween: IntTween(begin: 0, end: points),
                   duration: const Duration(milliseconds: 800),
                   builder: (context, value, child) {
                     return Text(
                       '$value pts',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: r.sp(28),
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
                       ),
@@ -236,28 +230,30 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
               ],
             ),
           ),
-          // Trophy Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: r.wp(12),
+              vertical: r.hp(6),
+            ),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(r.radius(20)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.emoji_events_rounded,
                   color: Colors.amber,
-                  size: 18,
+                  size: r.iconSize(18),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: r.wp(6)),
                 Text(
                   'Level ${(points ~/ 100) + 1}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: r.sp(13),
                   ),
                 ),
               ],
@@ -269,10 +265,11 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
   }
 
   Widget _buildShieldIcon() {
+    final r = ResponsiveHelper.of(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: 120,
-      height: 120,
+      width: r.wp(120),
+      height: r.wp(120),
       decoration: BoxDecoration(
         gradient: _isChildrenModeActive
             ? const LinearGradient(
@@ -281,7 +278,9 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                 end: Alignment.bottomRight,
               )
             : null,
-        color: _isChildrenModeActive ? null : _tertiaryColor.withValues(alpha: 0.5),
+        color: _isChildrenModeActive
+            ? null
+            : _tertiaryColor.withValues(alpha: 0.5),
         shape: BoxShape.circle,
         boxShadow: _isChildrenModeActive
             ? [
@@ -301,13 +300,14 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
       ),
       child: Icon(
         _isChildrenModeActive ? Icons.shield_rounded : Icons.shield_outlined,
-        size: 56,
+        size: r.iconSize(56),
         color: _isChildrenModeActive ? Colors.white : _textSecondary,
       ),
     );
   }
 
   Widget _buildToggleSwitch() {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -316,14 +316,14 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        width: 88,
-        height: 48,
+        width: r.wp(88),
+        height: r.hp(48),
         decoration: BoxDecoration(
           gradient: _isChildrenModeActive
               ? const LinearGradient(colors: [_primaryColor, _secondaryColor])
               : null,
           color: _isChildrenModeActive ? null : const Color(0xFFE5E5EA),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(r.radius(24)),
           boxShadow: _isChildrenModeActive
               ? [
                   BoxShadow(
@@ -341,16 +341,16 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
               ? Alignment.centerRight
               : Alignment.centerLeft,
           child: Container(
-            margin: const EdgeInsets.all(4),
-            width: 40,
-            height: 40,
+            margin: EdgeInsets.all(r.wp(4)),
+            width: r.wp(40),
+            height: r.wp(40),
             decoration: const BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
             child: Icon(
               _isChildrenModeActive ? Icons.check_rounded : Icons.close_rounded,
-              size: 20,
+              size: r.iconSize(20),
               color: _isChildrenModeActive ? _primaryColor : _textSecondary,
             ),
           ),
@@ -360,14 +360,15 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
   }
 
   Widget _buildStatusBadge() {
+    final r = ResponsiveHelper.of(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: r.wp(20), vertical: r.hp(10)),
       decoration: BoxDecoration(
         color: _isChildrenModeActive
             ? _successColor.withValues(alpha: 0.1)
             : _tertiaryColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(r.radius(24)),
         border: Border.all(
           color: _isChildrenModeActive
               ? _successColor.withValues(alpha: 0.3)
@@ -379,18 +380,18 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: r.wp(8),
+            height: r.wp(8),
             decoration: BoxDecoration(
               color: _isChildrenModeActive ? _successColor : _textSecondary,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: r.wp(10)),
           Text(
             _isChildrenModeActive ? 'กำลังป้องกัน' : 'ปิดอยู่',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: r.sp(14),
               fontWeight: FontWeight.w600,
               color: _isChildrenModeActive ? _successColor : _textSecondary,
             ),
@@ -406,19 +407,19 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
     int remainingTime,
     int dailyLimit,
   ) {
+    final r = ResponsiveHelper.of(context);
     return Column(
       children: [
-        // Section 1: Total Daily Screen Time (resets at midnight)
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(r.wp(20)),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Colors.white, Color(0xFFFCFDFC)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(r.radius(24)),
             border: Border.all(color: _tertiaryColor),
             boxShadow: [
               BoxShadow(
@@ -432,35 +433,35 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(r.wp(12)),
                 decoration: BoxDecoration(
                   color: _tertiaryColor,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(r.radius(14)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.today_rounded,
                   color: _primaryColor,
-                  size: 24,
+                  size: r.iconSize(24),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: r.wp(16)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'เวลาเล่นทั้งหมดวันนี้',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                         color: _textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: r.hp(4)),
                     Text(
                       _formatTime(screenTime),
-                      style: const TextStyle(
-                        fontSize: 26,
+                      style: TextStyle(
+                        fontSize: r.sp(26),
                         fontWeight: FontWeight.bold,
                         color: _primaryColor,
                       ),
@@ -468,24 +469,30 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                   ],
                 ),
               ),
-              // Resets at midnight badge
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.wp(10),
+                  vertical: r.hp(6),
                 ),
                 decoration: BoxDecoration(
                   color: _tertiaryColor.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh, size: 14, color: _textSecondary),
-                    SizedBox(width: 4),
+                    Icon(
+                      Icons.refresh,
+                      size: r.iconSize(14),
+                      color: _textSecondary,
+                    ),
+                    SizedBox(width: r.wp(4)),
                     Text(
                       'Reset เที่ยงคืน',
-                      style: TextStyle(fontSize: 11, color: _textSecondary),
+                      style: TextStyle(
+                        fontSize: r.sp(11),
+                        color: _textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -493,13 +500,11 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
             ],
           ),
         ),
-
-        // Section 2: Time Limit Progress (if limit is set)
         if (dailyLimit > 0) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: r.hp(16)),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(r.wp(20)),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -511,7 +516,7 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(r.radius(24)),
               border: Border.all(
                 color: remainingTime < 1800
                     ? const Color(0xFFEF4444).withValues(alpha: 0.3)
@@ -530,31 +535,30 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
             ),
             child: Column(
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(r.wp(12)),
                       decoration: BoxDecoration(
                         color: remainingTime < 1800
                             ? const Color(0xFFEF4444).withValues(alpha: 0.1)
                             : _tertiaryColor,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(r.radius(14)),
                       ),
                       child: Icon(
                         Icons.timer_outlined,
                         color: remainingTime < 1800
                             ? const Color(0xFFEF4444)
                             : _primaryColor,
-                        size: 24,
+                        size: r.iconSize(24),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
+                    SizedBox(width: r.wp(16)),
+                    Expanded(
                       child: Text(
                         'ขีดจำกัดเวลาเล่น',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: r.sp(16),
                           fontWeight: FontWeight.w600,
                           color: _textPrimary,
                         ),
@@ -562,54 +566,54 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                // Stats Row
+                SizedBox(height: r.hp(20)),
                 Row(
                   children: [
-                    // Used Time
                     Expanded(
                       child: Column(
                         children: [
                           Text(
                             _formatTime(limitUsedTime),
-                            style: const TextStyle(
-                              fontSize: 24,
+                            style: TextStyle(
+                              fontSize: r.sp(24),
                               fontWeight: FontWeight.bold,
                               color: _primaryColor,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
+                          SizedBox(height: r.hp(4)),
+                          Text(
                             'ใช้ไปแล้ว',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: _textSecondary,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Divider
-                    Container(width: 1, height: 50, color: _tertiaryColor),
-                    // Remaining Time
+                    Container(
+                      width: 1,
+                      height: r.hp(50),
+                      color: _tertiaryColor,
+                    ),
                     Expanded(
                       child: Column(
                         children: [
                           Text(
                             _formatTime(remainingTime),
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: r.sp(24),
                               fontWeight: FontWeight.bold,
                               color: remainingTime < 1800
                                   ? const Color(0xFFEF4444)
                                   : _successColor,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
+                          SizedBox(height: r.hp(4)),
+                          Text(
                             'เหลืออีก',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: _textSecondary,
                             ),
                           ),
@@ -618,13 +622,12 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
                     ),
                   ],
                 ),
-                // Progress Bar
-                const SizedBox(height: 20),
+                SizedBox(height: r.hp(20)),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(r.radius(8)),
                   child: LinearProgressIndicator(
                     value: (limitUsedTime / dailyLimit).clamp(0.0, 1.0),
-                    minHeight: 8,
+                    minHeight: r.hp(8),
                     backgroundColor: _tertiaryColor,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       (limitUsedTime / dailyLimit) > 0.8

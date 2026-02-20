@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import 'child_setup_screen.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class AllChildrenScreen extends StatelessWidget {
   const AllChildrenScreen({super.key});
@@ -13,6 +14,7 @@ class AllChildrenScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     if (user == null)
       return const Scaffold(body: Center(child: Text('User not found')));
@@ -20,7 +22,7 @@ class AllChildrenScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF4),
       appBar: AppBar(
-        title: const Text('My Children'),
+        title: Text('My Children', style: TextStyle(fontSize: r.sp(18))),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -32,8 +34,8 @@ class AllChildrenScreen extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const ChildSetupScreen()),
           );
         },
-        label: const Text('Add Child'),
-        icon: const Icon(Icons.add),
+        label: Text('Add Child', style: TextStyle(fontSize: r.sp(14))),
+        icon: Icon(Icons.add, size: r.iconSize(20)),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -53,15 +55,18 @@ class AllChildrenScreen extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.person_off_outlined,
-                    size: 64,
+                    size: r.iconSize(64),
                     color: Colors.grey.shade300,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: r.hp(16)),
                   Text(
                     'No children profiles yet',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: r.sp(16),
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: r.hp(16)),
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
@@ -71,7 +76,16 @@ class AllChildrenScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    child: const Text('Add your first child'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: r.wp(24),
+                        vertical: r.hp(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Add your first child',
+                      style: TextStyle(fontSize: r.sp(14)),
+                    ),
                   ),
                 ],
               ),
@@ -88,9 +102,9 @@ class AllChildrenScreen extends StatelessWidget {
               .toList();
 
           return ListView.separated(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(r.wp(20)),
             itemCount: children.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            separatorBuilder: (_, __) => SizedBox(height: r.hp(16)),
             itemBuilder: (context, index) {
               final child = children[index];
               return _buildChildCard(context, child, colorScheme);
@@ -106,11 +120,12 @@ class AllChildrenScreen extends StatelessWidget {
     ChildModel child,
     ColorScheme colorScheme,
   ) {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(r.wp(16)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(r.radius(20)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -123,8 +138,8 @@ class AllChildrenScreen extends StatelessWidget {
         children: [
           // Avatar
           Container(
-            width: 60,
-            height: 60,
+            width: r.wp(60),
+            height: r.wp(60),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withOpacity(0.5),
               shape: BoxShape.circle,
@@ -139,9 +154,13 @@ class AllChildrenScreen extends StatelessWidget {
             ),
             child: child.avatar != null
                 ? ClipOval(child: Image.asset(child.avatar!, fit: BoxFit.cover))
-                : Icon(Icons.person, color: colorScheme.primary, size: 30),
+                : Icon(
+                    Icons.person,
+                    color: colorScheme.primary,
+                    size: r.iconSize(30),
+                  ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: r.wp(16)),
           // Info
           Expanded(
             child: Column(
@@ -149,16 +168,19 @@ class AllChildrenScreen extends StatelessWidget {
               children: [
                 Text(
                   child.name,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: r.sp(18),
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
+                    color: const Color(0xFF1F2937),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: r.hp(4)),
                 Text(
                   '${child.age} years old • ${child.dailyTimeLimit == 0 ? "No Limit" : "${(child.dailyTimeLimit / 3600).toStringAsFixed(1)}h limit"}',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: r.sp(14),
+                  ),
                 ),
               ],
             ),
@@ -174,12 +196,12 @@ class AllChildrenScreen extends StatelessWidget {
               );
             },
             icon: Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(r.wp(8)),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(r.radius(12)),
               ),
-              child: const Icon(Icons.edit_rounded, size: 20),
+              child: Icon(Icons.edit_rounded, size: r.iconSize(20)),
             ),
           ),
         ],

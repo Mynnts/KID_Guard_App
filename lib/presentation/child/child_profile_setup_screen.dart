@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ChildProfileSetupScreen extends StatefulWidget {
   const ChildProfileSetupScreen({super.key});
@@ -58,57 +59,48 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+            padding: EdgeInsets.symmetric(horizontal: r.wp(28)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
-
-                // Back Button
+                SizedBox(height: r.hp(16)),
                 _buildBackButton(),
-
-                const SizedBox(height: 40),
-
-                // Title
-                const Text(
+                SizedBox(height: r.hp(40)),
+                Text(
                   'สร้างโปรไฟล์',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: r.sp(28),
                     fontWeight: FontWeight.w700,
                     color: _textPrimary,
                     letterSpacing: -0.5,
                   ),
                 ),
-
-                const SizedBox(height: 8),
-
+                SizedBox(height: r.hp(8)),
                 Text(
                   'เลือก avatar และกรอกข้อมูลของน้อง',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: r.sp(14),
                     color: _textSecondary,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-
-                const SizedBox(height: 40),
-
-                // Avatar Selection
+                SizedBox(height: r.hp(40)),
                 Center(
                   child: SizedBox(
-                    height: 110,
+                    height: r.hp(110),
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       shrinkWrap: true,
                       itemCount: _avatars.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(width: 20),
+                          SizedBox(width: r.wp(20)),
                       itemBuilder: (context, index) {
                         final isSelected = _selectedAvatar == index;
                         return GestureDetector(
@@ -119,7 +111,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(4),
+                            padding: EdgeInsets.all(r.wp(4)),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
@@ -139,7 +131,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                                   : null,
                             ),
                             child: CircleAvatar(
-                              radius: 46,
+                              radius: r.wp(46),
                               backgroundColor: const Color(0xFFF5F5F7),
                               backgroundImage: AssetImage(_avatars[index]),
                             ),
@@ -149,32 +141,22 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 48),
-
-                // Name Field
+                SizedBox(height: r.hp(48)),
                 _buildTextField(
                   controller: _nameController,
                   label: 'ชื่อเล่น',
                   icon: Icons.person_outline_rounded,
                 ),
-
-                const SizedBox(height: 16),
-
-                // Age Field
+                SizedBox(height: r.hp(16)),
                 _buildTextField(
                   controller: _ageController,
                   label: 'อายุ',
                   icon: Icons.cake_outlined,
                   keyboardType: TextInputType.number,
                 ),
-
-                const SizedBox(height: 48),
-
-                // Submit Button
+                SizedBox(height: r.hp(48)),
                 _buildSubmitButton(),
-
-                const SizedBox(height: 40),
+                SizedBox(height: r.hp(40)),
               ],
             ),
           ),
@@ -184,14 +166,15 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
   }
 
   Widget _buildBackButton() {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
-        width: 44,
-        height: 44,
+        width: r.wp(44),
+        height: r.wp(44),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(r.radius(14)),
           border: Border.all(color: _borderColor, width: 1),
           boxShadow: [
             BoxShadow(
@@ -201,10 +184,10 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
             ),
           ],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.arrow_back_ios_rounded,
           color: _textPrimary,
-          size: 16,
+          size: r.iconSize(16),
         ),
       ),
     );
@@ -216,64 +199,64 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final r = ResponsiveHelper.of(context);
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(
-        fontSize: 15,
+      style: TextStyle(
+        fontSize: r.sp(15),
         fontWeight: FontWeight.w500,
         color: _textPrimary,
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           color: _textSecondary,
           fontWeight: FontWeight.w400,
-          fontSize: 14,
+          fontSize: r.sp(14),
         ),
         floatingLabelStyle: const TextStyle(
           color: _accentColor,
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 12),
-          child: Icon(icon, color: _textMuted, size: 20),
+          padding: EdgeInsets.only(left: r.wp(16), right: r.wp(12)),
+          child: Icon(icon, color: _textMuted, size: r.iconSize(20)),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0),
         filled: true,
         fillColor: _inputBg,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: _borderColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: _accentColor, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: r.wp(16),
+          vertical: r.hp(18),
         ),
       ),
     );
   }
 
   Widget _buildSubmitButton() {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: () async {
         final name = _nameController.text.trim();
         final age = int.tryParse(_ageController.text.trim());
-
         if (name.isNotEmpty && age != null) {
           final success = await Provider.of<AuthProvider>(
             context,
             listen: false,
           ).registerChild(name, age, _avatars[_selectedAvatar]);
-
           if (success && mounted) {
             Navigator.pushReplacementNamed(context, AppRoutes.childHome);
           }
@@ -281,10 +264,10 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
       },
       child: Container(
         width: double.infinity,
-        height: 56,
+        height: r.hp(56),
         decoration: BoxDecoration(
           color: _accentColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           boxShadow: [
             BoxShadow(
               color: _accentColor.withOpacity(0.25),
@@ -293,12 +276,12 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
             ),
           ],
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             'เริ่มต้นใช้งาน',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 15,
+              fontSize: r.sp(15),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/child_model.dart';
 import '../../logic/providers/auth_provider.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ParentRewardsScreen extends StatefulWidget {
   final ChildModel child;
@@ -298,6 +299,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF4),
       body: Stack(
@@ -306,14 +308,15 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
             slivers: [
               // App Bar with Points
               SliverAppBar(
-                expandedHeight: 200,
+                expandedHeight: r.hp(220),
                 floating: false,
                 pinned: true,
                 backgroundColor: const Color(0xFF6B9080),
                 leading: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_ios_new,
                     color: Colors.white,
+                    size: r.iconSize(24),
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -327,72 +330,100 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                       ),
                     ),
                     child: SafeArea(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 20),
-                          // Child Avatar
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            backgroundImage: widget.child.avatar != null
-                                ? AssetImage(widget.child.avatar!)
-                                : null,
-                            child: widget.child.avatar == null
-                                ? Text(
-                                    widget.child.name[0],
-                                    style: const TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.center,
+                              child: SizedBox(
+                                width: constraints.maxWidth - r.wp(32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(height: r.hp(16)),
+                                    // Child Avatar
+                                    CircleAvatar(
+                                      radius: r.wp(30),
+                                      backgroundColor: Colors.white.withOpacity(
+                                        0.2,
+                                      ),
+                                      backgroundImage:
+                                          widget.child.avatar != null
+                                          ? AssetImage(widget.child.avatar!)
+                                          : null,
+                                      child: widget.child.avatar == null
+                                          ? Text(
+                                              widget.child.name[0],
+                                              style: TextStyle(
+                                                fontSize: r.sp(24),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : null,
                                     ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            widget.child.name,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Points Display
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                color: Colors.amber,
-                                size: 32,
-                              ),
-                              const SizedBox(width: 8),
-                              TweenAnimationBuilder<int>(
-                                tween: IntTween(begin: 0, end: _currentPoints),
-                                duration: const Duration(milliseconds: 600),
-                                builder: (context, value, child) {
-                                  return Text(
-                                    '$value',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.bold,
+                                    SizedBox(height: r.hp(8)),
+                                    Text(
+                                      widget.child.name,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: r.sp(15),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                AppLocalizations.of(context)!.points,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 18,
+                                    SizedBox(height: r.hp(4)),
+                                    // Points Display
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.star_rounded,
+                                          color: Colors.amber,
+                                          size: r.iconSize(28),
+                                        ),
+                                        SizedBox(width: r.wp(6)),
+                                        TweenAnimationBuilder<int>(
+                                          tween: IntTween(
+                                            begin: 0,
+                                            end: _currentPoints,
+                                          ),
+                                          duration: const Duration(
+                                            milliseconds: 600,
+                                          ),
+                                          builder: (context, value, child) {
+                                            return Text(
+                                              '$value',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: r.sp(42),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(width: r.wp(4)),
+                                        Text(
+                                          AppLocalizations.of(context)!.points,
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: r.sp(16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: r.hp(8)),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -402,41 +433,48 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               // Quick Add Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    r.wp(20),
+                    r.hp(24),
+                    r.wp(20),
+                    r.hp(16),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         AppLocalizations.of(context)!.quickAdd,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: r.sp(18),
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1F2937),
+                          color: const Color(0xFF1F2937),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: r.hp(12)),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final cardWidth =
                               (constraints.maxWidth - 36) /
                               4; // 4 cards with 12px gaps
-                          return SizedBox(
-                            height: 100,
+                          return IntrinsicHeight(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: _getQuickReasons(context).map((item) {
                                 return GestureDetector(
                                   onTap: () =>
                                       _addPoints(item['points'], item['label']),
                                   child: Container(
                                     width: cardWidth.clamp(70.0, 90.0),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                      horizontal: 8,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: r.hp(10),
+                                      horizontal: r.wp(6),
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(
+                                        r.radius(16),
+                                      ),
                                       border: Border.all(
                                         color: Colors.grey.shade200,
                                       ),
@@ -453,26 +491,31 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                                           MainAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          item['emoji'],
-                                          style: const TextStyle(fontSize: 22),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '+${item['points']}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF10B981),
-                                            fontSize: 13,
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            item['emoji'],
+                                            style: TextStyle(
+                                              fontSize: r.sp(22),
+                                            ),
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        SizedBox(height: r.hp(3)),
+                                        Text(
+                                          '+${item['points']}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF10B981),
+                                            fontSize: r.sp(13),
+                                          ),
+                                        ),
+                                        SizedBox(height: r.hp(2)),
                                         FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(
                                             item['label'],
                                             style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: r.sp(10),
                                               color: Colors.grey[600],
                                             ),
                                             maxLines: 1,
@@ -495,7 +538,12 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               // Rewards Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    r.wp(20),
+                    r.hp(8),
+                    r.wp(20),
+                    r.hp(16),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -504,10 +552,10 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                         children: [
                           Text(
                             AppLocalizations.of(context)!.redeemRewards,
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: TextStyle(
+                              fontSize: r.sp(18),
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F2937),
+                              color: const Color(0xFF1F2937),
                             ),
                           ),
                           TextButton(
@@ -516,14 +564,15 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.hp(8)),
                       SizedBox(
-                        height: 130,
+                        height: r.hp(140),
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
                           itemCount: _getRewards(context).length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(width: 12),
+                              SizedBox(width: r.wp(12)),
                           itemBuilder: (context, index) {
                             final reward = _getRewards(context)[index];
                             final canAfford =
@@ -531,13 +580,18 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                             return GestureDetector(
                               onTap: () => _redeemReward(reward),
                               child: Container(
-                                width: 100,
-                                padding: const EdgeInsets.all(12),
+                                width: r.wp(100),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: r.wp(8),
+                                  vertical: r.hp(8),
+                                ),
                                 decoration: BoxDecoration(
                                   color: canAfford
                                       ? Colors.white
                                       : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(
+                                    r.radius(16),
+                                  ),
                                   border: Border.all(
                                     color: canAfford
                                         ? const Color(
@@ -548,31 +602,41 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      reward['emoji'],
-                                      style: TextStyle(
-                                        fontSize: 32,
-                                        color: canAfford ? null : Colors.grey,
+                                    Flexible(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          reward['emoji'],
+                                          style: TextStyle(
+                                            fontSize: r.sp(28),
+                                            color: canAfford
+                                                ? null
+                                                : Colors.grey,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: r.hp(4)),
                                     Text(
                                       reward['name'],
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 12,
+                                        fontSize: r.sp(11),
                                         color: canAfford
                                             ? Colors.black87
                                             : Colors.grey,
                                       ),
                                       textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: r.hp(3)),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: r.wp(8),
+                                        vertical: r.hp(2),
                                       ),
                                       decoration: BoxDecoration(
                                         color: canAfford
@@ -580,12 +644,14 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                                                 0xFF6B9080,
                                               ).withOpacity(0.1)
                                             : Colors.grey.shade200,
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(
+                                          r.radius(8),
+                                        ),
                                       ),
                                       child: Text(
                                         '${reward['cost']}',
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: r.sp(11),
                                           fontWeight: FontWeight.bold,
                                           color: canAfford
                                               ? const Color(0xFF6B9080)
@@ -608,23 +674,28 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               // Calendar Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    r.wp(20),
+                    r.hp(8),
+                    r.wp(20),
+                    r.hp(16),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         AppLocalizations.of(context)!.pointHistory,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: r.sp(18),
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1F2937),
+                          color: const Color(0xFF1F2937),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: r.hp(12)),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(r.radius(20)),
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: TableCalendar(
@@ -654,20 +725,23 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                               color: Color(0xFF10B981),
                               shape: BoxShape.circle,
                             ),
-                            markerSize: 6,
+                            markerSize: r.wp(6),
                             markersMaxCount: 1,
                           ),
-                          headerStyle: const HeaderStyle(
+                          headerStyle: HeaderStyle(
                             formatButtonVisible: false,
                             titleCentered: true,
-                            leftChevronIcon: Icon(Icons.chevron_left, size: 20),
+                            leftChevronIcon: Icon(
+                              Icons.chevron_left,
+                              size: r.iconSize(20),
+                            ),
                             rightChevronIcon: Icon(
                               Icons.chevron_right,
-                              size: 20,
+                              size: r.iconSize(20),
                             ),
                           ),
-                          daysOfWeekHeight: 32,
-                          rowHeight: 48,
+                          daysOfWeekHeight: r.hp(32),
+                          rowHeight: r.hp(48),
                         ),
                       ),
                     ],
@@ -678,12 +752,12 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
               // Activity List
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: r.wp(20)),
                   child: _buildActivityList(),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              SliverToBoxAdapter(child: SizedBox(height: r.hp(32))),
             ],
           ),
 
@@ -702,22 +776,27 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
 
   Widget _buildActivityList() {
     final events = _selectedDay != null ? _getEventsForDay(_selectedDay!) : [];
+    final r = ResponsiveHelper.of(context);
 
     if (events.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(r.wp(24)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           border: Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
           children: [
-            Icon(Icons.event_note_rounded, size: 40, color: Colors.grey[300]),
-            const SizedBox(height: 12),
+            Icon(
+              Icons.event_note_rounded,
+              size: r.iconSize(40),
+              color: Colors.grey[300],
+            ),
+            SizedBox(height: r.hp(12)),
             Text(
               AppLocalizations.of(context)!.noActivity,
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              style: TextStyle(color: Colors.grey[500], fontSize: r.sp(14)),
             ),
           ],
         ),
@@ -728,41 +807,44 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
       children: events.map((event) {
         final isEarn = event['type'] == 'earn';
         return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(14),
+          margin: EdgeInsets.only(bottom: r.hp(8)),
+          padding: EdgeInsets.all(r.wp(14)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(r.radius(14)),
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(r.wp(10)),
                 decoration: BoxDecoration(
                   color: isEarn
                       ? const Color(0xFF10B981).withOpacity(0.1)
                       : Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
                 child: Icon(
                   isEarn ? Icons.add_rounded : Icons.remove_rounded,
                   color: isEarn ? const Color(0xFF10B981) : Colors.orange,
-                  size: 20,
+                  size: r.iconSize(20),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: r.wp(14)),
               Expanded(
                 child: Text(
                   event['reason'] ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: r.sp(14),
+                  ),
                 ),
               ),
               Text(
                 '${isEarn ? '+' : '-'}${event['amount']}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: r.sp(16),
                   color: isEarn ? const Color(0xFF10B981) : Colors.orange,
                 ),
               ),

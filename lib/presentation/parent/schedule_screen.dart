@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
+import '../../core/utils/responsive_helper.dart';
 
 /// Unified Schedule Screen - combines Sleep Schedule and Quiet Time
 class ScheduleScreen extends StatelessWidget {
@@ -12,6 +13,7 @@ class ScheduleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
+    final r = ResponsiveHelper.of(context);
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -24,10 +26,10 @@ class ScheduleScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(r.wp(8)),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(r.radius(12)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -35,13 +37,13 @@ class ScheduleScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back_ios_rounded, size: 16),
+            child: Icon(Icons.arrow_back_ios_rounded, size: r.iconSize(16)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'ตารางเวลา',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.sp(20)),
         ),
         centerTitle: true,
       ),
@@ -52,18 +54,20 @@ class ScheduleScreen extends StatelessWidget {
             .collection('children')
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
-          }
-
           final childrenDocs = snapshot.data!.docs;
           if (childrenDocs.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.child_care, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
+                  Icon(
+                    Icons.child_care,
+                    size: r.iconSize(64),
+                    color: Colors.grey[400],
+                  ),
+                  SizedBox(height: r.hp(16)),
                   Text(
                     'ยังไม่มีโปรไฟล์เด็ก',
                     style: TextStyle(color: Colors.grey[600]),
@@ -72,7 +76,6 @@ class ScheduleScreen extends StatelessWidget {
               ),
             );
           }
-
           final children = childrenDocs
               .map(
                 (doc) => ChildModel.fromMap(
@@ -81,13 +84,11 @@ class ScheduleScreen extends StatelessWidget {
                 ),
               )
               .toList();
-
           return ListView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(r.wp(20)),
             itemCount: children.length,
-            itemBuilder: (context, index) {
-              return _ScheduleCard(child: children[index], parentId: user.uid);
-            },
+            itemBuilder: (context, index) =>
+                _ScheduleCard(child: children[index], parentId: user.uid),
           );
         },
       ),
@@ -278,13 +279,14 @@ class _ScheduleCardState extends State<_ScheduleCard> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     final enabledCount = _periods.where((p) => p.enabled).length;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: EdgeInsets.only(bottom: r.hp(20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(r.radius(24)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -294,15 +296,14 @@ class _ScheduleCardState extends State<_ScheduleCard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(r.wp(20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 CircleAvatar(
-                  radius: 24,
+                  radius: r.wp(24),
                   backgroundColor: const Color(0xFF6B9080).withOpacity(0.1),
                   backgroundImage: widget.child.avatar != null
                       ? AssetImage(widget.child.avatar!)
@@ -310,53 +311,52 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                   child: widget.child.avatar == null
                       ? Text(
                           widget.child.name[0].toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF6B9080),
-                            fontSize: 18,
+                            color: const Color(0xFF6B9080),
+                            fontSize: r.sp(18),
                           ),
                         )
                       : null,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: r.wp(16)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         widget.child.name,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: r.sp(18),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         '$enabledCount ช่วงเวลาที่เปิดใช้งาน',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: r.sp(12),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 20),
-
-            // Schedule Items
+            SizedBox(height: r.hp(20)),
             ...List.generate(_periods.length, (index) {
               final period = _periods[index];
               final isSleep = period.type == ScheduleType.sleep;
-
               return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
+                margin: EdgeInsets.only(bottom: r.hp(12)),
+                padding: EdgeInsets.all(r.wp(16)),
                 decoration: BoxDecoration(
                   color: period.enabled
                       ? (isSleep
                             ? const Color(0xFF6B9080).withOpacity(0.05)
                             : const Color(0xFF10B981).withOpacity(0.05))
                       : const Color(0xFFF5F5F7),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(r.radius(16)),
                   border: Border.all(
                     color: period.enabled
                         ? (isSleep
@@ -368,14 +368,14 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(r.wp(10)),
                       decoration: BoxDecoration(
                         color: period.enabled
                             ? (isSleep
                                   ? const Color(0xFF6B9080).withOpacity(0.1)
                                   : const Color(0xFF10B981).withOpacity(0.1))
                             : Colors.grey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                       ),
                       child: Icon(
                         isSleep
@@ -386,10 +386,10 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                   ? const Color(0xFF6B9080)
                                   : const Color(0xFF10B981))
                             : Colors.grey,
-                        size: 20,
+                        size: r.iconSize(20),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: r.wp(16)),
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _editPeriod(index),
@@ -408,23 +408,25 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                   ),
                                 ),
                                 if (isSleep) ...[
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: r.wp(8)),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: r.wp(8),
+                                      vertical: r.hp(2),
                                     ),
                                     decoration: BoxDecoration(
                                       color: const Color(
                                         0xFF6B9080,
                                       ).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(
+                                        r.radius(8),
+                                      ),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'Sleep',
                                       style: TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFF6B9080),
+                                        fontSize: r.sp(10),
+                                        color: const Color(0xFF6B9080),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -432,11 +434,11 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                                 ],
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: r.hp(2)),
                             Text(
                               '${period.formatStart()} - ${period.formatEnd()}',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: r.sp(13),
                                 color: period.enabled
                                     ? (isSleep
                                           ? const Color(0xFF6B9080)
@@ -458,7 +460,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                     ),
                     if (!isSleep)
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
+                        icon: Icon(Icons.delete_outline, size: r.iconSize(20)),
                         color: Colors.grey[400],
                         onPressed: () => _removePeriod(index),
                       ),
@@ -466,17 +468,14 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                 ),
               );
             }),
-
-            const SizedBox(height: 16),
-
-            // Add Button
+            SizedBox(height: r.hp(16)),
             GestureDetector(
               onTap: _addQuietTime,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(r.wp(16)),
                 decoration: BoxDecoration(
                   color: const Color(0xFF6B9080).withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(r.radius(16)),
                   border: Border.all(
                     color: const Color(0xFF6B9080).withOpacity(0.2),
                   ),
@@ -485,23 +484,24 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(r.wp(6)),
                       decoration: BoxDecoration(
                         color: const Color(0xFF6B9080).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(r.radius(8)),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add_rounded,
-                        color: Color(0xFF6B9080),
-                        size: 18,
+                        color: const Color(0xFF6B9080),
+                        size: r.iconSize(18),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
+                    SizedBox(width: r.wp(12)),
+                    Text(
                       'เพิ่มช่วงเวลา',
                       style: TextStyle(
-                        color: Color(0xFF6B9080),
+                        color: const Color(0xFF6B9080),
                         fontWeight: FontWeight.w600,
+                        fontSize: r.sp(14),
                       ),
                     ),
                   ],
@@ -651,23 +651,27 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     final isSleep = widget.period.type == ScheduleType.sleep;
     final primaryColor = isSleep
         ? const Color(0xFF6B9080)
         : const Color(0xFF6B9080);
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(r.radius(20)),
+      ),
       title: Row(
         children: [
           Icon(
             isSleep ? Icons.bedtime_rounded : Icons.schedule_rounded,
             color: primaryColor,
+            size: r.iconSize(24),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: r.wp(12)),
           Text(
             isSleep ? 'ตั้งเวลานอน' : 'แก้ไขช่วงเวลา',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.sp(18)),
           ),
         ],
       ),
@@ -680,37 +684,37 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
               decoration: InputDecoration(
                 labelText: 'ชื่อ',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
               ),
             ),
-          if (!isSleep) const SizedBox(height: 20),
+          if (!isSleep) SizedBox(height: r.hp(20)),
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
                   onTap: _selectStartTime,
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(r.wp(16)),
                     decoration: BoxDecoration(
                       color: primaryColor.withOpacity(0.05),
                       border: Border.all(color: primaryColor.withOpacity(0.2)),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(r.radius(12)),
                     ),
                     child: Column(
                       children: [
                         Text(
                           isSleep ? 'เข้านอน' : 'เริ่ม',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: r.sp(12),
                             color: Colors.grey[600],
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: r.hp(4)),
                         Text(
                           '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: r.sp(24),
                             fontWeight: FontWeight.bold,
                             color: primaryColor,
                           ),
@@ -721,36 +725,37 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: r.wp(12)),
                 child: Icon(
                   Icons.arrow_forward_rounded,
                   color: Colors.grey[400],
+                  size: r.iconSize(24),
                 ),
               ),
               Expanded(
                 child: GestureDetector(
                   onTap: _selectEndTime,
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(r.wp(16)),
                     decoration: BoxDecoration(
                       color: primaryColor.withOpacity(0.05),
                       border: Border.all(color: primaryColor.withOpacity(0.2)),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(r.radius(12)),
                     ),
                     child: Column(
                       children: [
                         Text(
                           isSleep ? 'ตื่นนอน' : 'สิ้นสุด',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: r.sp(12),
                             color: Colors.grey[600],
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: r.hp(4)),
                         Text(
                           '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: r.sp(24),
                             fontWeight: FontWeight.bold,
                             color: primaryColor,
                           ),
@@ -767,7 +772,7 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('ยกเลิก'),
+          child: Text('ยกเลิก', style: TextStyle(fontSize: r.sp(14))),
         ),
         ElevatedButton(
           onPressed: () {
@@ -785,10 +790,13 @@ class _EditScheduleDialogState extends State<_EditScheduleDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryColor,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(r.radius(12)),
             ),
           ),
-          child: const Text('บันทึก', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'บันทึก',
+            style: TextStyle(color: Colors.white, fontSize: r.sp(14)),
+          ),
         ),
       ],
     );

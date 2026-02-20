@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../parent/parent_home_screen.dart';
 import '../parent/parent_activity_screen.dart';
 import '../parent/parent_settings_screen.dart';
+import '../../core/utils/responsive_helper.dart';
 
 /// Main shell for parent screens with bottom navigation
 class ParentShell extends StatefulWidget {
@@ -31,6 +32,7 @@ class _ParentShellState extends State<ParentShell> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     final screens = const [
       ParentHomeScreen(),
@@ -54,7 +56,7 @@ class _ParentShellState extends State<ParentShell> {
           ),
           child: NavigationBar(
             elevation: 0,
-            height: 70,
+            height: r.hp(70),
             backgroundColor: colorScheme.surface,
             indicatorColor: colorScheme.primaryContainer,
             selectedIndex: _selectedIndex,
@@ -63,25 +65,40 @@ class _ParentShellState extends State<ParentShell> {
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined, color: Colors.grey[600]),
+                icon: Icon(
+                  Icons.home_outlined,
+                  size: r.iconSize(24),
+                  color: Colors.grey[600],
+                ),
                 selectedIcon: Icon(
                   Icons.home_rounded,
+                  size: r.iconSize(24),
                   color: colorScheme.primary,
                 ),
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.insights_outlined, color: Colors.grey[600]),
+                icon: Icon(
+                  Icons.insights_outlined,
+                  size: r.iconSize(24),
+                  color: Colors.grey[600],
+                ),
                 selectedIcon: Icon(
                   Icons.insights_rounded,
+                  size: r.iconSize(24),
                   color: colorScheme.primary,
                 ),
                 label: 'Activity',
               ),
               NavigationDestination(
-                icon: Icon(Icons.settings_outlined, color: Colors.grey[600]),
+                icon: Icon(
+                  Icons.settings_outlined,
+                  size: r.iconSize(24),
+                  color: Colors.grey[600],
+                ),
                 selectedIcon: Icon(
                   Icons.settings_rounded,
+                  size: r.iconSize(24),
                   color: colorScheme.primary,
                 ),
                 label: 'Settings',
