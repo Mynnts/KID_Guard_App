@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
+import 'child_rewards_screen.dart';
 
 class ChildHomeScreen extends StatefulWidget {
   const ChildHomeScreen({super.key});
@@ -730,7 +731,6 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
   Widget _buildPointsCard(int points, String childName) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [_primaryColor, _secondaryColor],
@@ -752,83 +752,84 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Star Icon
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.star_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChildRewardsScreen()),
           ),
-          const SizedBox(width: 16),
-          // Points Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'แต้มสะสม',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                TweenAnimationBuilder<int>(
-                  tween: IntTween(begin: 0, end: points),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, value, child) {
-                    return Text(
-                      '$value pts',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          // Trophy Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.emoji_events_rounded,
-                  color: Colors.amber,
-                  size: 18,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Level ${(points ~/ 100) + 1}',
-                  style: const TextStyle(
+                // Star Icon
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Points Text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'แต้มสะสม',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TweenAnimationBuilder<int>(
+                        tween: IntTween(begin: 0, end: points),
+                        duration: const Duration(milliseconds: 800),
+                        builder: (context, value, child) {
+                          return Text(
+                            '$value pts',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white,
+                    size: 16,
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

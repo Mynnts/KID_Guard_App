@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../data/models/app_info_model.dart';
-import '../../../data/models/device_model.dart';
+import '../../../data/models/child_model.dart';
 import '../../../data/services/app_service.dart';
 import '../../../data/services/device_service.dart';
 import '../../../logic/providers/auth_provider.dart';
 
 class ParentAppControlScreen extends StatefulWidget {
-  const ParentAppControlScreen({super.key});
+  final String? childId;
+  const ParentAppControlScreen({super.key, this.childId});
 
   @override
   State<ParentAppControlScreen> createState() => _ParentAppControlScreenState();
@@ -16,9 +18,8 @@ class ParentAppControlScreen extends StatefulWidget {
 
 class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   String _searchQuery = '';
-  bool _showSystemApps = true;
+  bool _showSystemApps = false;
   String? _selectedChildId;
-  String? _selectedDeviceId; // null means "All Devices"
 
   final AppService _appService = AppService();
   final DeviceService _deviceService = DeviceService();
@@ -26,6 +27,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedChildId = widget.childId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.children.isNotEmpty && _selectedChildId == null) {
@@ -40,15 +42,13 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
-    final children = authProvider.children;
 
-    final childId =
-        _selectedChildId ?? (children.isNotEmpty ? children.first.id : null);
+    final String? childId = widget.childId ?? _selectedChildId;
 
     if (user == null || childId == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('App Control')),
-        body: const Center(child: Text('No child selected')),
+        appBar: AppBar(title: const Text('การควบคุมแอพ')),
+        body: const Center(child: Text('ไม่ได้เลือกเด็ก')),
       );
     }
 
@@ -56,20 +56,64 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          'App Control',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'การควบคุมแอพ',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('children')
+                  .doc(childId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return const Text(
+                    'กำลังโหลด...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  );
+                }
+
+                final childData = snapshot.data!.data() as Map<String, dynamic>;
+                final child = ChildModel.fromMap(childData, snapshot.data!.id);
+
+                // Be more forgiving with online status
+                final isOnline =
+                    (child.isChildModeActive &&
+                        child.lastActive != null &&
+                        DateTime.now().difference(child.lastActive!).inMinutes <
+                            10) ||
+                    (child.isChildModeActive && child.isOnline);
+
+                return Text(
+                  '${child.name} • ${isOnline ? 'ออนไลน์' : 'ออฟไลน์'}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.normal,
+                    color: isOnline ? Colors.green[700] : Colors.grey[600],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         actions: [
           // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh apps from device',
+            tooltip: 'รีเฟรชแอพจากอุปกรณ์',
             onPressed: () => _onRefreshPressed(user.uid, childId),
           ),
           PopupMenuButton<bool>(
             icon: const Icon(Icons.filter_list),
-            tooltip: 'Filter Apps',
+            tooltip: 'กรองแอพ',
             onSelected: (value) {
               setState(() {
                 _showSystemApps = value;
@@ -79,7 +123,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
               CheckedPopupMenuItem(
                 value: !_showSystemApps,
                 checked: _showSystemApps,
-                child: const Text('Show System Apps'),
+                child: const Text('แสดงแอพระบบ'),
               ),
             ],
           ),
@@ -87,172 +131,12 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       ),
       body: Column(
         children: [
-          // Selectors Section
-          _buildSelectorsSection(children, childId),
-          // Device Selector
-          _buildDeviceSelector(user.uid, childId),
           // Search Field
           _buildSearchField(),
           // Apps List
           Expanded(child: _buildAppsList(user.uid, childId)),
         ],
       ),
-    );
-  }
-
-  Widget _buildSelectorsSection(List<dynamic> children, String childId) {
-    if (children.length <= 1) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: childId,
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down),
-            items: children.map((child) {
-              return DropdownMenuItem<String>(
-                value: child.id,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      child: Text(
-                        child.name.isNotEmpty
-                            ? child.name[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      child.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedChildId = value;
-                  _selectedDeviceId = null; // Reset device selection
-                });
-              }
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeviceSelector(String parentUid, String childId) {
-    return StreamBuilder<List<DeviceModel>>(
-      stream: _deviceService.streamDevices(parentUid, childId),
-      builder: (context, snapshot) {
-        final devices = snapshot.data ?? [];
-
-        if (devices.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                value: _selectedDeviceId,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down),
-                hint: const Row(
-                  children: [
-                    Icon(Icons.devices, size: 20, color: Colors.grey),
-                    SizedBox(width: 12),
-                    Text('ทุกอุปกรณ์'),
-                  ],
-                ),
-                items: [
-                  // "All Devices" option
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Row(
-                      children: [
-                        Icon(Icons.devices, size: 20, color: Colors.grey),
-                        SizedBox(width: 12),
-                        Text('ทุกอุปกรณ์'),
-                      ],
-                    ),
-                  ),
-                  // Individual devices
-                  ...devices.map((device) {
-                    return DropdownMenuItem<String?>(
-                      value: device.deviceId,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.smartphone,
-                            size: 20,
-                            color: device.isOnline ? Colors.green : Colors.grey,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  device.deviceName,
-                                  style: const TextStyle(fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  device.isOnline ? 'ออนไลน์' : 'ออฟไลน์',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: device.isOnline
-                                        ? Colors.green
-                                        : Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDeviceId = value;
-                  });
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -266,7 +150,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
           });
         },
         decoration: InputDecoration(
-          hintText: 'Search apps...',
+          hintText: 'ค้นหาแอพ...',
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Colors.white,
@@ -281,27 +165,15 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   }
 
   Widget _buildAppsList(String parentUid, String childId) {
-    final Stream<List<AppInfoModel>> appsStream;
-
-    if (_selectedDeviceId != null) {
-      appsStream = _appService.streamAppsForDevice(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
-      );
-    } else {
-      appsStream = _appService.streamApps(parentUid, childId);
-    }
-
     return StreamBuilder<List<AppInfoModel>>(
-      stream: appsStream,
+      stream: _appService.streamApps(parentUid, childId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(child: Text('ข้อผิดพลาด: ${snapshot.error}'));
         }
 
         var apps = snapshot.data ?? [];
@@ -331,13 +203,13 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _searchQuery.isEmpty
-                      ? 'No apps synced yet.'
-                      : 'No apps found.',
+                      ? 'ยังไม่มีการซิงค์ข้อมูลแอพ'
+                      : 'ไม่พบแอพที่ค้นหา',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Make sure the child app is running and synced.',
+                  'โปรดตรวจสอบว่าแอพในเครื่องเด็กเปิดทำงานอยู่',
                   style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 ),
               ],
@@ -377,20 +249,21 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildStatItem(
-                    'Total Apps',
+                    'แอพทั้งหมด',
                     apps.length.toString(),
                     Icons.apps,
+                    Colors.blue[300],
                   ),
-                  Container(width: 1, height: 40, color: Colors.white30),
+                  _buildStatDivider(),
                   _buildStatItem(
-                    'Blocked',
+                    'ถูกบล็อก',
                     blockedApps.length.toString(),
                     Icons.block,
                     Colors.red[300],
                   ),
-                  Container(width: 1, height: 40, color: Colors.white30),
+                  _buildStatDivider(),
                   _buildStatItem(
-                    'Allowed',
+                    'อนุญาต',
                     allowedApps.length.toString(),
                     Icons.check_circle,
                     Colors.green[300],
@@ -417,52 +290,25 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   }
 
   Future<void> _onRefreshPressed(String parentUid, String childId) async {
-    if (_selectedDeviceId != null) {
-      // Refresh specific device
-      await _deviceService.requestDeviceSync(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
+    // Refresh all devices
+    await _deviceService.requestAllDevicesSync(parentUid, childId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.sync, color: Colors.white, size: 18),
+              SizedBox(width: 12),
+              Expanded(child: Text('กำลังขอข้อมูลแอพจากทุกอุปกรณ์...')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
       );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.sync, color: Colors.white, size: 18),
-                SizedBox(width: 12),
-                Expanded(child: Text('กำลังขอข้อมูลแอพจากอุปกรณ์ที่เลือก...')),
-              ],
-            ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } else {
-      // Refresh all devices
-      await _deviceService.requestAllDevicesSync(parentUid, childId);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.sync, color: Colors.white, size: 18),
-                SizedBox(width: 12),
-                Expanded(child: Text('กำลังขอข้อมูลแอพจากทุกอุปกรณ์...')),
-              ],
-            ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
@@ -490,6 +336,10 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(width: 1, height: 40, color: Colors.white30);
   }
 
   Widget _buildAppCard(
@@ -601,7 +451,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isBlocked ? 'Blocked' : 'Allowed',
+                              isBlocked ? 'ถูกบล็อก' : 'อนุญาต',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -632,8 +482,8 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                         SnackBar(
                           content: Text(
                             value
-                                ? '${app.name} is now allowed'
-                                : '${app.name} is now blocked',
+                                ? 'อนุญาตให้ใช้งาน ${app.name} แล้ว'
+                                : 'บล็อกการใช้งาน ${app.name} แล้ว',
                           ),
                           behavior: SnackBarBehavior.floating,
                           duration: const Duration(seconds: 2),
@@ -657,24 +507,13 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     String packageName,
     bool isLocked,
   ) {
-    if (_selectedDeviceId != null) {
-      // Toggle for specific device
-      _appService.toggleAppLockForDevice(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
-        packageName,
-        isLocked,
-      );
-    } else {
-      // Toggle for all devices
-      _appService.toggleAppLockAllDevices(
-        parentUid,
-        childId,
-        packageName,
-        isLocked,
-      );
-    }
+    // Toggle for all devices (global child profile)
+    _appService.toggleAppLockAllDevices(
+      parentUid,
+      childId,
+      packageName,
+      isLocked,
+    );
   }
 
   void _showAppDetailsDialog(
@@ -703,20 +542,20 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Package', app.packageName),
+            _buildDetailRow('แพ็คเกจ', app.packageName),
             const SizedBox(height: 12),
-            _buildDetailRow('Status', app.isLocked ? 'Blocked' : 'Allowed'),
+            _buildDetailRow('สถานะ', app.isLocked ? 'ถูกบล็อก' : 'อนุญาต'),
             const SizedBox(height: 12),
             _buildDetailRow(
-              'Type',
-              app.isSystemApp ? 'System App' : 'User App',
+              'ประเภท',
+              app.isSystemApp ? 'แอพระบบ' : 'แอพทั่วไป',
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('ปิด'),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -729,7 +568,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
               Navigator.pop(context);
             },
             icon: Icon(app.isLocked ? Icons.check_circle : Icons.block),
-            label: Text(app.isLocked ? 'Allow' : 'Block'),
+            label: Text(app.isLocked ? 'อนุญาต' : 'บล็อก'),
             style: ElevatedButton.styleFrom(
               backgroundColor: app.isLocked ? Colors.green : Colors.red,
               foregroundColor: Colors.white,

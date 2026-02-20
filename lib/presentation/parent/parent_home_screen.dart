@@ -11,6 +11,7 @@ import 'child_location_screen.dart';
 import 'schedule_screen.dart';
 import 'parent_rewards_screen.dart';
 import 'all_children_screen.dart';
+import 'apps/parent_app_control_screen.dart';
 
 import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:kidguard/data/models/notification_model.dart';
@@ -187,10 +188,15 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
 
                     // Quick Actions
                     _buildSectionHeader(
-                      AppLocalizations.of(context)!.quickActions,
+                      '${AppLocalizations.of(context)!.quickActions}${selectedChild != null ? ' ของ ${selectedChild.name}' : ''}',
                     ),
                     const SizedBox(height: 16),
-                    _buildEnhancedQuickActions(context, children, colorScheme),
+                    _buildEnhancedQuickActions(
+                      context,
+                      children,
+                      selectedChild,
+                      colorScheme,
+                    ),
 
                     const SizedBox(height: 100),
                   ],
@@ -1458,6 +1464,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   Widget _buildEnhancedQuickActions(
     BuildContext context,
     List<ChildModel> children,
+    ChildModel? selectedChild,
     ColorScheme colorScheme,
   ) {
     final actions = [
@@ -1473,7 +1480,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         label: 'App Control',
         subtitle: 'Manage apps',
         color: const Color(0xFF6B9080),
-        onTap: () => Navigator.pushNamed(context, '/parent/app_control'),
+        onTap: () {
+          if (selectedChild == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please select a child first')),
+            );
+            return;
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ParentAppControlScreen(childId: selectedChild.id),
+            ),
+          );
+        },
       ),
       _QuickAction(
         icon: Icons.timer_rounded,

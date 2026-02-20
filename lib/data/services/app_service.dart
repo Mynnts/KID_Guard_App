@@ -1,5 +1,6 @@
 // ==================== นำเข้า Packages ====================
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:installed_apps/app_info.dart';
@@ -202,7 +203,10 @@ class AppService {
   ) async {
     final docId = packageName.replaceAll('.', '_');
 
-    await _firestore
+    final batch = _firestore.batch();
+
+    // 1. Update on specific device
+    final deviceAppRef = _firestore
         .collection('users')
         .doc(parentUid)
         .collection('children')
@@ -210,8 +214,26 @@ class AppService {
         .collection('devices')
         .doc(deviceId)
         .collection('apps')
-        .doc(docId)
-        .set({'isLocked': isLocked}, SetOptions(merge: true));
+        .doc(docId);
+    batch.set(deviceAppRef, {
+      'isLocked': isLocked,
+      'packageName': packageName,
+    }, SetOptions(merge: true));
+
+    // 2. Also update legacy for consistency
+    final legacyAppRef = _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .collection('apps')
+        .doc(docId);
+    batch.set(legacyAppRef, {
+      'isLocked': isLocked,
+      'packageName': packageName,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
   }
 
   /// Toggle app lock for all devices (global)
@@ -232,42 +254,121 @@ class AppService {
         .get();
 
     final batch = _firestore.batch();
+
+    // 1. Update on all registered devices
     for (var deviceDoc in devicesSnapshot.docs) {
       final appRef = deviceDoc.reference.collection('apps').doc(docId);
-      batch.set(appRef, {'isLocked': isLocked}, SetOptions(merge: true));
+      batch.set(appRef, {
+        'isLocked': isLocked,
+        'packageName': packageName,
+      }, SetOptions(merge: true));
     }
+
+    // 2. Update legacy structure (fallback)
+    // This ensures that if the UI is reading from the legacy collection (because no devices are found),
+    // the lock status is still updated and reflected in the UI.
+    final legacyAppRef = _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .collection('apps')
+        .doc(docId);
+    batch.set(legacyAppRef, {
+      'isLocked': isLocked,
+      'packageName': packageName,
+    }, SetOptions(merge: true));
     await batch.commit();
   }
 
   /// Stream blocked apps from all devices for this child
   /// Used by child device to get blocklist
   Stream<List<String>> streamBlockedApps(String parentUid, String childId) {
-    return _firestore
+    final controller = StreamController<List<String>>();
+    StreamSubscription? legacySub;
+    StreamSubscription? devicesListSub;
+    final Map<String, StreamSubscription> deviceAppSubs = {};
+
+    final Set<String> legacyBlocked = {};
+    final Map<String, Set<String>> deviceBlocked = {};
+
+    void emitMerged() {
+      if (controller.isClosed) return;
+      final Set<String> merged = {...legacyBlocked};
+      for (final blocked in deviceBlocked.values) {
+        merged.addAll(blocked);
+      }
+      controller.add(merged.toList());
+    }
+
+    // 1. Listen to legacy structure (Real-time)
+    legacySub = _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .collection('apps')
+        .where('isLocked', isEqualTo: true)
+        .snapshots()
+        .listen((snapshot) {
+          legacyBlocked.clear();
+          for (var doc in snapshot.docs) {
+            final pkg = doc.data()['packageName'] as String?;
+            if (pkg != null) legacyBlocked.add(pkg);
+          }
+          emitMerged();
+        });
+
+    // 2. Listen to devices and their apps (Real-time)
+    devicesListSub = _firestore
         .collection('users')
         .doc(parentUid)
         .collection('children')
         .doc(childId)
         .collection('devices')
         .snapshots()
-        .asyncMap((devicesSnapshot) async {
-          final Set<String> blockedPackages = {};
+        .listen((devicesSnapshot) {
+          // Clean up subs for removed devices
+          final currentDeviceIds = devicesSnapshot.docs
+              .map((d) => d.id)
+              .toSet();
+          deviceAppSubs.keys.toList().forEach((id) {
+            if (!currentDeviceIds.contains(id)) {
+              deviceAppSubs[id]?.cancel();
+              deviceAppSubs.remove(id);
+              deviceBlocked.remove(id);
+            }
+          });
 
+          // Add subs for new devices
           for (var deviceDoc in devicesSnapshot.docs) {
-            final appsSnapshot = await deviceDoc.reference
-                .collection('apps')
-                .where('isLocked', isEqualTo: true)
-                .get();
-
-            for (var appDoc in appsSnapshot.docs) {
-              final packageName = appDoc.data()['packageName'] as String?;
-              if (packageName != null) {
-                blockedPackages.add(packageName);
-              }
+            if (!deviceAppSubs.containsKey(deviceDoc.id)) {
+              deviceAppSubs[deviceDoc.id] = deviceDoc.reference
+                  .collection('apps')
+                  .where('isLocked', isEqualTo: true)
+                  .snapshots()
+                  .listen((appsSnapshot) {
+                    final blocked = appsSnapshot.docs
+                        .map((doc) => doc.data()['packageName'] as String?)
+                        .whereType<String>()
+                        .toSet();
+                    deviceBlocked[deviceDoc.id] = blocked;
+                    emitMerged();
+                  });
             }
           }
-
-          return blockedPackages.toList();
+          emitMerged();
         });
+
+    controller.onCancel = () {
+      legacySub?.cancel();
+      devicesListSub?.cancel();
+      for (var sub in deviceAppSubs.values) {
+        sub.cancel();
+      }
+    };
+
+    return controller.stream;
   }
 
   // ==================== LEGACY METHODS (for backward compatibility) ====================
@@ -280,48 +381,101 @@ class AppService {
 
   /// Legacy: Stream apps from old structure (for backward compatibility)
   Stream<List<AppInfoModel>> streamApps(String parentUid, String childId) {
-    // First try to get from devices structure, fallback to old structure
-    return _firestore
+    final controller = StreamController<List<AppInfoModel>>();
+    StreamSubscription? devicesListSub;
+    StreamSubscription? legacySub;
+    final Map<String, StreamSubscription> deviceAppSubs = {};
+    final Map<String, List<AppInfoModel>> deviceAppsMap = {};
+    List<AppInfoModel> legacyApps = [];
+
+    void emitMerged() {
+      if (controller.isClosed) return;
+      final Map<String, AppInfoModel> mergedMap = {};
+
+      // 1. Process legacy apps
+      for (var app in legacyApps) {
+        mergedMap[app.packageName] = app;
+      }
+
+      // 2. Process all device apps
+      // If a package exists in multiple devices, we merge status (if any is locked, it's locked)
+      for (var apps in deviceAppsMap.values) {
+        for (var app in apps) {
+          if (!mergedMap.containsKey(app.packageName) || app.isLocked) {
+            mergedMap[app.packageName] = app;
+          }
+        }
+      }
+      controller.add(mergedMap.values.toList());
+    }
+
+    devicesListSub = _firestore
         .collection('users')
         .doc(parentUid)
         .collection('children')
         .doc(childId)
         .collection('devices')
         .snapshots()
-        .asyncMap((devicesSnapshot) async {
+        .listen((devicesSnapshot) {
+          // Clean up subs for removed devices
+          final currentDeviceIds = devicesSnapshot.docs
+              .map((d) => d.id)
+              .toSet();
+          deviceAppSubs.keys.toList().forEach((id) {
+            if (!currentDeviceIds.contains(id)) {
+              deviceAppSubs[id]?.cancel();
+              deviceAppSubs.remove(id);
+              deviceAppsMap.remove(id);
+            }
+          });
+
           if (devicesSnapshot.docs.isEmpty) {
-            // Fallback to old structure
-            final oldAppsSnapshot = await _firestore
+            // Fallback to legacy structure
+            legacySub ??= _firestore
                 .collection('users')
                 .doc(parentUid)
                 .collection('children')
                 .doc(childId)
                 .collection('apps')
-                .get();
+                .snapshots()
+                .listen((snap) {
+                  legacyApps = snap.docs
+                      .map((d) => AppInfoModel.fromMap(d.data()))
+                      .toList();
+                  emitMerged();
+                });
+          } else {
+            // We have devices, stop legacy if it was running
+            legacySub?.cancel();
+            legacySub = null;
+            legacyApps = [];
 
-            return oldAppsSnapshot.docs.map((doc) {
-              return AppInfoModel.fromMap(doc.data());
-            }).toList();
-          }
-
-          // Use new devices structure
-          final Map<String, AppInfoModel> appMap = {};
-          for (var deviceDoc in devicesSnapshot.docs) {
-            final appsSnapshot = await deviceDoc.reference
-                .collection('apps')
-                .get();
-            for (var appDoc in appsSnapshot.docs) {
-              final app = AppInfoModel.fromMap(appDoc.data());
-              if (!appMap.containsKey(app.packageName)) {
-                appMap[app.packageName] = app;
-              } else if (app.isLocked) {
-                appMap[app.packageName] = app;
+            for (var deviceDoc in devicesSnapshot.docs) {
+              if (!deviceAppSubs.containsKey(deviceDoc.id)) {
+                deviceAppSubs[deviceDoc.id] = deviceDoc.reference
+                    .collection('apps')
+                    .snapshots()
+                    .listen((appsSnapshot) {
+                      deviceAppsMap[deviceDoc.id] = appsSnapshot.docs
+                          .map((doc) => AppInfoModel.fromMap(doc.data()))
+                          .toList();
+                      emitMerged();
+                    });
               }
             }
           }
-
-          return appMap.values.toList();
+          emitMerged();
         });
+
+    controller.onCancel = () {
+      devicesListSub?.cancel();
+      legacySub?.cancel();
+      for (var sub in deviceAppSubs.values) {
+        sub.cancel();
+      }
+    };
+
+    return controller.stream;
   }
 
   /// Legacy: Toggle app lock (deprecated)
