@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../../data/services/auth_service.dart';
 import '../../data/models/user_model.dart';
@@ -12,9 +13,11 @@ class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   UserModel? _userModel;
   bool _isLoading = false;
+  bool _isInitialized = false;
 
   UserModel? get userModel => _userModel;
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
 
   // Initialize auth state
   List<ChildModel> _children = [];
@@ -25,6 +28,9 @@ class AuthProvider with ChangeNotifier {
   ChildModel? get currentChild => _currentChild;
 
   Future<void> init() async {
+    if (_isInitialized) return;
+
+    // 1. Listen to Firebase Auth changes
     _authService.authStateChanges.listen((User? user) async {
       if (user != null) {
         _userModel = await _authService.getUserData(user.uid);
@@ -32,11 +38,42 @@ class AuthProvider with ChangeNotifier {
           await fetchChildren();
         }
       } else {
-        _userModel = null;
-        _children = [];
+        // Only clear if we're not in child mode (handled by PIN)
+        final prefs = await SharedPreferences.getInstance();
+        final savedPin = prefs.getString('saved_child_pin');
+        if (savedPin == null) {
+          _userModel = null;
+          _children = [];
+        }
       }
       notifyListeners();
     });
+
+    try {
+      _isLoading = true;
+      // 2. Check for child session
+      final prefs = await SharedPreferences.getInstance();
+      final savedPin = prefs.getString('saved_child_pin');
+      final savedChildId = prefs.getString('saved_child_id');
+
+      if (savedPin != null) {
+        final success = await childLogin(savedPin, isAutoLogin: true);
+        if (success && savedChildId != null && _children.isNotEmpty) {
+          final childToSelect = _children.any((c) => c.id == savedChildId)
+              ? _children.firstWhere((c) => c.id == savedChildId)
+              : null;
+          if (childToSelect != null) {
+            await selectChild(childToSelect);
+          }
+        }
+      }
+    } catch (e) {
+      print('AuthProvider init error: $e');
+    } finally {
+      _isInitialized = true;
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> fetchChildren() async {
@@ -79,6 +116,10 @@ class AuthProvider with ChangeNotifier {
       _userModel = await _authService.signIn(email, password);
       if (_userModel != null) {
         await fetchChildren();
+        // Clear child session if parent signs in
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('saved_child_pin');
+        await prefs.remove('saved_child_id');
       }
       return true;
     } catch (e) {
@@ -112,6 +153,10 @@ class AuthProvider with ChangeNotifier {
       _userModel = await _authService.signInWithGoogle();
       if (_userModel != null) {
         await fetchChildren();
+        // Clear child session if parent signs in
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('saved_child_pin');
+        await prefs.remove('saved_child_id');
       }
       return _userModel != null;
     } catch (e) {
@@ -126,6 +171,9 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     await _authService.signOut();
     _userModel = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_child_pin');
+    await prefs.remove('saved_child_id');
     notifyListeners();
   }
 
@@ -174,6 +222,10 @@ class AuthProvider with ChangeNotifier {
     _currentChild = child;
     notifyListeners();
 
+    // Save session
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('saved_child_id', child.id);
+
     // Cancel previous subscription if exists
     await _currentChildSubscription?.cancel();
 
@@ -208,23 +260,32 @@ class AuthProvider with ChangeNotifier {
         false,
       );
     }
+
+    // Clear saved child session
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_child_pin');
+    await prefs.remove('saved_child_id');
+
     _currentChild = null;
     notifyListeners();
   }
 
-  Future<bool> childLogin(String pin) async {
+  Future<bool> childLogin(String pin, {bool isAutoLogin = false}) async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      if (!isAutoLogin) {
+        _isLoading = true;
+        notifyListeners();
+      }
+
       final parentUser = await _authService.verifyPin(pin);
       if (parentUser != null) {
-        // For child login, we might want to store the parent's info
-        // or a specific child session. For now, we'll store the parent user
-        // but we should probably handle this differently in a real app
-        // (e.g., separate ChildModel).
-        // Assuming the requirement is just to link/login.
         _userModel = parentUser;
-        await fetchChildren(); // Fetch children for the parent
+        await fetchChildren();
+
+        // Save session
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('saved_child_pin', pin);
+
         return true;
       }
       return false;
@@ -232,8 +293,10 @@ class AuthProvider with ChangeNotifier {
       print(e);
       return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!isAutoLogin) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 

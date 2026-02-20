@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/routes.dart';
 import '../../logic/providers/auth_provider.dart';
 
@@ -56,35 +57,61 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   }
 
   Future<void> _checkAuthState() async {
-    // Use Firebase Auth directly to check if user is logged in
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // 1. Wait for AuthProvider to finish its initialization (auto-login, etc.)
+    int attempts = 0;
+    while (!authProvider.isInitialized && attempts < 50) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+      if (!mounted) return;
+    }
+
+    if (!mounted || _hasNavigated) return;
+
+    // 2. Priority 1: Child Mode (Active child selected)
+    if (authProvider.currentChild != null) {
+      _hasNavigated = true;
+      Navigator.pushReplacementNamed(context, AppRoutes.childHome);
+      return;
+    }
+
+    // 3. Priority 2: Child Mode (PIN entered but no child selected yet)
+    // We check SharedPreferences to confirm this was a child PIN login session
+    final prefs = await SharedPreferences.getInstance();
+    final hasSavedChildPin = prefs.getString('saved_child_pin') != null;
+
+    if (authProvider.userModel != null && hasSavedChildPin) {
+      _hasNavigated = true;
+      Navigator.pushReplacementNamed(context, AppRoutes.childSelection);
+      return;
+    }
+
+    // 4. Priority 3: Parent Session (Firebase Auth)
     final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    if (!mounted) return;
-
-    if (firebaseUser != null) {
-      // User is logged in, wait for AuthProvider to load user data
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      // Wait for AuthProvider to sync with Firebase (max 3 seconds)
-      int attempts = 0;
-      while (authProvider.userModel == null && attempts < 30) {
+    if (firebaseUser != null || authProvider.userModel != null) {
+      // If we have a userModel but NO saved child PIN, it's likely a parent session
+      // Wait a bit more if userModel is still null
+      int userAttempts = 0;
+      while (authProvider.userModel == null && userAttempts < 20) {
         await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
+        userAttempts++;
         if (!mounted) return;
       }
 
-      // Redirect to parent dashboard
-      if (mounted && !_hasNavigated) {
+      if (mounted && !_hasNavigated && authProvider.userModel != null) {
         _hasNavigated = true;
+        // Check if it should go to parent dashboard
         Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
+        return;
       }
-    } else {
-      // User is not logged in, show select user screen
-      if (mounted) {
-        setState(() {
-          _isCheckingAuth = false;
-        });
-      }
+    }
+
+    // 5. No active session found, show role selection UI
+    if (mounted) {
+      setState(() {
+        _isCheckingAuth = false;
+      });
     }
   }
 

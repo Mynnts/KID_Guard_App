@@ -5,6 +5,9 @@ import '../../data/local/blocklist_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:device_apps/device_apps.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/services.dart';
 
 class BackgroundService {
   Timer? _monitorTimer;
@@ -72,10 +75,33 @@ class BackgroundService {
     _currentChildId = childId;
     _currentParentId = parentId;
 
-    // Save IDs for Background Worker (WorkManager)
+    // Save IDs for Background Worker (WorkManager) and Native Services
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('current_child_id', childId);
     await prefs.setString('current_parent_uid', parentId);
+
+    // Sync to Native SharedPreferences for Accessibility/ChildMode services
+    try {
+      const platformNative = MethodChannel('com.kidguard/native');
+      await platformNative.invokeMethod('saveMonitoringSettings', {
+        'childId': childId,
+        'parentId': parentId,
+      });
+
+      // Also save to JSON file as another backup (Native likes this)
+      final settingsFile = File(
+        '${await BlocklistStorage().localPath}/kid_guard_settings.json',
+      );
+      final settingsData = {
+        'childId': childId,
+        'parentId': parentId,
+        'isChildModeActive': true,
+        'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+      };
+      await settingsFile.writeAsString(jsonEncode(settingsData));
+    } catch (e) {
+      print("Error syncing native IDs: $e");
+    }
 
     // Register Periodic Task
     Workmanager().registerPeriodicTask(
@@ -139,6 +165,21 @@ class BackgroundService {
       } catch (e) {
         print('Error setting offline status: $e');
       }
+    }
+
+    // Update native settings to reflect inactive state
+    try {
+      final settingsFile = File(
+        '${await BlocklistStorage().localPath}/kid_guard_settings.json',
+      );
+      if (await settingsFile.exists()) {
+        final content = await settingsFile.readAsString();
+        final data = Map<String, dynamic>.from(jsonDecode(content));
+        data['isChildModeActive'] = false;
+        await settingsFile.writeAsString(jsonEncode(data));
+      }
+    } catch (e) {
+      print("Error updating native settings on stop: $e");
     }
 
     _monitorTimer?.cancel();

@@ -54,9 +54,29 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _restoreState();
     _initializeServices();
     _startSyncing();
     _checkIntent();
+  }
+
+  Future<void> _restoreState() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool isActive = prefs.getBool('isChildModeActive') ?? false;
+
+    // Check if service is actually running to be more accurate
+    final isServiceRunning = await ChildModeService.isRunning();
+    if (isServiceRunning) {
+      isActive = true;
+    }
+
+    if (isActive) {
+      if (mounted) {
+        setState(() {
+          _isChildrenModeActive = true;
+        });
+      }
+    }
   }
 
   void _checkIntent() {
