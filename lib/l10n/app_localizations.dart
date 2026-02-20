@@ -703,6 +703,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name}\'s profile has been updated.'**
   String profileUpdatedMessage(Object name);
+
+  /// No description provided for @online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get online;
+
+  /// No description provided for @offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offline;
 }
 
 class _AppLocalizationsDelegate

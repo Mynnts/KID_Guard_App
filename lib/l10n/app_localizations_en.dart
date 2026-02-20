@@ -335,4 +335,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String profileUpdatedMessage(Object name) {
     return '$name\'s profile has been updated.';
   }
+
+  @override
+  String get online => 'Online';
+
+  @override
+  String get offline => 'Offline';
 }

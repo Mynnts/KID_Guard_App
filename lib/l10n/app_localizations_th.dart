@@ -332,4 +332,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String profileUpdatedMessage(Object name) {
     return 'โปรไฟล์ของ $name ได้รับการอัปเดตเรียบร้อยแล้ว';
   }
+
+  @override
+  String get online => 'ออนไลน์';
+
+  @override
+  String get offline => 'ออฟไลน์';
 }

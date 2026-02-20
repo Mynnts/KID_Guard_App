@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/services/notification_service.dart';
 import '../../data/models/notification_model.dart';
+import '../../data/models/notification_model.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({super.key});
@@ -329,28 +331,73 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.verified, color: _primaryColor, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  AppLocalizations.of(context)!.parentAccount,
-                  style: const TextStyle(
-                    color: _primaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+          const SizedBox(height: 8),
+          if (Provider.of<AuthProvider>(context, listen: false).userModel !=
+              null)
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(
+                    Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    ).userModel!.uid,
+                  )
+                  .collection('children')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                bool isAnyChildOnline = false;
+                if (snapshot.hasData) {
+                  for (var doc in snapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final timestamp = data['lastActive'] as Timestamp?;
+                    if (timestamp != null) {
+                      final lastActive = timestamp.toDate();
+                      if (DateTime.now().difference(lastActive).inMinutes < 2) {
+                        isAnyChildOnline = true;
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                final statusColor = isAnyChildOnline
+                    ? _successColor
+                    : _textMuted;
+                final statusText = isAnyChildOnline
+                    ? AppLocalizations.of(context)!.online
+                    : AppLocalizations.of(context)!.offline;
+                final statusIcon = isAnyChildOnline
+                    ? Icons.circle
+                    : Icons.circle_outlined;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                ),
-              ],
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 10),
+                      const SizedBox(width: 6),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ),
         ],
       ),
     );

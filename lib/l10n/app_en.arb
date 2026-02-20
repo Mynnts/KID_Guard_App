@@ -113,5 +113,7 @@
   "@childAddedMessage": { "placeholders": { "name": {} } },
   "profileUpdatedTitle": "Profile Updated",
   "profileUpdatedMessage": "{name}'s profile has been updated.",
-  "@profileUpdatedMessage": { "placeholders": { "name": {} } }
+  "@profileUpdatedMessage": { "placeholders": { "name": {} } },
+  "online": "Online",
+  "offline": "Offline"
 }

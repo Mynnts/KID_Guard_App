@@ -883,6 +883,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           final child = children[index];
           final isSelected = _selectedChildIndex == index;
           final isOnline =
+              child.isChildModeActive &&
               child.lastActive != null &&
               DateTime.now().difference(child.lastActive!).inMinutes < 2;
 
@@ -1313,6 +1314,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     if (child == null) return const SizedBox();
 
     final isOnline =
+        child.isChildModeActive &&
         child.lastActive != null &&
         DateTime.now().difference(child.lastActive!).inMinutes < 2;
     final lastActiveText = child.lastActive != null
