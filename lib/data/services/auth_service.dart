@@ -1,17 +1,33 @@
+// ==================== นำเข้า Packages ====================
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../models/child_model.dart';
+import '../../core/utils/security_logger.dart';
 
+// ==================== AuthService ====================
+/// บริการจัดการ Authentication และข้อมูลผู้ใช้
+///
+/// ฟังก์ชันหลัก:
+/// - signIn(), register() - ล็อกอิน/ลงทะเบียนด้วย email
+/// - signInWithGoogle() - ล็อกอินด้วย Google
+/// - signOut() - ออกจากระบบ
+/// - generatePin() - สร้าง PIN 6 หลักสำหรับเชื่อมต่อกับลูก
+/// - verifyPin() - ตรวจสอบ PIN ของผู้ปกครอง
+/// - registerChild() - ลงทะเบียนลูกใหม่
+/// - getChildren() - ดึงรายการลูกทั้งหมด
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  /// Stream สถานะ authentication (ล็อกอิน/ออกจากระบบ)
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign in with Email & Password
+  // ==================== ล็อกอินด้วย Email ====================
+  /// ล็อกอินด้วย email และ password
+  /// @return UserModel ถ้าสำเร็จ, null ถ้าล้มเหลว
   Future<UserModel?> signIn(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -20,15 +36,23 @@ class AuthService {
       );
       User? user = result.user;
       if (user != null) {
+        await SecurityLogger.logAuth('email_sign_in', true, userId: user.uid);
         return await getUserData(user.uid);
       }
       return null;
     } catch (e) {
+      await SecurityLogger.logAuth('email_sign_in', false);
+      await SecurityLogger.error(
+        'Sign in failed',
+        data: {'error': e.toString()},
+      );
       rethrow;
     }
   }
 
-  // Register with Email & Password
+  // ==================== ลงทะเบียนด้วย Email ====================
+  /// สร้างบัญชีใหม่ด้วย email และ password
+  /// สร้าง document ใน Firestore ที่ /users/{uid}
   Future<UserModel?> register(
     String email,
     String password,
@@ -41,12 +65,12 @@ class AuthService {
       );
       User? user = result.user;
       if (user != null) {
-        // Create user doc in Firestore
+        // สร้าง document ใน Firestore
         UserModel newUser = UserModel(
           uid: user.uid,
           email: email,
           displayName: name,
-          role: 'parent', // Default to parent for now
+          role: 'parent', // ผู้ลงทะเบียนใหม่เป็น parent เสมอ
         );
         await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
         return newUser;
@@ -57,11 +81,16 @@ class AuthService {
     }
   }
 
-  // Sign in with Google
+  // ==================== ล็อกอินด้วย Google ====================
+  /// ล็อกอินด้วย Google Account
+  /// ถ้าไม่มี document ใน Firestore จะสร้างให้อัตโนมัติ
   Future<UserModel?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // User canceled
+      if (googleUser == null) {
+        await SecurityLogger.logAuth('google_sign_in', false);
+        return null; // ผู้ใช้ยกเลิก
+      }
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -74,12 +103,14 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
-        // Check if user exists, if not create
+        await SecurityLogger.logAuth('google_sign_in', true, userId: user.uid);
+        // ตรวจสอบว่ามี document ใน Firestore หรือยัง
         DocumentSnapshot doc = await _firestore
             .collection('users')
             .doc(user.uid)
             .get();
         if (!doc.exists) {
+          // สร้าง document ใหม่ถ้าเป็นผู้ใช้ใหม่
           UserModel newUser = UserModel(
             uid: user.uid,
             email: user.email ?? '',
@@ -90,6 +121,10 @@ class AuthService {
               .collection('users')
               .doc(user.uid)
               .set(newUser.toMap());
+          await SecurityLogger.info(
+            'New user registered via Google',
+            data: {'uid': user.uid},
+          );
           return newUser;
         } else {
           return UserModel.fromMap(
@@ -100,18 +135,26 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print(e.toString());
+      await SecurityLogger.logAuth('google_sign_in', false);
+      await SecurityLogger.error(
+        'Google sign in failed',
+        data: {'error': e.toString()},
+      );
       return null;
     }
   }
 
-  // Sign Out
+  // ==================== ออกจากระบบ ====================
+  /// ออกจากระบบทั้ง Firebase Auth และ Google Sign-In
   Future<void> signOut() async {
+    final userId = _auth.currentUser?.uid;
+    await SecurityLogger.logAuth('sign_out', true, userId: userId);
     await _googleSignIn.signOut();
     await _auth.signOut();
   }
 
-  // Get User Data from Firestore
+  // ==================== ดึงข้อมูลผู้ใช้ ====================
+  /// ดึงข้อมูลผู้ใช้จาก Firestore
   Future<UserModel?> getUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore
@@ -128,10 +171,14 @@ class AuthService {
     }
   }
 
-  // Generate Unique PIN for Parent (Persistent)
+  // ==================== สร้าง PIN ====================
+  /// สร้าง PIN 6 หลักสำหรับผู้ปกครอง
+  /// - ถ้ามี PIN อยู่แล้วจะคืนค่าเดิม
+  /// - ตรวจสอบความไม่ซ้ำกับผู้ใช้อื่น
+  /// - บันทึกลง Firestore
   Future<String?> generatePin(String uid) async {
     try {
-      // Check if user already has a PIN
+      // ตรวจสอบว่ามี PIN อยู่แล้วหรือไม่
       DocumentSnapshot userDoc = await _firestore
           .collection('users')
           .doc(uid)
@@ -176,7 +223,9 @@ class AuthService {
     }
   }
 
-  // Register Child
+  // ==================== ลงทะเบียนลูก ====================
+  /// ลงทะเบียนลูกใหม่ภายใต้ผู้ปกครอง
+  /// สร้าง document ที่ /users/{parentUid}/children/{childId}
   Future<ChildModel?> registerChild(
     String parentUid,
     String name,
@@ -204,7 +253,8 @@ class AuthService {
     }
   }
 
-  // Get Children
+  // ==================== ดึงรายชื่อลูก ====================
+  /// ดึงรายชื่อลูกทั้งหมดของผู้ปกครอง
   Future<List<ChildModel>> getChildren(String parentUid) async {
     try {
       final query = await _firestore
@@ -221,7 +271,9 @@ class AuthService {
     }
   }
 
-  // Verify PIN for Child Login
+  // ==================== ตรวจสอบ PIN ====================
+  /// ตรวจสอบ PIN สำหรับการล็อกอินของเด็ก
+  /// @return UserModel ของผู้ปกครองถ้า PIN ถูกต้อง
   Future<UserModel?> verifyPin(String pin) async {
     try {
       final query = await _firestore
@@ -241,7 +293,8 @@ class AuthService {
     }
   }
 
-  // Delete Child
+  // ==================== ลบลูก ====================
+  /// ลบข้อมูลลูกออกจากระบบ
   Future<void> deleteChild(String parentUid, String childId) async {
     try {
       await _firestore
@@ -256,7 +309,8 @@ class AuthService {
     }
   }
 
-  // Update Child Status (Online/Offline)
+  // ==================== อัปเดตสถานะลูก ====================
+  /// อัปเดตสถานะออนไลน์/ออฟไลน์ และ lastActive
   Future<void> updateChildStatus(
     String parentUid,
     String childId,
@@ -274,6 +328,48 @@ class AuthService {
           });
     } catch (e) {
       print(e.toString());
+    }
+  }
+
+  // ==================== อัปเดตชื่อผู้ใช้ ====================
+  /// อัปเดตชื่อที่แสดงทั้งใน Firestore และ Firebase Auth
+  Future<void> updateDisplayName(String uid, String newName) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'displayName': newName,
+      });
+      // อัปเดตใน Firebase Auth ด้วย
+      await _auth.currentUser?.updateDisplayName(newName);
+    } catch (e) {
+      print(e.toString());
+      rethrow;
+    }
+  }
+
+  // ==================== เปลี่ยนรหัสผ่าน ====================
+  /// เปลี่ยนรหัสผ่าน - ต้อง re-authenticate ก่อน
+  Future<void> updatePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // ต้อง re-authenticate ด้วยรหัสผ่านปัจจุบันก่อน
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // เปลี่ยนรหัสผ่านใหม่
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      print(e.toString());
+      rethrow;
     }
   }
 }

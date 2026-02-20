@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
@@ -21,6 +22,7 @@ class OverlayService : Service() {
 
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var audioManager: AudioManager? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -29,6 +31,7 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         createNotificationChannel()
         startForeground(1, createNotification())
     }
@@ -39,7 +42,37 @@ class OverlayService : Service() {
         return START_STICKY
     }
 
+    private fun pauseAllMedia() {
+        try {
+            // Request audio focus to pause other apps like YouTube
+            if (audioManager?.isMusicActive == true) {
+                @Suppress("DEPRECATION")
+                audioManager?.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+                )
+            }
+            // Also dispatch media button event to pause
+            val keyEvent = android.view.KeyEvent(
+                android.view.KeyEvent.ACTION_DOWN,
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE
+            )
+            audioManager?.dispatchMediaKeyEvent(keyEvent)
+            val keyEventUp = android.view.KeyEvent(
+                android.view.KeyEvent.ACTION_UP,
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE
+            )
+            audioManager?.dispatchMediaKeyEvent(keyEventUp)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun showOverlay(packageName: String) {
+        // Pause all media when showing overlay
+        pauseAllMedia()
+        
         if (overlayView != null) {
             updateOverlayContent(packageName)
             return
@@ -52,87 +85,90 @@ class OverlayService : Service() {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else
                 WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            // Block ALL touches - kids cannot interact, only parents can unlock via Firebase
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.CENTER
 
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        overlayView = inflater.inflate(R.layout.overlay_layout, null)
+        
+        // Try friendly layout first, fallback to old layout if crash
+        try {
+            overlayView = inflater.inflate(R.layout.friendly_overlay_layout, null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                overlayView = inflater.inflate(R.layout.overlay_layout, null)
+            } catch (e2: Exception) {
+                e2.printStackTrace()
+                return // Can't show overlay
+            }
+        }
 
         updateOverlayContent(packageName)
-
-        val button = overlayView?.findViewById<Button>(R.id.overlay_button)
-        button?.setOnClickListener {
-            val startMain = Intent(Intent.ACTION_MAIN)
-            startMain.addCategory(Intent.CATEGORY_HOME)
-            startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(startMain)
-        }
         
-        // Add Unlock Button logic if needed (e.g. long press or specific button)
-        // For now, let's keep it simple. If we want to unlock, we might need a separate button.
-        // Let's assume the user wants to unlock via the app.
-        // But since the overlay blocks everything, they can't open the app easily.
-        // We should add an "Unlock" button to the overlay for Time Limit.
-        
-        if (packageName == "Time Limit Reached") {
-             // Change button text or add another button
-             button?.text = "Unlock with PIN"
-             button?.setOnClickListener {
-                 // Show PIN Dialog (Native) or Open App with specific intent
-                 // Opening app is easier to handle PIN logic in Flutter
-                 val intent = packageManager.getLaunchIntentForPackage(packageName)
-                 if (intent != null) {
-                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                     startActivity(intent)
-                 } else {
-                     // Fallback if we can't find our own package?
-                     // We are in the same package, so:
-                     val appIntent = Intent(this, MainActivity::class.java)
-                     appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                     appIntent.putExtra("action", "unlock_time_limit")
-                     startActivity(appIntent)
-                 }
-                 // We don't hide overlay yet, Flutter will tell us to hide if PIN is correct
-             }
-        }
+        // Update clock and date display
+        updateClockDisplay()
 
-        windowManager?.addView(overlayView, params)
+        // Button is now hidden/invisible in the new layout
+        // Children cannot dismiss the overlay - only parents can unlock via Firebase
+
+        try {
+            windowManager?.addView(overlayView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    
+    private fun updateClockDisplay() {
+        try {
+            val clockView = overlayView?.findViewById<TextView>(R.id.clock_display)
+            val dateView = overlayView?.findViewById<TextView>(R.id.date_display)
+            
+            val now = java.util.Calendar.getInstance()
+            val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            val dateFormat = java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.ENGLISH)
+            
+            clockView?.text = timeFormat.format(now.time)
+            dateView?.text = dateFormat.format(now.time)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun updateOverlayContent(packageName: String) {
         val title = overlayView?.findViewById<TextView>(R.id.overlay_title)
         val message = overlayView?.findViewById<TextView>(R.id.overlay_message)
-        val button = overlayView?.findViewById<Button>(R.id.overlay_button)
 
-        if (packageName == "Time Limit Reached") {
-            title?.text = "Time's Up!"
-            message?.text = "You have used your screen time for today."
-            button?.text = "Unlock with PIN"
-            button?.setOnClickListener {
-                 val appIntent = Intent(this, MainActivity::class.java)
-                 appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                 appIntent.putExtra("action", "unlock_time_limit")
-                 startActivity(appIntent)
-                 
-                 // HIDE OVERLAY temporarily to allow PIN entry
-                 // We can remove it or set visibility to GONE
-                 // If we remove it, we need to be careful about recreating it if they cancel.
-                 // Setting visibility to GONE is safer if we keep the service running.
-                 overlayView?.visibility = View.GONE
+        // Super child-friendly cute messages - NO buttons for kids to dismiss
+        when {
+            packageName == "Time Limit Reached" || packageName.contains("หมดเวลา") || packageName.contains("⏰") -> {
+                title?.text = "เก่งมากวันนี้! ⭐"
+                message?.text = "พักสายตาสักครู่นะ 💕"
             }
-        } else {
-            title?.text = "App Locked"
-            message?.text = "You cannot access $packageName right now."
-            button?.text = "I Understand"
-            button?.setOnClickListener {
-                val startMain = Intent(Intent.ACTION_MAIN)
-                startMain.addCategory(Intent.CATEGORY_HOME)
-                startMain.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(startMain)
+            packageName.contains("นอน") || packageName.contains("🌙") -> {
+                title?.text = "ฝันดีนะตัวน้อย 🌙"
+                message?.text = "พรุ่งนี้เจอกันใหม่นะ ✨"
+            }
+            packageName.contains("พัก") || packageName.contains("🔕") -> {
+                title?.text = "พักผ่อนกันเถอะ 🌸"
+                message?.text = "ไปทำกิจกรรมสนุกๆ กันนะ"
+            }
+            packageName.contains("ระงับ") || packageName.contains("🔒") -> {
+                title?.text = "พักสักครู่นะ 🔒"
+                message?.text = "รอพ่อแม่มาปลดล็อคนะ"
+            }
+            packageName.contains("หลับ") || packageName.contains("💤") || packageName.contains("ไม่ได้เล่น") -> {
+                // Screen timeout - device inactive
+                title?.text = "แอปหลับแล้วนะ 💤"
+                message?.text = "กดหน้าจอเพื่อเล่นต่อได้นะ"
+            }
+            else -> {
+                // Blocked app - friendly message
+                title?.text = "ไปเล่นอย่างอื่นกันนะ 🎮"
+                message?.text = "มีอย่างอื่นเยอะเลย 🌈"
             }
         }
     }

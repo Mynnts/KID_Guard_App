@@ -5,6 +5,16 @@ allprojects {
     }
 }
 
+// Apply after all projects are evaluated to ensure plugins are configured
+gradle.afterProject {
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.addAll(listOf(
+            "-Xlint:none",
+            "-nowarn"
+        ))
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

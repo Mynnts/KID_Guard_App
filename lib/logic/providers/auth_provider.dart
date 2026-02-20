@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../../data/services/auth_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/child_model.dart';
+import '../../data/services/notification_service.dart';
+import '../../data/models/notification_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -15,6 +19,7 @@ class AuthProvider with ChangeNotifier {
   // Initialize auth state
   List<ChildModel> _children = [];
   ChildModel? _currentChild;
+  StreamSubscription<DocumentSnapshot>? _currentChildSubscription;
 
   List<ChildModel> get children => _children;
   ChildModel? get currentChild => _currentChild;
@@ -140,6 +145,20 @@ class AuthProvider with ChangeNotifier {
           childIds: _userModel!.childIds,
           pin: pin,
         );
+
+        // Notify user about PIN change
+        await NotificationService().addNotification(
+          _userModel!.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'PIN Updated',
+            message: 'Your connection PIN has been regenerated.',
+            timestamp: DateTime.now(),
+            type: 'system',
+            iconName: 'vpn_key_rounded',
+            colorValue: Colors.orange.value,
+          ),
+        );
       }
       return pin;
     } catch (e) {
@@ -154,12 +173,34 @@ class AuthProvider with ChangeNotifier {
   Future<void> selectChild(ChildModel child) async {
     _currentChild = child;
     notifyListeners();
+
+    // Cancel previous subscription if exists
+    await _currentChildSubscription?.cancel();
+
+    // Subscribe to realtime updates for this child
     if (_userModel != null) {
+      _currentChildSubscription = FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userModel!.uid)
+          .collection('children')
+          .doc(child.id)
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.exists && snapshot.data() != null) {
+              _currentChild = ChildModel.fromMap(snapshot.data()!, snapshot.id);
+              notifyListeners();
+            }
+          });
+
       await _authService.updateChildStatus(_userModel!.uid, child.id, true);
     }
   }
 
   Future<void> logoutChild() async {
+    // Cancel realtime subscription
+    await _currentChildSubscription?.cancel();
+    _currentChildSubscription = null;
+
     if (_userModel != null && _currentChild != null) {
       await _authService.updateChildStatus(
         _userModel!.uid,
@@ -203,6 +244,50 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       await _authService.deleteChild(_userModel!.uid, childId);
       _children.removeWhere((child) => child.id == childId);
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateDisplayName(String newName) async {
+    if (_userModel == null) return false;
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authService.updateDisplayName(_userModel!.uid, newName);
+      // Update local user model
+      _userModel = UserModel(
+        uid: _userModel!.uid,
+        email: _userModel!.email,
+        displayName: newName,
+        role: _userModel!.role,
+        childIds: _userModel!.childIds,
+        pin: _userModel!.pin,
+      );
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updatePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    if (_userModel == null) return false;
+    try {
+      _isLoading = true;
+      notifyListeners();
+      await _authService.updatePassword(currentPassword, newPassword);
       return true;
     } catch (e) {
       print(e);

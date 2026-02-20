@@ -25,3 +25,12 @@ plugins {
 }
 
 include(":app")
+
+// Force Java 17 for all subprojects to suppress obsolete Java 8 warnings
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.withType<JavaCompile>().configureEach {
+            options.compilerArgs.addAll(listOf("-Xlint:-options", "-Xlint:-deprecation"))
+        }
+    }
+}

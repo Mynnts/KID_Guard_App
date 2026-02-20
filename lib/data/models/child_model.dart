@@ -6,12 +6,20 @@ class ChildModel {
   final String name;
   final int age;
   final String? avatar;
-  final int screenTime; // in seconds
+  final int screenTime; // Total screen time today for statistics (seconds)
+  final int
+  limitUsedTime; // Time used towards limit - resettable by parent (seconds)
   final bool isLocked;
   final bool isOnline;
   final DateTime? lastActive;
+  final DateTime? sessionStartTime; // When child mode was activated
   final int dailyTimeLimit; // in seconds, 0 means no limit
   final bool isChildModeActive;
+  final bool unlockRequested; // Parent can request unlock remotely
+  final DateTime? timeLimitDisabledUntil; // Time limit disabled until this time
+  final String
+  lockReason; // Reason for lock (blocked_app, time_limit, sleep, quiet, screen_timeout)
+  final int points;
 
   ChildModel({
     required this.id,
@@ -20,11 +28,17 @@ class ChildModel {
     required this.age,
     this.avatar,
     this.screenTime = 0,
+    this.limitUsedTime = 0,
     this.isLocked = false,
     this.isOnline = false,
     this.lastActive,
+    this.sessionStartTime,
     this.dailyTimeLimit = 0,
     this.isChildModeActive = false,
+    this.unlockRequested = false,
+    this.timeLimitDisabledUntil,
+    this.lockReason = '',
+    this.points = 0,
   });
 
   factory ChildModel.fromMap(Map<String, dynamic> map, String id) {
@@ -35,13 +49,26 @@ class ChildModel {
       age: map['age'] ?? 0,
       avatar: map['avatar'],
       screenTime: map['screenTime'] ?? 0,
+      limitUsedTime:
+          map['limitUsedTime'] ??
+          map['screenTime'] ??
+          0, // Fallback to screenTime for existing data
       isLocked: map['isLocked'] ?? false,
       isOnline: map['isOnline'] ?? false,
       lastActive: map['lastActive'] != null
           ? (map['lastActive'] as Timestamp).toDate()
           : null,
+      sessionStartTime: map['sessionStartTime'] != null
+          ? (map['sessionStartTime'] as Timestamp).toDate()
+          : null,
       dailyTimeLimit: map['dailyTimeLimit'] ?? 0,
       isChildModeActive: map['isChildModeActive'] ?? false,
+      unlockRequested: map['unlockRequested'] ?? false,
+      timeLimitDisabledUntil: map['timeLimitDisabledUntil'] != null
+          ? (map['timeLimitDisabledUntil'] as Timestamp).toDate()
+          : null,
+      lockReason: map['lockReason'] ?? '',
+      points: map['points'] ?? 0,
     );
   }
 
@@ -52,11 +79,17 @@ class ChildModel {
       'age': age,
       'avatar': avatar,
       'screenTime': screenTime,
+      'limitUsedTime': limitUsedTime,
       'isLocked': isLocked,
       'isOnline': isOnline,
       'lastActive': lastActive,
+      'sessionStartTime': sessionStartTime,
       'dailyTimeLimit': dailyTimeLimit,
       'isChildModeActive': isChildModeActive,
+      'unlockRequested': unlockRequested,
+      'timeLimitDisabledUntil': timeLimitDisabledUntil,
+      'lockReason': lockReason,
+      'points': points,
     };
   }
 }
