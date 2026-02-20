@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ChildLocationScreen extends StatefulWidget {
   final String childId;
@@ -50,6 +51,7 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -57,25 +59,25 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(r.wp(8)),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(r.radius(12)),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8),
             ],
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, size: r.iconSize(20)),
             onPressed: () => Navigator.pop(context),
           ),
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.all(8),
+            margin: EdgeInsets.all(r.wp(8)),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(r.radius(12)),
               boxShadow: [
                 BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8),
               ],
@@ -191,19 +193,19 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
 
   Widget _buildAnimatedMarker() {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Pulse ring
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
             return Transform.scale(
               scale: _pulseAnimation.value,
               child: Container(
-                width: 80,
-                height: 80,
+                width: r.wp(80),
+                height: r.wp(80),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: colorScheme.primary.withOpacity(0.2),
@@ -212,9 +214,8 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
             );
           },
         ),
-        // Inner marker
         Container(
-          padding: const EdgeInsets.all(4),
+          padding: EdgeInsets.all(r.wp(4)),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -231,12 +232,12 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
             ],
           ),
           child: CircleAvatar(
-            radius: 24,
+            radius: r.wp(24),
             backgroundColor: Colors.white,
             child: Text(
               widget.childName[0].toUpperCase(),
               style: TextStyle(
-                fontSize: 20,
+                fontSize: r.sp(20),
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
               ),
@@ -249,6 +250,7 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
 
   Widget _buildNameBadge() {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -263,37 +265,41 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
         );
       },
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(r.radius(16)),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: r.wp(16),
+              vertical: r.hp(10),
+            ),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(r.radius(16)),
               border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: EdgeInsets.all(r.wp(6)),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(r.radius(8)),
                   ),
                   child: Icon(
                     Icons.location_on,
                     color: colorScheme.primary,
-                    size: 18,
+                    size: r.iconSize(18),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: r.wp(8)),
                 Text(
                   "${widget.childName}'s Location",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
+                    fontSize: r.sp(14),
                   ),
                 ),
               ],
@@ -312,6 +318,7 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
     required double lng,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -324,52 +331,49 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
         );
       },
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(r.radius(28))),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(r.wp(24)),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(r.radius(28)),
               ),
               border: Border.all(color: Colors.white.withOpacity(0.5)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
                 Container(
-                  width: 40,
-                  height: 4,
+                  width: r.wp(40),
+                  height: r.hp(4),
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(r.radius(2)),
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // Status row
+                SizedBox(height: r.hp(20)),
                 Row(
                   children: [
-                    // Status indicator
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(r.wp(12)),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: hasData
                               ? [colorScheme.primary, colorScheme.tertiary]
                               : [Colors.grey, Colors.grey.shade400],
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(r.radius(16)),
                       ),
                       child: Icon(
                         hasData ? Icons.gps_fixed : Icons.gps_off,
                         color: Colors.white,
+                        size: r.iconSize(24),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: r.wp(16)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,27 +382,27 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
                             hasData
                                 ? 'Location Active'
                                 : 'Waiting for location...',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: r.sp(18),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: r.hp(4)),
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time,
-                                size: 14,
+                                size: r.iconSize(14),
                                 color: Colors.grey[600],
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: r.wp(4)),
                               Text(
                                 hasData
                                     ? 'Last updated: $timeString'
                                     : 'No data yet',
                                 style: TextStyle(
                                   color: Colors.grey[600],
-                                  fontSize: 13,
+                                  fontSize: r.sp(13),
                                 ),
                               ),
                             ],
@@ -409,15 +413,13 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
                     if (hasData) _buildTimeSinceBadge(lastUpdate),
                   ],
                 ),
-
                 if (hasData) ...[
-                  const SizedBox(height: 20),
-                  // Coordinates
+                  SizedBox(height: r.hp(20)),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(r.wp(16)),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceVariant.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(r.radius(16)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -429,7 +431,7 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
                         ),
                         Container(
                           width: 1,
-                          height: 40,
+                          height: r.hp(40),
                           color: Colors.grey[300],
                         ),
                         _buildCoordinateItem(
@@ -440,25 +442,27 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Center on map button
+                  SizedBox(height: r.hp(16)),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () =>
                           _mapController.move(LatLng(lat, lng), 17),
-                      icon: const Icon(Icons.my_location),
-                      label: const Text('Center on Map'),
+                      icon: Icon(Icons.my_location, size: r.iconSize(20)),
+                      label: Text(
+                        'Center on Map',
+                        style: TextStyle(fontSize: r.sp(14)),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(r.radius(14)),
                         ),
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 8),
+                SizedBox(height: r.hp(8)),
               ],
             ),
           ),
@@ -469,6 +473,7 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
 
   Widget _buildTimeSinceBadge(DateTime? lastUpdate) {
     if (lastUpdate == null) return const SizedBox();
+    final r = ResponsiveHelper.of(context);
 
     final diff = DateTime.now().difference(lastUpdate);
     String timeAgo;
@@ -489,26 +494,26 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: r.wp(10), vertical: r.hp(6)),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(r.radius(12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: r.wp(8),
+            height: r.wp(8),
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: r.wp(6)),
           Text(
             timeAgo,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: r.sp(12),
             ),
           ),
         ],
@@ -517,13 +522,20 @@ class _ChildLocationScreenState extends State<ChildLocationScreen>
   }
 
   Widget _buildCoordinateItem(String label, String value, IconData icon) {
+    final r = ResponsiveHelper.of(context);
     return Column(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Icon(icon, size: r.iconSize(16), color: Colors.grey[600]),
+        SizedBox(height: r.hp(4)),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey[600], fontSize: r.sp(12)),
+        ),
+        SizedBox(height: r.hp(2)),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: r.sp(14)),
+        ),
       ],
     );
   }

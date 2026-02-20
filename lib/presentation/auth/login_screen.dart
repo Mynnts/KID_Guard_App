@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -115,12 +116,13 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final r = ResponsiveHelper.of(context);
 
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: EdgeInsets.symmetric(horizontal: r.wp(28)),
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: Form(
@@ -128,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 16),
+                  SizedBox(height: r.hp(16)),
 
                   // Back Button
                   Align(
@@ -136,40 +138,40 @@ class _LoginScreenState extends State<LoginScreen>
                     child: _buildBackButton(),
                   ),
 
-                  const SizedBox(height: 48),
+                  SizedBox(height: r.hp(48)),
 
                   // Icon
                   Center(child: _buildIcon()),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: r.hp(32)),
 
                   // Title
                   Text(
                     _isLogin ? 'ยินดีต้อนรับกลับ' : 'สร้างบัญชีใหม่',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
+                    style: TextStyle(
+                      fontSize: r.sp(28),
                       fontWeight: FontWeight.w700,
                       color: _textPrimary,
                       letterSpacing: -0.5,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  SizedBox(height: r.hp(8)),
 
                   Text(
                     _isLogin
                         ? 'ลงชื่อเข้าใช้เพื่อดำเนินการต่อ'
                         : 'ลงทะเบียนเพื่อเริ่มต้นใช้งาน',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: r.sp(14),
                       color: _textSecondary,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
 
-                  const SizedBox(height: 48),
+                  SizedBox(height: r.hp(48)),
 
                   // Name Field (only for registration)
                   if (!_isLogin) ...[
@@ -187,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.hp(16)),
                   ],
 
                   // Email Field
@@ -204,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen>
                     },
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: r.hp(16)),
 
                   // Password Field
                   _buildTextField(
@@ -218,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
                         color: _textMuted,
-                        size: 20,
+                        size: r.iconSize(20),
                       ),
                       onPressed: () => setState(
                         () => _isPasswordVisible = !_isPasswordVisible,
@@ -232,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
 
                   if (_isLogin) ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: r.hp(12)),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -243,10 +245,10 @@ class _LoginScreenState extends State<LoginScreen>
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
+                        child: Text(
                           'ลืมรหัสผ่าน?',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: r.sp(13),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -254,17 +256,17 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ],
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: r.hp(32)),
 
                   // Submit Button
                   if (authProvider.isLoading)
                     Center(
                       child: Container(
-                        width: 52,
-                        height: 52,
+                        width: r.wp(52),
+                        height: r.hp(52),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(r.radius(16)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.06),
@@ -273,11 +275,11 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ],
                         ),
-                        child: const Center(
+                        child: Center(
                           child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
+                            width: r.wp(24),
+                            height: r.hp(24),
+                            child: const CircularProgressIndicator(
                               color: _primaryColor,
                               strokeWidth: 2.5,
                             ),
@@ -291,22 +293,22 @@ class _LoginScreenState extends State<LoginScreen>
                       text: _isLogin ? 'เข้าสู่ระบบ' : 'สร้างบัญชี',
                     ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: r.hp(32)),
 
                   // Divider
                   _buildDivider(),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: r.hp(32)),
 
                   // Google Button
                   _buildGoogleButton(authProvider),
 
-                  const SizedBox(height: 40),
+                  SizedBox(height: r.hp(40)),
 
                   // Switch Auth Mode
                   _buildAuthModeSwitch(),
 
-                  const SizedBox(height: 48),
+                  SizedBox(height: r.hp(48)),
                 ],
               ),
             ),
@@ -317,14 +319,15 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildBackButton() {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
-        width: 44,
-        height: 44,
+        width: r.wp(44),
+        height: r.hp(44),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(r.radius(14)),
           border: Border.all(color: _borderColor, width: 1),
           boxShadow: [
             BoxShadow(
@@ -334,22 +337,23 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.arrow_back_ios_rounded,
           color: _textPrimary,
-          size: 16,
+          size: r.iconSize(16),
         ),
       ),
     );
   }
 
   Widget _buildIcon() {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      width: 72,
-      height: 72,
+      width: r.wp(72),
+      height: r.wp(72),
       decoration: BoxDecoration(
         color: _primaryColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(r.radius(22)),
         boxShadow: [
           BoxShadow(
             color: _primaryColor.withOpacity(0.25),
@@ -358,9 +362,9 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ],
       ),
-      child: const Icon(
+      child: Icon(
         Icons.person_outline_rounded,
-        size: 34,
+        size: r.iconSize(34),
         color: Colors.white,
       ),
     );
@@ -375,58 +379,59 @@ class _LoginScreenState extends State<LoginScreen>
     Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
+    final r = ResponsiveHelper.of(context);
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
-      style: const TextStyle(
-        fontSize: 15,
+      style: TextStyle(
+        fontSize: r.sp(15),
         fontWeight: FontWeight.w500,
         color: _textPrimary,
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           color: _textSecondary,
           fontWeight: FontWeight.w400,
-          fontSize: 14,
+          fontSize: r.sp(14),
         ),
         floatingLabelStyle: const TextStyle(
           color: _primaryColor,
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 12),
-          child: Icon(icon, color: _textMuted, size: 20),
+          padding: EdgeInsets.only(left: r.wp(16), right: r.wp(12)),
+          child: Icon(icon, color: _textMuted, size: r.iconSize(20)),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: _inputBg,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: _borderColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: _primaryColor, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: Color(0xFFEF4444)),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 18,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: r.wp(16),
+          vertical: r.hp(18),
         ),
       ),
     );
@@ -436,13 +441,14 @@ class _LoginScreenState extends State<LoginScreen>
     required VoidCallback onPressed,
     required String text,
   }) {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        height: 56,
+        height: r.hp(56),
         decoration: BoxDecoration(
           color: _primaryColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           boxShadow: [
             BoxShadow(
               color: _primaryColor.withOpacity(0.25),
@@ -454,9 +460,9 @@ class _LoginScreenState extends State<LoginScreen>
         child: Center(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 15,
+              fontSize: r.sp(15),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),
@@ -487,6 +493,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleButton(AuthProvider authProvider) {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTap: () async {
         final success = await authProvider.signInWithGoogle();
@@ -495,10 +502,10 @@ class _LoginScreenState extends State<LoginScreen>
         }
       },
       child: Container(
-        height: 56,
+        height: r.hp(56),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           border: Border.all(color: _borderColor, width: 1),
           boxShadow: [
             BoxShadow(
@@ -513,28 +520,28 @@ class _LoginScreenState extends State<LoginScreen>
           children: [
             Image.network(
               'https://www.google.com/favicon.ico',
-              width: 20,
-              height: 20,
+              width: r.wp(20),
+              height: r.wp(20),
               errorBuilder: (_, __, ___) => Container(
-                width: 20,
-                height: 20,
+                width: r.wp(20),
+                height: r.wp(20),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F0F5),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(r.radius(6)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.g_mobiledata,
-                  size: 16,
-                  color: Color(0xFF4285F4),
+                  size: r.iconSize(16),
+                  color: const Color(0xFF4285F4),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            const Text(
+            SizedBox(width: r.wp(12)),
+            Text(
               'ดำเนินการต่อด้วย Google',
               style: TextStyle(
                 color: _textPrimary,
-                fontSize: 14,
+                fontSize: r.sp(14),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -545,14 +552,15 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildAuthModeSwitch() {
+    final r = ResponsiveHelper.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           _isLogin ? 'ยังไม่มีบัญชี? ' : 'มีบัญชีอยู่แล้ว? ',
-          style: const TextStyle(
+          style: TextStyle(
             color: _textSecondary,
-            fontSize: 14,
+            fontSize: r.sp(14),
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -560,10 +568,10 @@ class _LoginScreenState extends State<LoginScreen>
           onTap: _toggleAuthMode,
           child: Text(
             _isLogin ? 'ลงทะเบียน' : 'เข้าสู่ระบบ',
-            style: const TextStyle(
+            style: TextStyle(
               color: _primaryColor,
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: r.sp(14),
             ),
           ),
         ),

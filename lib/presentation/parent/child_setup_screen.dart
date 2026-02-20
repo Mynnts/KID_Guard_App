@@ -6,6 +6,7 @@ import '../../data/models/child_model.dart';
 import '../../data/models/notification_model.dart';
 import '../../data/services/notification_service.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ChildSetupScreen extends StatefulWidget {
   final ChildModel? child;
@@ -42,16 +43,18 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.child != null;
+    final r = ResponsiveHelper.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
           isEditing
               ? AppLocalizations.of(context)!.editChildProfile
               : AppLocalizations.of(context)!.addChildProfile,
+          style: TextStyle(fontSize: r.sp(18)),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(r.wp(24)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -60,14 +63,14 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                   ? AppLocalizations.of(context)!.updateProfileDesc
                   : AppLocalizations.of(context)!.createProfileDesc,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey, fontSize: r.sp(14)),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: r.hp(32)),
             Center(
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 50,
+                    radius: r.wp(50),
                     backgroundColor: Theme.of(
                       context,
                     ).colorScheme.primaryContainer,
@@ -75,18 +78,18 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                         ? AssetImage(widget.child!.avatar!)
                         : null,
                     child: widget.child?.avatar == null
-                        ? const Icon(Icons.person, size: 50)
+                        ? Icon(Icons.person, size: r.iconSize(50))
                         : null,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: CircleAvatar(
-                      radius: 18,
+                      radius: r.wp(18),
                       backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: const Icon(
+                      child: Icon(
                         Icons.camera_alt,
-                        size: 18,
+                        size: r.iconSize(18),
                         color: Colors.white,
                       ),
                     ),
@@ -94,35 +97,40 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: r.hp(32)),
             TextFormField(
               controller: _nameController,
+              style: TextStyle(fontSize: r.sp(15)),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context)!.childName,
-                prefixIcon: const Icon(Icons.person_outline),
+                labelStyle: TextStyle(fontSize: r.sp(14)),
+                prefixIcon: Icon(Icons.person_outline, size: r.iconSize(22)),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: r.hp(16)),
             TextFormField(
               controller: _ageController,
+              style: TextStyle(fontSize: r.sp(15)),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context)!.childAge,
-                prefixIcon: const Icon(Icons.cake_outlined),
+                labelStyle: TextStyle(fontSize: r.sp(14)),
+                prefixIcon: Icon(Icons.cake_outlined, size: r.iconSize(22)),
               ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: r.hp(32)),
             Text(
               '${AppLocalizations.of(context)!.dailyTimeLimit}: ${_dailyTimeLimit == 0 ? AppLocalizations.of(context)!.unlimited : "${(_dailyTimeLimit / 60).toStringAsFixed(1)} ${AppLocalizations.of(context)!.hours}"}',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: r.sp(16),
+              ),
             ),
             Slider(
               value: _dailyTimeLimit.toDouble(),
               min: 0,
-              max: 480, // 8 hours
-              divisions: 16, // 30 min steps
+              max: 480,
+              divisions: 16,
               label: _dailyTimeLimit == 0
                   ? AppLocalizations.of(context)!.unlimited
                   : '${(_dailyTimeLimit / 60).toStringAsFixed(1)} ${AppLocalizations.of(context)!.hours}',
@@ -132,15 +140,15 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                 });
               },
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: r.hp(32)),
             Text(
               AppLocalizations.of(context)!.selectMode,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: r.sp(16),
+              ),
             ),
-            const SizedBox(height: 16),
-            // TODO: Implement actual mode selection logic. currently just UI
+            SizedBox(height: r.hp(16)),
             _buildModeOption(
               context,
               title: AppLocalizations.of(context)!.strictMode,
@@ -148,7 +156,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
               icon: Icons.lock_outline,
               isSelected: true,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: r.hp(12)),
             _buildModeOption(
               context,
               title: AppLocalizations.of(context)!.flexibleMode,
@@ -156,13 +164,17 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
               icon: Icons.lock_open_outlined,
               isSelected: false,
             ),
-            const SizedBox(height: 48),
+            SizedBox(height: r.hp(48)),
             ElevatedButton(
               onPressed: _saveChildProfile,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: r.hp(14)),
+              ),
               child: Text(
                 isEditing
                     ? AppLocalizations.of(context)!.saveChanges
                     : AppLocalizations.of(context)!.createProfile,
+                style: TextStyle(fontSize: r.sp(15)),
               ),
             ),
           ],
@@ -308,13 +320,14 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
     required IconData icon,
     required bool isSelected,
   }) {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(r.wp(16)),
       decoration: BoxDecoration(
         color: isSelected
             ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5)
             : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(r.radius(12)),
         border: Border.all(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
@@ -326,12 +339,12 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
         children: [
           Icon(
             icon,
-            size: 32,
+            size: r.iconSize(32),
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
                 : Colors.grey,
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: r.wp(16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,6 +353,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: r.sp(14),
                     color: isSelected
                         ? Theme.of(context).colorScheme.onSurface
                         : Colors.grey.shade700,
@@ -347,7 +361,10 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                 ),
                 Text(
                   description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: r.sp(12),
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -356,6 +373,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
             Icon(
               Icons.check_circle,
               color: Theme.of(context).colorScheme.primary,
+              size: r.iconSize(24),
             ),
         ],
       ),

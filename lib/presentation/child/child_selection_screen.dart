@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../config/routes.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ChildSelectionScreen extends StatefulWidget {
   const ChildSelectionScreen({super.key});
@@ -54,6 +55,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final children = authProvider.children;
+    final r = ResponsiveHelper.of(context);
 
     return Scaffold(
       backgroundColor: _bgColor,
@@ -63,20 +65,23 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Header Section
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 40, 28, 24),
+                  padding: EdgeInsets.fromLTRB(
+                    r.wp(28),
+                    r.hp(40),
+                    r.wp(28),
+                    r.hp(24),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Decorative Icon
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: r.wp(56),
+                        height: r.wp(56),
                         decoration: BoxDecoration(
                           gradient: _accentGradient,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(r.radius(16)),
                           boxShadow: [
                             BoxShadow(
                               color: _accentColor.withOpacity(0.3),
@@ -85,31 +90,30 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.child_care_rounded,
                           color: Colors.white,
-                          size: 28,
+                          size: r.iconSize(28),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      // Title
+                      SizedBox(height: r.hp(24)),
                       Text(
                         'ใครกำลังใช้งาน',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: r.sp(15),
                           fontWeight: FontWeight.w500,
                           color: _textSecondary,
                           letterSpacing: 0.3,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: r.hp(6)),
                       ShaderMask(
                         shaderCallback: (bounds) =>
                             _accentGradient.createShader(bounds),
-                        child: const Text(
+                        child: Text(
                           'เครื่องนี้?',
                           style: TextStyle(
-                            fontSize: 34,
+                            fontSize: r.sp(34),
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                             letterSpacing: -0.5,
@@ -117,11 +121,11 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.hp(8)),
                       Text(
                         'เลือกโปรไฟล์เพื่อเริ่มใช้งาน',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: r.sp(14),
                           color: _textSecondary.withOpacity(0.8),
                           fontWeight: FontWeight.w400,
                         ),
@@ -130,18 +134,16 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   ),
                 ),
               ),
-
-              // Children Grid
               SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.wp(24),
+                  vertical: r.hp(8),
                 ),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisSpacing: r.wp(16),
+                    mainAxisSpacing: r.hp(16),
                     childAspectRatio: 0.95,
                   ),
                   delegate: SliverChildBuilderDelegate((context, index) {
@@ -152,9 +154,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   }, childCount: children.length + 1),
                 ),
               ),
-
-              // Bottom Spacing
-              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              SliverToBoxAdapter(child: SizedBox(height: r.hp(40))),
             ],
           ),
         ),
@@ -164,6 +164,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
 
   Widget _buildChildCard(BuildContext context, ChildModel child, int index) {
     final isSelected = _selectedIndex == index;
+    final r = ResponsiveHelper.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -185,7 +186,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
           child: Container(
             decoration: BoxDecoration(
               color: _cardBg,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(r.radius(28)),
               border: Border.all(
                 color: isSelected
                     ? _accentColor.withOpacity(0.3)
@@ -205,7 +206,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(r.radius(28)),
                 onTap: () async {
                   final authProvider = Provider.of<AuthProvider>(
                     context,
@@ -221,9 +222,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                 },
                 child: Stack(
                   children: [
-                    // Main Content
                     Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: EdgeInsets.all(r.wp(12)),
                       child: Center(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
@@ -234,7 +234,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                               Hero(
                                 tag: 'avatar_${child.id}',
                                 child: Container(
-                                  padding: const EdgeInsets.all(3),
+                                  padding: EdgeInsets.all(r.wp(3)),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     gradient: LinearGradient(
@@ -247,13 +247,13 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                     ),
                                   ),
                                   child: Container(
-                                    padding: const EdgeInsets.all(2),
+                                    padding: EdgeInsets.all(r.wp(2)),
                                     decoration: const BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
                                     ),
                                     child: CircleAvatar(
-                                      radius: 32,
+                                      radius: r.wp(32),
                                       backgroundColor: const Color(0xFFF8F8FA),
                                       backgroundImage: child.avatar != null
                                           ? AssetImage(child.avatar!)
@@ -270,8 +270,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                                       ? child.name[0]
                                                             .toUpperCase()
                                                       : '?',
-                                                  style: const TextStyle(
-                                                    fontSize: 24,
+                                                  style: TextStyle(
+                                                    fontSize: r.sp(24),
                                                     fontWeight: FontWeight.w700,
                                                     color: Colors.white,
                                                   ),
@@ -283,12 +283,11 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              // Name
+                              SizedBox(height: r.hp(12)),
                               Text(
                                 child.name,
-                                style: const TextStyle(
-                                  fontSize: 15,
+                                style: TextStyle(
+                                  fontSize: r.sp(15),
                                   fontWeight: FontWeight.w600,
                                   color: _textPrimary,
                                   letterSpacing: 0.2,
@@ -297,21 +296,22 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 6),
-                              // Age Badge
+                              SizedBox(height: r.hp(6)),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: r.wp(10),
+                                  vertical: r.hp(4),
                                 ),
                                 decoration: BoxDecoration(
                                   color: _accentColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(
+                                    r.radius(10),
+                                  ),
                                 ),
                                 child: Text(
                                   '${child.age} ปี',
-                                  style: const TextStyle(
-                                    fontSize: 11,
+                                  style: TextStyle(
+                                    fontSize: r.sp(11),
                                     color: _accentColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -322,10 +322,9 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                         ),
                       ),
                     ),
-                    // Delete Button
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: r.hp(8),
+                      right: r.wp(8),
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -345,11 +344,11 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                             customBorder: const CircleBorder(),
                             onTap: () => _confirmDelete(context, child),
                             child: Padding(
-                              padding: const EdgeInsets.all(6),
+                              padding: EdgeInsets.all(r.wp(6)),
                               child: Icon(
                                 Icons.close_rounded,
                                 color: Colors.grey[400],
-                                size: 14,
+                                size: r.iconSize(14),
                               ),
                             ),
                           ),
@@ -367,34 +366,37 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
   }
 
   void _confirmDelete(BuildContext context, ChildModel child) {
+    final r = ResponsiveHelper.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(r.radius(24)),
+        ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(r.wp(10)),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(r.radius(12)),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFEF4444),
-                size: 22,
+                color: const Color(0xFFEF4444),
+                size: r.iconSize(22),
               ),
             ),
-            const SizedBox(width: 14),
-            const Expanded(
+            SizedBox(width: r.wp(14)),
+            Expanded(
               child: Text(
                 'ลบโปรไฟล์?',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: _textPrimary,
-                  fontSize: 18,
+                  fontSize: r.sp(18),
                 ),
               ),
             ),
@@ -402,13 +404,13 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
         ),
         content: Text(
           'คุณแน่ใจหรือไม่ที่จะลบโปรไฟล์ของ ${child.name}? การกระทำนี้จะไม่สามารถย้อนกลับได้',
-          style: const TextStyle(
+          style: TextStyle(
             color: _textSecondary,
-            fontSize: 14,
+            fontSize: r.sp(14),
             height: 1.5,
           ),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actionsPadding: EdgeInsets.fromLTRB(r.wp(20), 0, r.wp(20), r.hp(20)),
         actions: [
           Row(
             children: [
@@ -416,23 +418,23 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(r.radius(14)),
                       side: BorderSide(color: _borderColor),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'ยกเลิก',
                     style: TextStyle(
                       color: _textSecondary,
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: r.sp(14),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: r.wp(12)),
               Expanded(
                 child: TextButton(
                   onPressed: () async {
@@ -441,32 +443,34 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                       context,
                       listen: false,
                     ).deleteChild(child.id);
-
                     if (!success && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('ไม่สามารถลบโปรไฟล์ได้'),
+                          content: Text(
+                            'ไม่สามารถลบโปรไฟล์ได้',
+                            style: TextStyle(fontSize: r.sp(14)),
+                          ),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(r.radius(12)),
                           ),
                         ),
                       );
                     }
                   },
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                     backgroundColor: const Color(0xFFEF4444),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(r.radius(14)),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'ลบ',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: r.sp(14),
                     ),
                   ),
                 ),
@@ -479,6 +483,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
   }
 
   Widget _buildAddChildCard(BuildContext context, int index) {
+    final r = ResponsiveHelper.of(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 400 + (index * 100)),
@@ -491,14 +496,14 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(r.radius(28)),
           border: Border.all(color: _borderColor, width: 1.5),
           color: Colors.white.withOpacity(0.5),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(r.radius(28)),
             onTap: () {
               Navigator.pushReplacementNamed(
                 context,
@@ -508,10 +513,9 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Dashed Circle with Icon
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: r.wp(64),
+                  height: r.wp(64),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -520,17 +524,17 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                     ),
                     color: _accentColor.withOpacity(0.06),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add_rounded,
-                    size: 30,
+                    size: r.iconSize(30),
                     color: _accentColor,
                   ),
                 ),
-                const SizedBox(height: 14),
-                const Text(
+                SizedBox(height: r.hp(14)),
+                Text(
                   'เพิ่มโปรไฟล์',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: r.sp(14),
                     color: _accentColor,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,

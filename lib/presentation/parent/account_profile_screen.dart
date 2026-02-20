@@ -6,6 +6,7 @@ import '../../data/models/notification_model.dart';
 import '../../data/models/notification_model.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({super.key});
@@ -56,6 +57,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    final r = ResponsiveHelper.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -63,21 +65,26 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             Icon(
               isError ? Icons.error_outline : Icons.check_circle_outline,
               color: Colors.white,
-              size: 18,
+              size: r.iconSize(18),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: r.wp(12)),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: r.sp(14),
+                ),
               ),
             ),
           ],
         ),
         backgroundColor: isError ? _errorColor : _successColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(r.radius(12)),
+        ),
+        margin: EdgeInsets.all(r.wp(20)),
       ),
     );
   }
@@ -203,6 +210,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
+    final r = ResponsiveHelper.of(context);
 
     return Scaffold(
       backgroundColor: _bgColor,
@@ -212,37 +220,25 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: r.wp(24)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24),
-
-                    // Profile Avatar
+                    SizedBox(height: r.hp(24)),
                     _buildAvatar(user?.displayName ?? ''),
-
-                    const SizedBox(height: 32),
-
-                    // Display Name Section
+                    SizedBox(height: r.hp(32)),
                     _buildSectionTitle(
                       AppLocalizations.of(context)!.displayName,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.hp(16)),
                     _buildNameCard(user?.displayName ?? ''),
-
-                    const SizedBox(height: 24),
-
-                    // Email Section (Read-only)
+                    SizedBox(height: r.hp(24)),
                     _buildEmailCard(user?.email ?? ''),
-
-                    const SizedBox(height: 32),
-
-                    // Password Section
+                    SizedBox(height: r.hp(32)),
                     _buildSectionTitle(AppLocalizations.of(context)!.password),
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.hp(16)),
                     _buildPasswordCard(),
-
-                    const SizedBox(height: 40),
+                    SizedBox(height: r.hp(40)),
                   ],
                 ),
               ),
@@ -254,18 +250,19 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Widget _buildHeader() {
+    final r = ResponsiveHelper.of(context);
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(r.wp(16)),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              width: 44,
-              height: 44,
+              width: r.wp(44),
+              height: r.wp(44),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(r.radius(14)),
                 border: Border.all(color: _borderColor, width: 1),
                 boxShadow: [
                   BoxShadow(
@@ -275,18 +272,18 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_rounded,
                 color: _textPrimary,
-                size: 16,
+                size: r.iconSize(16),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: r.wp(16)),
           Text(
             AppLocalizations.of(context)!.accountProfile,
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: r.sp(20),
               fontWeight: FontWeight.w700,
               color: _textPrimary,
               letterSpacing: -0.3,
@@ -298,12 +295,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Widget _buildAvatar(String name) {
+    final r = ResponsiveHelper.of(context);
     return Center(
       child: Column(
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: r.wp(100),
+            height: r.wp(100),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [_primaryColor, Color(0xFF84A98C)],
@@ -322,16 +320,16 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             child: Center(
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 40,
+                  fontSize: r.sp(40),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          const SizedBox(height: 8),
+          SizedBox(height: r.hp(8)),
+          SizedBox(height: r.hp(8)),
           if (Provider.of<AuthProvider>(context, listen: false).userModel !=
               null)
             StreamBuilder<QuerySnapshot>(
@@ -372,24 +370,28 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     : Icons.circle_outlined;
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: r.wp(12),
+                    vertical: r.hp(6),
                   ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(r.radius(20)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(statusIcon, color: statusColor, size: 10),
-                      const SizedBox(width: 6),
+                      Icon(
+                        statusIcon,
+                        color: statusColor,
+                        size: r.iconSize(10),
+                      ),
+                      SizedBox(width: r.wp(6)),
                       Text(
                         statusText,
                         style: TextStyle(
                           color: statusColor,
-                          fontSize: 13,
+                          fontSize: r.sp(13),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -404,13 +406,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final r = ResponsiveHelper.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: EdgeInsets.only(left: r.wp(4)),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           color: _textSecondary,
-          fontSize: 13,
+          fontSize: r.sp(13),
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
@@ -420,12 +423,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
 
   Widget _buildNameCard(String currentName) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final r = ResponsiveHelper.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(r.wp(20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(r.radius(20)),
         border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
@@ -441,34 +445,34 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(r.wp(10)),
                 decoration: BoxDecoration(
                   color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_outline_rounded,
                   color: _primaryColor,
-                  size: 22,
+                  size: r.iconSize(22),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: r.wp(14)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.displayName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: r.sp(15),
                         color: _textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: r.hp(2)),
                     Text(
                       AppLocalizations.of(context)!.displayNameDesc,
-                      style: const TextStyle(fontSize: 12, color: _textMuted),
+                      style: TextStyle(fontSize: r.sp(12), color: _textMuted),
                     ),
                   ],
                 ),
@@ -477,62 +481,62 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 GestureDetector(
                   onTap: () => setState(() => _isEditingName = true),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.wp(14),
+                      vertical: r.hp(8),
                     ),
                     decoration: BoxDecoration(
                       color: _primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(r.radius(10)),
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.edit,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: _primaryColor,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                       ),
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: r.hp(16)),
           if (_isEditingName) ...[
             TextFormField(
               controller: _nameController,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: r.sp(15),
                 fontWeight: FontWeight.w500,
                 color: _textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.enterDisplayName,
-                hintStyle: const TextStyle(color: _textMuted),
+                hintStyle: TextStyle(color: _textMuted, fontSize: r.sp(14)),
                 filled: true,
                 fillColor: _inputBg,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(r.radius(14)),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(r.radius(14)),
                   borderSide: const BorderSide(color: _borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(r.radius(14)),
                   borderSide: const BorderSide(
                     color: _primaryColor,
                     width: 1.5,
                   ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: r.wp(16),
+                  vertical: r.hp(14),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: r.hp(14)),
             Row(
               children: [
                 Expanded(
@@ -542,33 +546,34 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       _nameController.text = currentName;
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                       decoration: BoxDecoration(
                         color: _inputBg,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                         border: Border.all(color: _borderColor),
                       ),
                       child: Center(
                         child: Text(
                           AppLocalizations.of(context)!.cancel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: _textSecondary,
                             fontWeight: FontWeight.w600,
+                            fontSize: r.sp(14),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: r.wp(12)),
                 Expanded(
                   child: GestureDetector(
                     onTap: authProvider.isLoading ? null : _updateDisplayName,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                       decoration: BoxDecoration(
                         color: _primaryColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                         boxShadow: [
                           BoxShadow(
                             color: _primaryColor.withOpacity(0.25),
@@ -579,19 +584,20 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       ),
                       child: Center(
                         child: authProvider.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
+                            ? SizedBox(
+                                width: r.wp(20),
+                                height: r.wp(20),
+                                child: const CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )
                             : Text(
                                 AppLocalizations.of(context)!.save,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: r.sp(14),
                                 ),
                               ),
                       ),
@@ -603,10 +609,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           ] else ...[
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.wp(16),
+                vertical: r.hp(14),
+              ),
               decoration: BoxDecoration(
                 color: _inputBg,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(r.radius(14)),
                 border: Border.all(color: _borderColor),
               ),
               child: Text(
@@ -614,7 +623,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     ? currentName
                     : AppLocalizations.of(context)!.notSet,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: r.sp(15),
                   fontWeight: FontWeight.w500,
                   color: currentName.isNotEmpty ? _textPrimary : _textMuted,
                 ),
@@ -627,11 +636,12 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Widget _buildEmailCard(String email) {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(r.wp(20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(r.radius(20)),
         border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
@@ -647,57 +657,61 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(r.wp(10)),
                 decoration: BoxDecoration(
                   color: _textMuted.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.mail_outline_rounded,
                   color: _textSecondary,
-                  size: 22,
+                  size: r.iconSize(22),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: r.wp(14)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.email,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: r.sp(15),
                         color: _textPrimary,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: r.hp(2)),
                     Text(
                       AppLocalizations.of(context)!.cannotBeChanged,
-                      style: const TextStyle(fontSize: 12, color: _textMuted),
+                      style: TextStyle(fontSize: r.sp(12), color: _textMuted),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.wp(10),
+                  vertical: r.hp(6),
                 ),
                 decoration: BoxDecoration(
                   color: _successColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(r.radius(8)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, color: _successColor, size: 14),
-                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.check_circle,
+                      color: _successColor,
+                      size: r.iconSize(14),
+                    ),
+                    SizedBox(width: r.wp(4)),
                     Text(
                       AppLocalizations.of(context)!.verified,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: _successColor,
-                        fontSize: 11,
+                        fontSize: r.sp(11),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -706,19 +720,22 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: r.hp(16)),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: EdgeInsets.symmetric(
+              horizontal: r.wp(16),
+              vertical: r.hp(14),
+            ),
             decoration: BoxDecoration(
               color: _inputBg,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(r.radius(14)),
               border: Border.all(color: _borderColor),
             ),
             child: Text(
               email,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: r.sp(15),
                 fontWeight: FontWeight.w500,
                 color: _textSecondary,
               ),
@@ -731,12 +748,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
 
   Widget _buildPasswordCard() {
     final authProvider = Provider.of<AuthProvider>(context);
+    final r = ResponsiveHelper.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(r.wp(20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(r.radius(20)),
         border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
@@ -752,34 +770,34 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(r.wp(10)),
                 decoration: BoxDecoration(
                   color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.lock_outline_rounded,
                   color: _primaryColor,
-                  size: 22,
+                  size: r.iconSize(22),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: r.wp(14)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.password,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: r.sp(15),
                         color: _textPrimary,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: r.hp(2)),
                     Text(
                       AppLocalizations.of(context)!.changePasswordDesc,
-                      style: const TextStyle(fontSize: 12, color: _textMuted),
+                      style: TextStyle(fontSize: r.sp(12), color: _textMuted),
                     ),
                   ],
                 ),
@@ -788,20 +806,20 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 GestureDetector(
                   onTap: () => setState(() => _isChangingPassword = true),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.wp(14),
+                      vertical: r.hp(8),
                     ),
                     decoration: BoxDecoration(
                       color: _primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(r.radius(10)),
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.change,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: _primaryColor,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                       ),
                     ),
                   ),
@@ -809,7 +827,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             ],
           ),
           if (_isChangingPassword) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: r.hp(20)),
             _buildPasswordField(
               controller: _currentPasswordController,
               label: AppLocalizations.of(context)!.currentPassword,
@@ -817,7 +835,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               onToggleVisibility: () =>
                   setState(() => _showCurrentPassword = !_showCurrentPassword),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: r.hp(14)),
             _buildPasswordField(
               controller: _newPasswordController,
               label: AppLocalizations.of(context)!.newPassword,
@@ -825,7 +843,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               onToggleVisibility: () =>
                   setState(() => _showNewPassword = !_showNewPassword),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: r.hp(14)),
             _buildPasswordField(
               controller: _confirmPasswordController,
               label: AppLocalizations.of(context)!.confirmNewPassword,
@@ -833,7 +851,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               onToggleVisibility: () =>
                   setState(() => _showConfirmPassword = !_showConfirmPassword),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: r.hp(20)),
             Row(
               children: [
                 Expanded(
@@ -847,33 +865,34 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                       decoration: BoxDecoration(
                         color: _inputBg,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                         border: Border.all(color: _borderColor),
                       ),
                       child: Center(
                         child: Text(
                           AppLocalizations.of(context)!.cancel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: _textSecondary,
                             fontWeight: FontWeight.w600,
+                            fontSize: r.sp(14),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: r.wp(12)),
                 Expanded(
                   child: GestureDetector(
                     onTap: authProvider.isLoading ? null : _updatePassword,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                       decoration: BoxDecoration(
                         color: _primaryColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                         boxShadow: [
                           BoxShadow(
                             color: _primaryColor.withOpacity(0.25),
@@ -884,19 +903,20 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       ),
                       child: Center(
                         child: authProvider.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
+                            ? SizedBox(
+                                width: r.wp(20),
+                                height: r.wp(20),
+                                child: const CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'เปลี่ยนรหัสผ่าน',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: r.sp(14),
                                 ),
                               ),
                       ),
@@ -906,19 +926,22 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               ],
             ),
           ] else ...[
-            const SizedBox(height: 16),
+            SizedBox(height: r.hp(16)),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.wp(16),
+                vertical: r.hp(14),
+              ),
               decoration: BoxDecoration(
                 color: _inputBg,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(r.radius(14)),
                 border: Border.all(color: _borderColor),
               ),
-              child: const Text(
+              child: Text(
                 '••••••••••',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: r.sp(15),
                   fontWeight: FontWeight.w500,
                   color: _textSecondary,
                   letterSpacing: 3,
@@ -937,42 +960,44 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     required bool isVisible,
     required VoidCallback onToggleVisibility,
   }) {
+    final r = ResponsiveHelper.of(context);
     return TextFormField(
       controller: controller,
       obscureText: !isVisible,
-      style: const TextStyle(
-        fontSize: 15,
+      style: TextStyle(
+        fontSize: r.sp(15),
         fontWeight: FontWeight.w500,
         color: _textPrimary,
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           color: _textSecondary,
           fontWeight: FontWeight.w400,
-          fontSize: 14,
+          fontSize: r.sp(14),
         ),
-        floatingLabelStyle: const TextStyle(
+        floatingLabelStyle: TextStyle(
           color: _primaryColor,
           fontWeight: FontWeight.w500,
+          fontSize: r.sp(14),
         ),
         filled: true,
         fillColor: _inputBg,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(r.radius(14)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(r.radius(14)),
           borderSide: const BorderSide(color: _borderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(r.radius(14)),
           borderSide: const BorderSide(color: _primaryColor, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: r.wp(16),
+          vertical: r.hp(14),
         ),
         suffixIcon: IconButton(
           icon: Icon(
@@ -980,7 +1005,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
             color: _textMuted,
-            size: 20,
+            size: r.iconSize(20),
           ),
           onPressed: onToggleVisibility,
         ),

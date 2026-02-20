@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
+import '../../core/utils/responsive_helper.dart';
 import 'dart:math' as math;
 
 class ChildPinScreen extends StatefulWidget {
@@ -115,6 +116,7 @@ class _ChildPinScreenState extends State<ChildPinScreen>
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(
@@ -130,22 +132,24 @@ class _ChildPinScreenState extends State<ChildPinScreen>
                       children: [
                         // Minimal Header
                         Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(r.wp(16)),
                           child: Row(
                             children: [
                               GestureDetector(
                                 onTap: () => Navigator.pop(context),
                                 child: Container(
-                                  width: 40,
-                                  height: 40,
+                                  width: r.wp(40),
+                                  height: r.wp(40),
                                   decoration: BoxDecoration(
                                     color: _cardColor,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                      r.radius(12),
+                                    ),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.arrow_back_rounded,
                                     color: _textPrimary,
-                                    size: 20,
+                                    size: r.iconSize(20),
                                   ),
                                 ),
                               ),
@@ -157,40 +161,43 @@ class _ChildPinScreenState extends State<ChildPinScreen>
 
                         // Simple Icon
                         Container(
-                          width: 64,
-                          height: 64,
+                          width: r.wp(64),
+                          height: r.wp(64),
                           decoration: BoxDecoration(
                             color: _primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(r.radius(20)),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.lock_outline_rounded,
                             color: _primaryColor,
-                            size: 28,
+                            size: r.iconSize(28),
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: r.hp(24)),
 
                         // Title
-                        const Text(
+                        Text(
                           'Enter PIN',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: r.sp(24),
                             fontWeight: FontWeight.w600,
                             color: _textPrimary,
                             letterSpacing: -0.5,
                           ),
                         ),
 
-                        const SizedBox(height: 8),
+                        SizedBox(height: r.hp(8)),
 
-                        const Text(
+                        Text(
                           'Ask your parent for the code',
-                          style: TextStyle(fontSize: 14, color: _textSecondary),
+                          style: TextStyle(
+                            fontSize: r.sp(14),
+                            color: _textSecondary,
+                          ),
                         ),
 
-                        const SizedBox(height: 32),
+                        SizedBox(height: r.hp(32)),
 
                         // PIN Dots
                         AnimatedBuilder(
@@ -208,16 +215,16 @@ class _ChildPinScreenState extends State<ChildPinScreen>
                           child: _buildPinDots(),
                         ),
 
-                        const SizedBox(height: 16),
+                        SizedBox(height: r.hp(16)),
 
                         // Error text
                         SizedBox(
-                          height: 20,
+                          height: r.hp(20),
                           child: _hasError
-                              ? const Text(
+                              ? Text(
                                   'Incorrect PIN',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: r.sp(13),
                                     color: _errorColor,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -225,10 +232,10 @@ class _ChildPinScreenState extends State<ChildPinScreen>
                               : Consumer<AuthProvider>(
                                   builder: (context, auth, _) {
                                     if (auth.isLoading) {
-                                      return const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
+                                      return SizedBox(
+                                        width: r.wp(16),
+                                        height: r.hp(16),
+                                        child: const CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: _primaryColor,
                                         ),
@@ -244,7 +251,7 @@ class _ChildPinScreenState extends State<ChildPinScreen>
                         // Keypad
                         _buildKeypad(),
 
-                        const SizedBox(height: 32),
+                        SizedBox(height: r.hp(32)),
                       ],
                     ),
                   ),
@@ -258,6 +265,7 @@ class _ChildPinScreenState extends State<ChildPinScreen>
   }
 
   Widget _buildPinDots() {
+    final r = ResponsiveHelper.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(6, (index) {
@@ -271,9 +279,9 @@ class _ChildPinScreenState extends State<ChildPinScreen>
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          width: 12,
-          height: 12,
+          margin: EdgeInsets.symmetric(horizontal: r.wp(6)),
+          width: r.wp(12),
+          height: r.wp(12),
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         );
       }),
@@ -281,6 +289,7 @@ class _ChildPinScreenState extends State<ChildPinScreen>
   }
 
   Widget _buildKeypad() {
+    final r = ResponsiveHelper.of(context);
     final keys = [
       ['1', '2', '3'],
       ['4', '5', '6'],
@@ -289,16 +298,16 @@ class _ChildPinScreenState extends State<ChildPinScreen>
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
+      padding: EdgeInsets.symmetric(horizontal: r.wp(48)),
       child: Column(
         children: keys.map((row) {
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: EdgeInsets.symmetric(vertical: r.hp(6)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: row.map((key) {
                 if (key.isEmpty) {
-                  return const SizedBox(width: 64, height: 64);
+                  return SizedBox(width: r.wp(64), height: r.wp(64));
                 }
                 return _buildKey(key);
               }).toList(),
@@ -310,28 +319,29 @@ class _ChildPinScreenState extends State<ChildPinScreen>
   }
 
   Widget _buildKey(String value) {
+    final r = ResponsiveHelper.of(context);
     final isDelete = value == 'del';
 
     return GestureDetector(
       onTap: () => _onKeyPressed(isDelete ? 'delete' : value),
       child: Container(
-        width: 64,
-        height: 64,
+        width: r.wp(64),
+        height: r.wp(64),
         decoration: BoxDecoration(
           color: isDelete ? Colors.transparent : _keyBg,
           shape: BoxShape.circle,
         ),
         child: Center(
           child: isDelete
-              ? const Icon(
+              ? Icon(
                   Icons.backspace_outlined,
                   color: _textSecondary,
-                  size: 22,
+                  size: r.iconSize(22),
                 )
               : Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: r.sp(24),
                     fontWeight: FontWeight.w500,
                     color: _textPrimary,
                   ),

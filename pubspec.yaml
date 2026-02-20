@@ -1,6 +1,6 @@
 name: kidguard
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: "none"
 version: 1.0.0+1
 environment:
   sdk: ^3.10.1
@@ -40,8 +40,6 @@ dependencies:
   flutter_gen: ^5.12.0
   rxdart: ^0.28.0
 
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -54,10 +52,14 @@ flutter_launcher_icons:
   min_sdk_android: 21
 
 flutter:
-
   uses-material-design: true
   generate: true
 
   assets:
     - assets/avatars/boy_1.png
     - assets/avatars/girl_2.png
+
+  fonts:
+    - family: CkPuzzleDemo
+      fonts:
+        - asset: assets/fonts/CkPuzzleDemo.ttf

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/routes.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class SelectUserScreen extends StatefulWidget {
   const SelectUserScreen({super.key});
@@ -125,6 +126,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   Widget build(BuildContext context) {
     // Show loading while checking auth state
     if (_isCheckingAuth) {
+      final r = ResponsiveHelper.of(context);
       return Scaffold(
         backgroundColor: _bgColor,
         body: Center(
@@ -132,19 +134,19 @@ class _SelectUserScreenState extends State<SelectUserScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: r.wp(80),
+                height: r.wp(80),
                 decoration: BoxDecoration(
                   color: _accentColor,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(r.radius(24)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.shield_outlined,
-                  size: 40,
+                  size: r.iconSize(40),
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: r.hp(24)),
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(_accentColor),
               ),
@@ -153,6 +155,8 @@ class _SelectUserScreenState extends State<SelectUserScreen>
         ),
       );
     }
+
+    final r = ResponsiveHelper.of(context);
 
     return Scaffold(
       backgroundColor: _bgColor,
@@ -170,7 +174,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                     ),
                     child: IntrinsicHeight(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        padding: EdgeInsets.symmetric(horizontal: r.wp(32)),
                         child: Column(
                           children: [
                             const Spacer(flex: 3),
@@ -178,25 +182,25 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                             // Minimal Logo
                             _buildMinimalLogo(),
 
-                            const SizedBox(height: 28),
+                            SizedBox(height: r.hp(28)),
 
                             // App Name
-                            const Text(
+                            Text(
                               'Kid Guard',
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: r.sp(32),
                                 fontWeight: FontWeight.w700,
                                 color: _textPrimary,
                                 letterSpacing: -1,
                               ),
                             ),
 
-                            const SizedBox(height: 8),
+                            SizedBox(height: r.hp(8)),
 
                             Text(
                               'ปกป้อง ดูแล เข้าใจ',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: r.sp(14),
                                 color: _textSecondary,
                                 fontWeight: FontWeight.w400,
                                 letterSpacing: 0.5,
@@ -208,7 +212,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                             // Selection Label
                             _buildSelectionLabel(),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: r.hp(24)),
 
                             // Parent Card
                             _MinimalUserCard(
@@ -220,7 +224,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                                   Navigator.pushNamed(context, AppRoutes.login),
                             ),
 
-                            const SizedBox(height: 16),
+                            SizedBox(height: r.hp(16)),
 
                             // Child Card
                             _MinimalUserCard(
@@ -239,7 +243,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                             // Footer
                             _buildFooter(),
 
-                            const SizedBox(height: 40),
+                            SizedBox(height: r.hp(40)),
                           ],
                         ),
                       ),
@@ -255,12 +259,13 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   }
 
   Widget _buildMinimalLogo() {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      width: 80,
-      height: 80,
+      width: r.wp(80),
+      height: r.wp(80),
       decoration: BoxDecoration(
         color: _accentColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(r.radius(24)),
         boxShadow: [
           BoxShadow(
             color: _accentColor.withOpacity(0.25),
@@ -269,27 +274,32 @@ class _SelectUserScreenState extends State<SelectUserScreen>
           ),
         ],
       ),
-      child: const Icon(Icons.shield_outlined, size: 40, color: Colors.white),
+      child: Icon(
+        Icons.shield_outlined,
+        size: r.iconSize(40),
+        color: Colors.white,
+      ),
     );
   }
 
   Widget _buildSelectionLabel() {
+    final r = ResponsiveHelper.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
+          width: r.wp(6),
+          height: r.wp(6),
+          decoration: const BoxDecoration(
             color: _accentColor,
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: r.wp(10)),
         Text(
           'เลือกบทบาทของคุณ',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: r.sp(13),
             fontWeight: FontWeight.w500,
             color: _textSecondary,
             letterSpacing: 0.3,
@@ -300,15 +310,20 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   }
 
   Widget _buildFooter() {
+    final r = ResponsiveHelper.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.lock_outline_rounded, size: 14, color: _textMuted),
-        const SizedBox(width: 6),
+        Icon(
+          Icons.lock_outline_rounded,
+          size: r.iconSize(14),
+          color: _textMuted,
+        ),
+        SizedBox(width: r.wp(6)),
         Text(
           'ปลอดภัยและเป็นส่วนตัว',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: r.sp(12),
             color: _textMuted,
             fontWeight: FontWeight.w400,
           ),
@@ -342,6 +357,7 @@ class _MinimalUserCardState extends State<_MinimalUserCard> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
@@ -354,10 +370,10 @@ class _MinimalUserCardState extends State<_MinimalUserCard> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(r.wp(20)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(r.radius(20)),
             border: Border.all(
               color: _isPressed
                   ? widget.accentColor.withOpacity(0.3)
@@ -376,15 +392,19 @@ class _MinimalUserCardState extends State<_MinimalUserCard> {
             children: [
               // Icon Container
               Container(
-                width: 52,
-                height: 52,
+                width: r.wp(52),
+                height: r.wp(52),
                 decoration: BoxDecoration(
                   color: widget.accentColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(r.radius(16)),
                 ),
-                child: Icon(widget.icon, color: widget.accentColor, size: 26),
+                child: Icon(
+                  widget.icon,
+                  color: widget.accentColor,
+                  size: r.iconSize(26),
+                ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: r.wp(16)),
 
               // Text Content
               Expanded(
@@ -393,18 +413,18 @@ class _MinimalUserCardState extends State<_MinimalUserCard> {
                   children: [
                     Text(
                       widget.title,
-                      style: const TextStyle(
-                        fontSize: 17,
+                      style: TextStyle(
+                        fontSize: r.sp(17),
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A2E),
+                        color: const Color(0xFF1A1A2E),
                         letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: r.hp(4)),
                     Text(
                       widget.subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: r.sp(13),
                         color: Colors.grey[500],
                         fontWeight: FontWeight.w400,
                       ),
@@ -416,7 +436,7 @@ class _MinimalUserCardState extends State<_MinimalUserCard> {
               // Arrow
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                size: 16,
+                size: r.iconSize(16),
                 color: Colors.grey[400],
               ),
             ],

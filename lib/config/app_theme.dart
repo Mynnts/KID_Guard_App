@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  static const String _fontFamily = 'CkPuzzleDemo';
+
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: _fontFamily,
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(0xFF6B9080), // Sage Green - Soft & Professional
       primary: const Color(0xFF6B9080), // Sage Green
@@ -14,7 +16,8 @@ class AppTheme {
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: const Color(0xFFF6FBF4),
-    textTheme: GoogleFonts.outfitTextTheme().apply(
+    textTheme: ThemeData.light().textTheme.apply(
+      fontFamily: _fontFamily,
       bodyColor: const Color(0xFF1E293B), // Slate 800
       displayColor: const Color(0xFF0F172A), // Slate 900
     ),
@@ -28,7 +31,7 @@ class AppTheme {
         color: Color(0xFF1E293B),
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        fontFamily: 'Outfit',
+        fontFamily: _fontFamily,
       ),
     ),
     cardTheme: CardThemeData(
@@ -84,6 +87,7 @@ class AppTheme {
 
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: _fontFamily,
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(
         0xFF84A98C,
@@ -93,7 +97,7 @@ class AppTheme {
       background: const Color(0xFF0F172A), // Slate 900
     ),
     scaffoldBackgroundColor: const Color(0xFF0F172A),
-    textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+    textTheme: ThemeData.dark().textTheme.apply(fontFamily: _fontFamily),
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,

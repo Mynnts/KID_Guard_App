@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../core/utils/who_guidelines.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class TimeLimitScreen extends StatelessWidget {
   const TimeLimitScreen({super.key});
@@ -13,6 +14,7 @@ class TimeLimitScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
+    final r = ResponsiveHelper.of(context);
 
     if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -22,48 +24,50 @@ class TimeLimitScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
-          // Modern App Bar
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: r.hp(100),
             floating: true,
             pinned: true,
             backgroundColor: const Color(0xFFF8FAFC),
             leading: IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(r.wp(8)),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
                 child: Icon(
                   Icons.arrow_back_ios_new,
                   color: Colors.grey.shade700,
-                  size: 18,
+                  size: r.iconSize(18),
                 ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
-            flexibleSpace: const FlexibleSpaceBar(
-              titlePadding: EdgeInsets.only(left: 60, bottom: 16),
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: EdgeInsets.only(left: r.wp(60), bottom: r.hp(16)),
               title: Text(
                 'Time Limits',
                 style: TextStyle(
-                  color: Color(0xFF1F2937),
+                  color: const Color(0xFF1F2937),
                   fontWeight: FontWeight.w700,
-                  fontSize: 22,
+                  fontSize: r.sp(22),
                   letterSpacing: -0.5,
                 ),
               ),
             ),
           ),
-
-          // Header Description
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              padding: EdgeInsets.fromLTRB(
+                r.wp(20),
+                r.hp(8),
+                r.wp(20),
+                r.hp(24),
+              ),
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(r.wp(16)),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -71,7 +75,7 @@ class TimeLimitScreen extends StatelessWidget {
                       const Color(0xFF84A98C).withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(r.radius(16)),
                   border: Border.all(
                     color: const Color(0xFF6B9080).withOpacity(0.2),
                   ),
@@ -79,35 +83,35 @@ class TimeLimitScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(r.wp(10)),
                       decoration: BoxDecoration(
                         color: const Color(0xFF6B9080).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.timer_outlined,
-                        color: Color(0xFF6B9080),
-                        size: 22,
+                        color: const Color(0xFF6B9080),
+                        size: r.iconSize(22),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: r.wp(14)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Daily Screen Time',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Color(0xFF1F2937),
+                              fontSize: r.sp(15),
+                              color: const Color(0xFF1F2937),
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: r.hp(2)),
                           Text(
                             'Tap on a child to set their daily limit',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               color: Colors.grey.shade600,
                             ),
                           ),
@@ -142,23 +146,23 @@ class TimeLimitScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: EdgeInsets.all(r.wp(24)),
                           decoration: BoxDecoration(
                             color: Colors.grey.shade100,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.child_care_rounded,
-                            size: 48,
+                            size: r.iconSize(48),
                             color: Colors.grey.shade400,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: r.hp(20)),
                         Text(
                           'No children added yet',
                           style: TextStyle(
                             color: Colors.grey.shade600,
-                            fontSize: 16,
+                            fontSize: r.sp(16),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -178,7 +182,7 @@ class TimeLimitScreen extends StatelessWidget {
                   .toList();
 
               return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: r.wp(20)),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return TweenAnimationBuilder<double>(
@@ -252,8 +256,9 @@ class _ChildListItemState extends State<_ChildListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final totalUsage = widget.child.screenTime; // For statistics
-    final limitUsed = widget.child.limitUsedTime; // For limit tracking
+    final r = ResponsiveHelper.of(context);
+    final totalUsage = widget.child.screenTime;
+    final limitUsed = widget.child.limitUsedTime;
     final limit = widget.child.dailyTimeLimit;
     final progress = limit > 0 ? (limitUsed / limit).clamp(0.0, 1.0) : 0.0;
     final progressColor = limit > 0
@@ -261,24 +266,22 @@ class _ChildListItemState extends State<_ChildListItem> {
         : const Color(0xFF3B82F6);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: EdgeInsets.only(bottom: r.hp(14)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(r.radius(20)),
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: Column(
         children: [
-          // Main Content - Tappable to set limit
           GestureDetector(
             onTap: () => _showTimePicker(context),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(r.wp(16)),
               child: Row(
                 children: [
-                  // Avatar
                   Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: EdgeInsets.all(r.wp(2)),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
@@ -286,7 +289,7 @@ class _ChildListItemState extends State<_ChildListItem> {
                       ),
                     ),
                     child: CircleAvatar(
-                      radius: 24,
+                      radius: r.wp(24),
                       backgroundColor: Colors.white,
                       backgroundImage: widget.child.avatar != null
                           ? AssetImage(widget.child.avatar!)
@@ -294,79 +297,75 @@ class _ChildListItemState extends State<_ChildListItem> {
                       child: widget.child.avatar == null
                           ? Text(
                               widget.child.name[0].toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color(0xFF6B9080),
+                                fontSize: r.sp(18),
+                                color: const Color(0xFF6B9080),
                               ),
                             )
                           : null,
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  // Info Section
+                  SizedBox(width: r.wp(14)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Name
                         Text(
                           widget.child.name,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
+                            color: const Color(0xFF1F2937),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // Row 1: Total Usage Today (Statistics)
+                        SizedBox(height: r.hp(8)),
                         Row(
                           children: [
                             Icon(
                               Icons.bar_chart_rounded,
-                              size: 14,
+                              size: r.iconSize(14),
                               color: Colors.grey.shade500,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: r.wp(4)),
                             Text(
                               'ใช้งานวันนี้: ',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: r.sp(12),
                                 color: Colors.grey.shade500,
                               ),
                             ),
                             Text(
                               _formatDuration(totalUsage),
-                              style: const TextStyle(
-                                fontSize: 12,
+                              style: TextStyle(
+                                fontSize: r.sp(12),
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF3B82F6),
+                                color: const Color(0xFF3B82F6),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        // Row 2: Limit Used (for time limit)
+                        SizedBox(height: r.hp(4)),
                         if (limit > 0)
                           Row(
                             children: [
                               Icon(
                                 Icons.timer_outlined,
-                                size: 14,
+                                size: r.iconSize(14),
                                 color: progressColor,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: r.wp(4)),
                               Text(
                                 'Limit: ',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: r.sp(12),
                                   color: Colors.grey.shade500,
                                 ),
                               ),
                               Text(
                                 '${_formatDuration(limitUsed)} / ${_formatLimit(limit)}',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: r.sp(12),
                                   fontWeight: FontWeight.w600,
                                   color: progressColor,
                                 ),
@@ -378,14 +377,14 @@ class _ChildListItemState extends State<_ChildListItem> {
                             children: [
                               Icon(
                                 Icons.all_inclusive_rounded,
-                                size: 14,
+                                size: r.iconSize(14),
                                 color: Colors.grey.shade400,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: r.wp(4)),
                               Text(
                                 'ไม่ได้จำกัดเวลา',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: r.sp(12),
                                   color: Colors.grey.shade400,
                                 ),
                               ),
@@ -394,53 +393,51 @@ class _ChildListItemState extends State<_ChildListItem> {
                       ],
                     ),
                   ),
-                  // Edit Icon
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(r.wp(10)),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(r.radius(12)),
                     ),
                     child: Icon(
                       Icons.edit_outlined,
                       color: Colors.grey.shade500,
-                      size: 18,
+                      size: r.iconSize(18),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          // Progress Bar (only if limit is set)
           if (limit > 0)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: EdgeInsets.fromLTRB(r.wp(16), 0, r.wp(16), r.hp(12)),
               child: Column(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(r.radius(4)),
                     child: LinearProgressIndicator(
                       value: progress,
-                      minHeight: 6,
+                      minHeight: r.hp(6),
                       backgroundColor: Colors.grey.shade200,
                       valueColor: AlwaysStoppedAnimation(progressColor),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: r.hp(6)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         '${(progress * 100).toInt()}% ใช้ไปแล้ว',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: r.sp(11),
                           color: Colors.grey.shade500,
                         ),
                       ),
                       Text(
                         'เหลือ ${_formatDuration(limit - limitUsed > 0 ? limit - limitUsed : 0)}',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: r.sp(11),
                           fontWeight: FontWeight.w500,
                           color: progressColor,
                         ),
@@ -450,34 +447,35 @@ class _ChildListItemState extends State<_ChildListItem> {
                 ],
               ),
             ),
-          // Divider
           Container(height: 1, color: Colors.grey.shade100),
-          // Reset Button Row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: r.wp(8),
+              vertical: r.hp(6),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _showResetConfirmation(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(10)),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(r.radius(10)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.refresh_rounded,
-                            size: 16,
+                            size: r.iconSize(16),
                             color: Colors.blue.shade600,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: r.wp(6)),
                           Text(
                             'Reset เวลา Limit',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: r.sp(13),
                               fontWeight: FontWeight.w500,
                               color: Colors.blue.shade600,
                             ),
@@ -649,68 +647,66 @@ class _TimePickerModalState extends State<_TimePickerModal> {
 
   @override
   Widget build(BuildContext context) {
+    final r = ResponsiveHelper.of(context);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(r.radius(28))),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
+            margin: EdgeInsets.only(top: r.hp(12)),
+            width: r.wp(40),
+            height: r.hp(4),
             decoration: BoxDecoration(
               color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(r.radius(2)),
             ),
           ),
-
-          // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            padding: EdgeInsets.fromLTRB(r.wp(24), r.hp(24), r.wp(24), r.hp(8)),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
+                  padding: EdgeInsets.all(r.wp(2)),
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                     ),
                   ),
                   child: CircleAvatar(
-                    radius: 22,
+                    radius: r.wp(22),
                     backgroundColor: Colors.white,
                     child: Text(
                       widget.child.name[0].toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Color(0xFF6B9080),
+                        fontSize: r.sp(18),
+                        color: const Color(0xFF6B9080),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: r.wp(14)),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.child.name,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: r.sp(18),
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F2937),
+                        color: const Color(0xFF1F2937),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: r.hp(2)),
                     Text(
                       'Set daily time limit',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: r.sp(14),
                         color: Colors.grey.shade500,
                       ),
                     ),
@@ -719,30 +715,24 @@ class _TimePickerModalState extends State<_TimePickerModal> {
               ],
             ),
           ),
-
-          // WHO Guidelines Card
           _buildWHOGuidelinesCard(),
-
-          const SizedBox(height: 16),
-
-          // Time Picker
+          SizedBox(height: r.hp(16)),
           Container(
-            height: 200,
-            margin: const EdgeInsets.symmetric(horizontal: 24),
+            height: r.hp(200),
+            margin: EdgeInsets.symmetric(horizontal: r.wp(24)),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(r.radius(20)),
             ),
             child: Stack(
               children: [
-                // Selection highlight
                 Center(
                   child: Container(
-                    height: 48,
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    height: r.hp(48),
+                    margin: EdgeInsets.symmetric(horizontal: r.wp(20)),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(r.radius(14)),
                       border: Border.all(
                         color: const Color(0xFF6B9080).withOpacity(0.2),
                       ),
@@ -756,15 +746,13 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     ),
                   ),
                 ),
-                // Pickers
                 Row(
                   children: [
-                    const SizedBox(width: 20),
-                    // Hours Picker
+                    SizedBox(width: r.wp(20)),
                     Expanded(
                       child: CupertinoPicker(
                         scrollController: _hoursController,
-                        itemExtent: 48,
+                        itemExtent: r.hp(48),
                         diameterRatio: 1.5,
                         squeeze: 1.0,
                         selectionOverlay: const SizedBox(),
@@ -775,30 +763,28 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                           return Center(
                             child: Text(
                               index.toString().padLeft(2, '0'),
-                              style: const TextStyle(
-                                fontSize: 32,
+                              style: TextStyle(
+                                fontSize: r.sp(32),
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
+                                color: const Color(0xFF1F2937),
                               ),
                             ),
                           );
                         }),
                       ),
                     ),
-                    // Hours label
                     Text(
                       'hr',
                       style: TextStyle(
                         color: Colors.grey.shade500,
-                        fontSize: 18,
+                        fontSize: r.sp(18),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    // Minutes Picker
                     Expanded(
                       child: CupertinoPicker(
                         scrollController: _minutesController,
-                        itemExtent: 48,
+                        itemExtent: r.hp(48),
                         diameterRatio: 1.5,
                         squeeze: 1.0,
                         selectionOverlay: const SizedBox(),
@@ -809,73 +795,65 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                           return Center(
                             child: Text(
                               (index * 5).toString().padLeft(2, '0'),
-                              style: const TextStyle(
-                                fontSize: 32,
+                              style: TextStyle(
+                                fontSize: r.sp(32),
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
+                                color: const Color(0xFF1F2937),
                               ),
                             ),
                           );
                         }),
                       ),
                     ),
-                    // Minutes label
                     Text(
                       'min',
                       style: TextStyle(
                         color: Colors.grey.shade500,
-                        fontSize: 18,
+                        fontSize: r.sp(18),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    SizedBox(width: r.wp(20)),
                   ],
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Quick Presets
+          SizedBox(height: r.hp(20)),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: r.wp(24)),
             child: Row(
               children: [
                 _buildPresetChip('30m', 0, 30),
-                const SizedBox(width: 8),
+                SizedBox(width: r.wp(8)),
                 _buildPresetChip('1h', 1, 0),
-                const SizedBox(width: 8),
+                SizedBox(width: r.wp(8)),
                 _buildPresetChip('2h', 2, 0),
-                const SizedBox(width: 8),
+                SizedBox(width: r.wp(8)),
                 _buildPresetChip('∞', 0, 0),
               ],
             ),
           ),
-
-          const SizedBox(height: 24),
-
-          // Action Buttons
+          SizedBox(height: r.hp(24)),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            padding: EdgeInsets.fromLTRB(r.wp(24), 0, r.wp(24), r.hp(24)),
             child: Row(
               children: [
-                // Cancel Button
                 Expanded(
                   child: GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(16)),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(r.radius(14)),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
                       child: Center(
                         child: Text(
                           'Cancel',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
                             color: Colors.grey.shade600,
                           ),
@@ -884,19 +862,18 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Save Button
+                SizedBox(width: r.wp(12)),
                 Expanded(
                   flex: 2,
                   child: GestureDetector(
                     onTap: _saveAndClose,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: r.hp(16)),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
                         ),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(r.radius(14)),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF6B9080).withOpacity(0.3),
@@ -905,11 +882,11 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Save Limit',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
@@ -921,8 +898,6 @@ class _TimePickerModalState extends State<_TimePickerModal> {
               ],
             ),
           ),
-
-          // Safe area padding
           SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
@@ -931,6 +906,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
 
   Widget _buildPresetChip(String label, int hours, int minutes) {
     final isSelected = _selectedHours == hours && _selectedMinutes == minutes;
+    final r = ResponsiveHelper.of(context);
 
     return Expanded(
       child: GestureDetector(
@@ -952,7 +928,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(vertical: r.hp(12)),
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
@@ -960,7 +936,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                   )
                 : null,
             color: isSelected ? null : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(r.radius(12)),
             border: Border.all(
               color: isSelected ? Colors.transparent : Colors.grey.shade200,
             ),
@@ -969,7 +945,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: r.sp(14),
                 fontWeight: FontWeight.w600,
                 color: isSelected ? Colors.white : Colors.grey.shade700,
               ),

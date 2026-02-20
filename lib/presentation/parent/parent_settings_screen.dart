@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
+import '../../core/utils/responsive_helper.dart';
 
 class ParentSettingsScreen extends StatefulWidget {
   const ParentSettingsScreen({super.key});
@@ -39,19 +40,22 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         slivers: [
           // Modern App Bar
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: ResponsiveHelper.of(context).hp(100),
             floating: true,
             pinned: true,
             automaticallyImplyLeading: false,
             backgroundColor: colorScheme.background,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              titlePadding: EdgeInsets.only(
+                left: ResponsiveHelper.of(context).wp(16),
+                bottom: ResponsiveHelper.of(context).hp(16),
+              ),
               title: Text(
                 AppLocalizations.of(context)!.settings,
                 style: TextStyle(
                   color: colorScheme.onBackground,
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: ResponsiveHelper.of(context).sp(24),
                 ),
               ),
             ),
@@ -59,7 +63,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(16)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -186,6 +190,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
   Widget _buildProfileCard(String name, String email) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -200,23 +205,21 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(r.wp(20)),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [colorScheme.primary, colorScheme.tertiary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(r.radius(32)),
           boxShadow: [
-            // Far soft shadow
             BoxShadow(
               color: colorScheme.primary.withOpacity(0.20),
               blurRadius: 40,
               offset: const Offset(0, 16),
               spreadRadius: -8,
             ),
-            // Near crisp shadow
             BoxShadow(
               color: colorScheme.primary.withOpacity(0.12),
               blurRadius: 12,
@@ -227,7 +230,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(3),
+              padding: EdgeInsets.all(r.wp(3)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -236,57 +239,64 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 ),
               ),
               child: CircleAvatar(
-                radius: 32,
+                radius: r.wp(32),
                 backgroundColor: Colors.white.withOpacity(0.2),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: r.sp(28),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: r.wp(16)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: r.sp(20),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: r.hp(4)),
                   Text(
                     email,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
+                      fontSize: r.sp(14),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: r.hp(8)),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.wp(10),
+                      vertical: r.hp(4),
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(r.radius(12)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.verified, color: Colors.white, size: 14),
-                        SizedBox(width: 4),
+                        Icon(
+                          Icons.verified,
+                          color: Colors.white,
+                          size: r.iconSize(14),
+                        ),
+                        SizedBox(width: r.wp(4)),
                         Text(
                           'Parent Account',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: r.sp(12),
+                          ),
                         ),
                       ],
                     ),
@@ -296,12 +306,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             ),
             IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(r.wp(8)),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(r.radius(12)),
                 ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                child: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                  size: r.iconSize(20),
+                ),
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/parent/account-profile');
@@ -315,6 +329,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
   Widget _buildPinCard(String? pin, bool isLoading, AuthProvider authProvider) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -329,14 +344,14 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(r.wp(20)),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Colors.white, Color(0xFFFCFDFC)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(r.radius(24)),
           border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
           boxShadow: [
             BoxShadow(
@@ -358,42 +373,45 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(r.wp(10)),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(r.radius(12)),
                   ),
                   child: Icon(Icons.vpn_key, color: colorScheme.primary),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: r.wp(12)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Connection PIN',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: r.sp(16),
                         ),
                       ),
                       Text(
                         'Use this to link child devices',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: r.sp(12),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: r.hp(20)),
             // PIN Display
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
+              padding: EdgeInsets.symmetric(vertical: r.hp(20)),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceVariant.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(r.radius(16)),
               ),
               child: Center(
                 child: isLoading
@@ -412,7 +430,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: r.hp(16)),
             // Copy button only
             SizedBox(
               width: double.infinity,
@@ -425,18 +443,18 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                             content: const Text('PIN copied to clipboard'),
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(r.radius(10)),
                             ),
                           ),
                         );
                       }
                     : null,
-                icon: const Icon(Icons.copy, size: 18),
+                icon: Icon(Icons.copy, size: r.iconSize(18)),
                 label: const Text('Copy PIN'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(r.radius(12)),
                   ),
                 ),
               ),
@@ -448,13 +466,14 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final r = ResponsiveHelper.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: EdgeInsets.only(left: r.wp(4)),
       child: Text(
         title,
         style: TextStyle(
           color: Colors.grey[600],
-          fontSize: 13,
+          fontSize: r.sp(13),
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
@@ -464,6 +483,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
   Widget _buildSettingsGroup(List<_SettingItem> items) {
     final colorScheme = Theme.of(context).colorScheme;
+    final r = ResponsiveHelper.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -472,7 +492,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(r.radius(24)),
         border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
         boxShadow: [
           BoxShadow(
@@ -505,33 +525,39 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
               children: [
                 ListTile(
                   leading: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(r.wp(8)),
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(r.radius(10)),
                     ),
                     child: Icon(
                       item.icon,
                       color: colorScheme.primary,
-                      size: 22,
+                      size: r.iconSize(22),
                     ),
                   ),
                   title: Text(
                     item.title,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: r.sp(14),
+                    ),
                   ),
                   subtitle: Text(
                     item.subtitle,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: r.sp(12),
+                    ),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (item.trailing != null) item.trailing!,
-                      const SizedBox(width: 8),
+                      SizedBox(width: r.wp(8)),
                       Icon(
                         Icons.arrow_forward_ios,
-                        size: 14,
+                        size: r.iconSize(14),
                         color: Colors.grey[400],
                       ),
                     ],
@@ -539,7 +565,11 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   onTap: item.onTap,
                 ),
                 if (!isLast)
-                  Divider(height: 1, indent: 56, color: Colors.grey.shade200),
+                  Divider(
+                    height: 1,
+                    indent: r.wp(56),
+                    color: Colors.grey.shade200,
+                  ),
               ],
             ),
           );
@@ -549,6 +579,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   }
 
   Widget _buildSignOutButton(AuthProvider authProvider) {
+    final r = ResponsiveHelper.of(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 700),
@@ -558,29 +589,36 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.red.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           border: Border.all(color: Colors.red.withOpacity(0.2)),
         ),
         child: ListTile(
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(r.wp(8)),
             decoration: BoxDecoration(
               color: Colors.red.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(r.radius(10)),
             ),
-            child: const Icon(Icons.logout, color: Colors.red, size: 22),
+            child: Icon(Icons.logout, color: Colors.red, size: r.iconSize(22)),
           ),
           title: Text(
             AppLocalizations.of(context)!.signOut,
-            style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.w600,
+              fontSize: r.sp(14),
+            ),
           ),
           subtitle: Text(
             'Log out of your account',
-            style: TextStyle(color: Colors.red.withOpacity(0.7), fontSize: 12),
+            style: TextStyle(
+              color: Colors.red.withOpacity(0.7),
+              fontSize: r.sp(12),
+            ),
           ),
           trailing: Icon(
             Icons.arrow_forward_ios,
-            size: 14,
+            size: r.iconSize(14),
             color: Colors.red.withOpacity(0.5),
           ),
           onTap: () async {

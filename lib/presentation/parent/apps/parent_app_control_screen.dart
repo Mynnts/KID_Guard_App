@@ -7,6 +7,7 @@ import '../../../data/models/child_model.dart';
 import '../../../data/services/app_service.dart';
 import '../../../data/services/device_service.dart';
 import '../../../logic/providers/auth_provider.dart';
+import '../../../core/utils/responsive_helper.dart';
 
 class ParentAppControlScreen extends StatefulWidget {
   final String? childId;
@@ -140,9 +141,180 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     );
   }
 
-  Widget _buildSearchField() {
+<<<<<<< 20/2/2569Arm
+=======
+  Widget _buildSelectorsSection(List<dynamic> children, String childId) {
+    if (children.length <= 1) return const SizedBox.shrink();
+    final r = ResponsiveHelper.of(context);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(16), r.wp(16), r.hp(8)),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(r.radius(12)),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: childId,
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down),
+            items: children.map((child) {
+              return DropdownMenuItem<String>(
+                value: child.id,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: r.wp(14),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      child: Text(
+                        child.name.isNotEmpty
+                            ? child.name[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontSize: r.sp(12),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: r.wp(12)),
+                    Text(
+                      child.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: r.sp(14),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedChildId = value;
+                  _selectedDeviceId = null;
+                });
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceSelector(String parentUid, String childId) {
+    final r = ResponsiveHelper.of(context);
+    return StreamBuilder<List<DeviceModel>>(
+      stream: _deviceService.streamDevices(parentUid, childId),
+      builder: (context, snapshot) {
+        final devices = snapshot.data ?? [];
+
+        if (devices.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(8), r.wp(16), r.hp(8)),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(r.radius(12)),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String?>(
+                value: _selectedDeviceId,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down),
+                hint: Row(
+                  children: [
+                    Icon(
+                      Icons.devices,
+                      size: r.iconSize(20),
+                      color: Colors.grey,
+                    ),
+                    SizedBox(width: r.wp(12)),
+                    const Text('ทุกอุปกรณ์'),
+                  ],
+                ),
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.devices,
+                          size: r.iconSize(20),
+                          color: Colors.grey,
+                        ),
+                        SizedBox(width: r.wp(12)),
+                        const Text('ทุกอุปกรณ์'),
+                      ],
+                    ),
+                  ),
+                  ...devices.map((device) {
+                    return DropdownMenuItem<String?>(
+                      value: device.deviceId,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.smartphone,
+                            size: r.iconSize(20),
+                            color: device.isOnline ? Colors.green : Colors.grey,
+                          ),
+                          SizedBox(width: r.wp(12)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  device.deviceName,
+                                  style: TextStyle(fontSize: r.sp(14)),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  device.isOnline ? 'ออนไลน์' : 'ออฟไลน์',
+                                  style: TextStyle(
+                                    fontSize: r.sp(11),
+                                    color: device.isOnline
+                                        ? Colors.green
+                                        : Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDeviceId = value;
+                  });
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+>>>>>>> main
+  Widget _buildSearchField() {
+    final r = ResponsiveHelper.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(8), r.wp(16), r.hp(16)),
       child: TextField(
         onChanged: (value) {
           setState(() {
@@ -155,16 +327,32 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(r.radius(12)),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: r.wp(16)),
         ),
       ),
     );
   }
 
   Widget _buildAppsList(String parentUid, String childId) {
+<<<<<<< 20/2/2569Arm
+=======
+    final r = ResponsiveHelper.of(context);
+    final Stream<List<AppInfoModel>> appsStream;
+
+    if (_selectedDeviceId != null) {
+      appsStream = _appService.streamAppsForDevice(
+        parentUid,
+        childId,
+        _selectedDeviceId!,
+      );
+    } else {
+      appsStream = _appService.streamApps(parentUid, childId);
+    }
+
+>>>>>>> main
     return StreamBuilder<List<AppInfoModel>>(
       stream: _appService.streamApps(parentUid, childId),
       builder: (context, snapshot) {
@@ -178,7 +366,6 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
 
         var apps = snapshot.data ?? [];
 
-        // Filter by search query
         if (_searchQuery.isNotEmpty) {
           apps = apps
               .where(
@@ -189,7 +376,6 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
               .toList();
         }
 
-        // Filter system apps
         if (!_showSystemApps) {
           apps = apps.where((app) => !app.isSystemApp).toList();
         }
@@ -199,34 +385,47 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.apps_outlined, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
+                Icon(
+                  Icons.apps_outlined,
+                  size: r.iconSize(64),
+                  color: Colors.grey[400],
+                ),
+                SizedBox(height: r.hp(16)),
                 Text(
                   _searchQuery.isEmpty
+<<<<<<< 20/2/2569Arm
                       ? 'ยังไม่มีการซิงค์ข้อมูลแอพ'
                       : 'ไม่พบแอพที่ค้นหา',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+=======
+                      ? 'No apps synced yet.'
+                      : 'No apps found.',
+                  style: TextStyle(fontSize: r.sp(16), color: Colors.grey[600]),
+>>>>>>> main
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: r.hp(8)),
                 Text(
+<<<<<<< 20/2/2569Arm
                   'โปรดตรวจสอบว่าแอพในเครื่องเด็กเปิดทำงานอยู่',
                   style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+=======
+                  'Make sure the child app is running and synced.',
+                  style: TextStyle(fontSize: r.sp(14), color: Colors.grey[500]),
+>>>>>>> main
                 ),
               ],
             ),
           );
         }
 
-        // Group apps by blocked/allowed
         final blockedApps = apps.where((app) => app.isLocked).toList();
         final allowedApps = apps.where((app) => !app.isLocked).toList();
 
         return Column(
           children: [
-            // Stats Card
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
+              margin: EdgeInsets.symmetric(horizontal: r.wp(16)),
+              padding: EdgeInsets.all(r.wp(20)),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -234,7 +433,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                     Theme.of(context).colorScheme.secondary,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(r.radius(16)),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(
@@ -254,14 +453,22 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                     Icons.apps,
                     Colors.blue[300],
                   ),
+<<<<<<< 20/2/2569Arm
                   _buildStatDivider(),
+=======
+                  Container(width: 1, height: r.hp(40), color: Colors.white30),
+>>>>>>> main
                   _buildStatItem(
                     'ถูกบล็อก',
                     blockedApps.length.toString(),
                     Icons.block,
                     Colors.red[300],
                   ),
+<<<<<<< 20/2/2569Arm
                   _buildStatDivider(),
+=======
+                  Container(width: 1, height: r.hp(40), color: Colors.white30),
+>>>>>>> main
                   _buildStatItem(
                     'อนุญาต',
                     allowedApps.length.toString(),
@@ -271,11 +478,10 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // Apps List
+            SizedBox(height: r.hp(16)),
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
                 itemCount: apps.length,
                 itemBuilder: (context, index) {
                   final app = apps[index];
@@ -318,21 +524,22 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     IconData icon, [
     Color? color,
   ]) {
+    final r = ResponsiveHelper.of(context);
     return Column(
       children: [
-        Icon(icon, color: color ?? Colors.white, size: 28),
-        const SizedBox(height: 8),
+        Icon(icon, color: color ?? Colors.white, size: r.iconSize(28)),
+        SizedBox(height: r.hp(8)),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 24,
+          style: TextStyle(
+            fontSize: r.sp(24),
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          style: TextStyle(fontSize: r.sp(12), color: Colors.white70),
         ),
       ],
     );
@@ -349,12 +556,13 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     String childId,
   ) {
     final isBlocked = app.isLocked;
+    final r = ResponsiveHelper.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: r.hp(12)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(r.radius(16)),
         border: Border.all(
           color: isBlocked
               ? Colors.red.withOpacity(0.3)
@@ -372,88 +580,88 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(r.radius(16)),
           onTap: () {
             _showAppDetailsDialog(context, app, parentUid, childId);
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(r.wp(16)),
             child: Row(
               children: [
-                // App Icon
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: r.wp(56),
+                  height: r.wp(56),
                   decoration: BoxDecoration(
                     color: isBlocked
                         ? Colors.red.withOpacity(0.1)
                         : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(r.radius(12)),
                   ),
                   child: app.iconBase64 != null
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(r.radius(12)),
                           child: Image.memory(
                             base64Decode(app.iconBase64!),
-                            width: 56,
-                            height: 56,
+                            width: r.wp(56),
+                            height: r.wp(56),
                             fit: BoxFit.cover,
                           ),
                         )
                       : Icon(
                           Icons.android,
-                          size: 32,
+                          size: r.iconSize(32),
                           color: isBlocked ? Colors.red : Colors.green,
                         ),
                 ),
-                const SizedBox(width: 16),
-
-                // App Info
+                SizedBox(width: r.wp(16)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         app.name,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: r.sp(16),
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: r.hp(4)),
                       Text(
                         app.packageName,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: r.sp(12),
+                          color: Colors.grey[600],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: r.hp(8)),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: r.wp(8),
+                          vertical: r.hp(4),
                         ),
                         decoration: BoxDecoration(
                           color: isBlocked
                               ? Colors.red.withOpacity(0.1)
                               : Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(r.radius(6)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               isBlocked ? Icons.block : Icons.check_circle,
-                              size: 14,
+                              size: r.iconSize(14),
                               color: isBlocked ? Colors.red : Colors.green,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: r.wp(4)),
                             Text(
                               isBlocked ? 'ถูกบล็อก' : 'อนุญาต',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: r.sp(12),
                                 fontWeight: FontWeight.bold,
                                 color: isBlocked ? Colors.red : Colors.green,
                               ),
@@ -464,8 +672,6 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                     ],
                   ),
                 ),
-
-                // Toggle Switch
                 Transform.scale(
                   scale: 0.9,
                   child: Switch(
@@ -580,21 +786,26 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final r = ResponsiveHelper.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 80,
+          width: r.wp(80),
           child: Text(
             '$label:',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
+              fontSize: r.sp(14),
             ),
           ),
         ),
         Expanded(
-          child: Text(value, style: TextStyle(color: Colors.grey[600])),
+          child: Text(
+            value,
+            style: TextStyle(color: Colors.grey[600], fontSize: r.sp(14)),
+          ),
         ),
       ],
     );

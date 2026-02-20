@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
+import '../../core/utils/responsive_helper.dart';
 import 'account_profile_screen.dart';
 import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
@@ -74,6 +75,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     final user = authProvider.userModel;
     final colorScheme = Theme.of(context).colorScheme;
     final userName = user?.displayName ?? 'Parent';
+    final r = ResponsiveHelper.of(context);
 
     if (user == null) return const SizedBox();
 
@@ -137,11 +139,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: r.horizontalPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 16),
+                    SizedBox(height: r.hp(16)),
 
                     // Enhanced Header
                     _buildEnhancedHeader(
@@ -152,7 +154,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       user.uid,
                     ),
 
-                    const SizedBox(height: 28),
+                    SizedBox(height: r.hp(28)),
 
                     // Children Carousel
                     if (children.isNotEmpty) ...[
@@ -167,9 +169,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                           );
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: r.hp(16)),
                       _buildChildrenCarousel(children, colorScheme),
-                      const SizedBox(height: 28),
+                      SizedBox(height: r.hp(28)),
                     ],
 
                     // Stats Overview
@@ -179,17 +181,18 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       colorScheme,
                     ),
 
-                    const SizedBox(height: 28),
+                    SizedBox(height: r.hp(28)),
 
                     // Device Status Card
                     _buildDeviceStatusCard(selectedChild, colorScheme),
 
-                    const SizedBox(height: 28),
+                    SizedBox(height: r.hp(28)),
 
                     // Quick Actions
                     _buildSectionHeader(
                       '${AppLocalizations.of(context)!.quickActions}${selectedChild != null ? ' ของ ${selectedChild.name}' : ''}',
                     ),
+<<<<<<< 20/2/2569Arm
                     const SizedBox(height: 16),
                     _buildEnhancedQuickActions(
                       context,
@@ -197,8 +200,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       selectedChild,
                       colorScheme,
                     ),
+=======
+                    SizedBox(height: r.hp(16)),
+                    _buildEnhancedQuickActions(context, children, colorScheme),
+>>>>>>> main
 
-                    const SizedBox(height: 100),
+                    SizedBox(height: r.hp(100)),
                   ],
                 ),
               ),
@@ -223,6 +230,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     List<ChildModel> children,
     String userId,
   ) {
+    final r = ResponsiveHelper.of(context);
     return Row(
       children: [
         Expanded(
@@ -233,19 +241,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                 _getGreeting(context),
                 style: TextStyle(
                   color: Colors.grey.shade500,
-                  fontSize: 15,
+                  fontSize: r.sp(15),
                   fontWeight: FontWeight.w400,
                   letterSpacing: 0.2,
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: r.hp(6)),
               Text(
                 userName,
-                style: const TextStyle(
-                  fontSize: 26,
+                style: TextStyle(
+                  fontSize: r.sp(26),
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
-                  color: Color(0xFF1F2937),
+                  color: const Color(0xFF1F2937),
                 ),
               ),
             ],
@@ -260,10 +268,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             return GestureDetector(
               onTap: () => _showNotifications(context, userId),
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(r.wp(12)),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(r.radius(16)),
                   border: Border.all(color: Colors.grey.shade100),
                   boxShadow: [
                     BoxShadow(
@@ -278,15 +286,15 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     Icon(
                       Icons.notifications_none_rounded,
                       color: Colors.grey.shade600,
-                      size: 24,
+                      size: r.iconSize(24),
                     ),
                     if (hasUnread)
                       Positioned(
                         right: 0,
                         top: 0,
                         child: Container(
-                          width: 8,
-                          height: 8,
+                          width: r.wp(8),
+                          height: r.wp(8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEF4444),
                             shape: BoxShape.circle,
@@ -300,7 +308,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             );
           },
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: r.wp(12)),
         // Profile Avatar
         GestureDetector(
           onTap: () => Navigator.push(
@@ -308,10 +316,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             MaterialPageRoute(builder: (_) => const AccountProfileScreen()),
           ),
           child: Container(
-            width: 48,
-            height: 48,
+            width: r.wp(48),
+            height: r.wp(48),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(r.radius(16)),
               gradient: LinearGradient(
                 colors: [
                   colorScheme.primary.withOpacity(0.8),
@@ -324,10 +332,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             child: Center(
               child: Text(
                 userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: r.sp(18),
                 ),
               ),
             ),
@@ -800,26 +808,27 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
+    final r = ResponsiveHelper.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+          style: TextStyle(
+            fontSize: r.sp(20),
+            fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
-            color: Color(0xFF1F2937),
+            color: const Color(0xFF1F2937),
           ),
         ),
         if (onSeeAll != null)
           GestureDetector(
             onTap: onSeeAll,
             child: Text(
-              AppLocalizations.of(context)!.seeAll,
+              'See All',
               style: TextStyle(
                 color: Colors.grey.shade500,
-                fontSize: 14,
+                fontSize: r.sp(14),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -832,12 +841,13 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     List<ChildModel> children,
     ColorScheme colorScheme,
   ) {
+    final r = ResponsiveHelper.of(context);
     return SizedBox(
-      height: 160,
+      height: r.hp(160),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: children.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        separatorBuilder: (_, __) => SizedBox(width: r.wp(16)),
         itemBuilder: (context, index) {
           if (index == children.length) {
             // Add New Button
@@ -847,10 +857,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                 MaterialPageRoute(builder: (_) => const ChildSetupScreen()),
               ),
               child: Container(
-                width: 120,
+                width: r.wp(120),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(r.radius(20)),
                   border: Border.all(
                     color: colorScheme.primary.withOpacity(0.3),
                     width: 2,
@@ -861,7 +871,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(r.wp(12)),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
                         shape: BoxShape.circle,
@@ -869,15 +879,16 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       child: Icon(
                         Icons.add,
                         color: colorScheme.primary,
-                        size: 28,
+                        size: r.iconSize(28),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: r.hp(12)),
                     Text(
                       'Add Child',
                       style: TextStyle(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w600,
+                        fontSize: r.sp(14),
                       ),
                     ),
                   ],
@@ -900,8 +911,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             onTap: () => setState(() => _selectedChildIndex = index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              width: 140,
-              padding: const EdgeInsets.all(16),
+              width: r.wp(140),
+              padding: EdgeInsets.all(r.wp(16)),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? LinearGradient(
@@ -917,7 +928,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(r.radius(28)),
                 border: isSelected
                     ? null
                     : Border.all(
@@ -925,7 +936,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                         width: 1.5,
                       ),
                 boxShadow: [
-                  // Far soft shadow
                   BoxShadow(
                     color: isSelected
                         ? colorScheme.primary.withOpacity(0.25)
@@ -934,7 +944,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     offset: const Offset(0, 12),
                     spreadRadius: isSelected ? 0 : -4,
                   ),
-                  // Near crisp shadow
                   BoxShadow(
                     color: isSelected
                         ? colorScheme.primary.withOpacity(0.15)
@@ -952,7 +961,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       Stack(
                         children: [
                           CircleAvatar(
-                            radius: 24,
+                            radius: r.wp(24),
                             backgroundColor: isSelected
                                 ? Colors.white.withOpacity(0.2)
                                 : colorScheme.primaryContainer,
@@ -964,7 +973,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                                     child.name[0].toUpperCase(),
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                      fontSize: r.sp(18),
                                       color: isSelected
                                           ? Colors.white
                                           : colorScheme.primary,
@@ -977,8 +986,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                               right: 0,
                               bottom: 0,
                               child: Container(
-                                width: 14,
-                                height: 14,
+                                width: r.wp(14),
+                                height: r.wp(14),
                                 decoration: BoxDecoration(
                                   color: Colors.green,
                                   shape: BoxShape.circle,
@@ -995,20 +1004,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: r.wp(8),
+                          vertical: r.hp(4),
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? Colors.white.withOpacity(0.2)
                               : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(r.radius(8)),
                         ),
                         child: Text(
                           isOnline ? 'Active' : 'Offline',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: r.sp(10),
                             fontWeight: FontWeight.w600,
                             color: isSelected
                                 ? Colors.white
@@ -1023,24 +1032,30 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     child.name,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: r.sp(16),
                       color: isSelected ? Colors.white : Colors.black87,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: r.hp(4)),
                   Row(
                     children: [
                       Icon(
                         Icons.access_time,
-                        size: 14,
+                        size: r.iconSize(14),
                         color: isSelected ? Colors.white70 : Colors.grey,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${screenHours}h ${screenMins}m today',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isSelected ? Colors.white70 : Colors.grey[600],
+                      SizedBox(width: r.wp(4)),
+                      Flexible(
+                        child: Text(
+                          '${screenHours}h ${screenMins}m today',
+                          style: TextStyle(
+                            fontSize: r.sp(12),
+                            color: isSelected
+                                ? Colors.white70
+                                : Colors.grey[600],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -1246,7 +1261,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         int yesterdaySeconds = 0;
         if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>?;
-          yesterdaySeconds = data?['totalScreenTime'] ?? 0;
+          yesterdaySeconds = data?['screenTime'] ?? 0;
         }
 
         // Calculate difference
@@ -1534,11 +1549,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.5,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: ResponsiveHelper.of(context).gridCrossAxisCount,
+        crossAxisSpacing: ResponsiveHelper.of(context).wp(16),
+        mainAxisSpacing: ResponsiveHelper.of(context).hp(16),
+        childAspectRatio: ResponsiveHelper.of(context).quickActionAspectRatio,
       ),
       itemCount: actions.length,
       itemBuilder: (context, index) {
@@ -1973,14 +1988,16 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
           );
         },
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(18)),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Colors.white, Color(0xFFFAFBFA)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.of(context).radius(24),
+            ),
             border: Border.all(
               color: Colors.grey.shade100.withOpacity(0.6),
               width: 1,
@@ -2004,18 +2021,20 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(ResponsiveHelper.of(context).wp(12)),
                 decoration: BoxDecoration(
                   color: widget.action.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.of(context).radius(14),
+                  ),
                 ),
                 child: Icon(
                   widget.action.icon,
                   color: widget.action.color,
-                  size: 24,
+                  size: ResponsiveHelper.of(context).iconSize(24),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: ResponsiveHelper.of(context).wp(14)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2023,19 +2042,19 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
                   children: [
                     Text(
                       widget.action.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF1F2937),
+                        fontSize: ResponsiveHelper.of(context).sp(14),
+                        color: const Color(0xFF1F2937),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: ResponsiveHelper.of(context).hp(2)),
                     Text(
                       widget.action.subtitle,
                       style: TextStyle(
                         color: Colors.grey.shade500,
-                        fontSize: 12,
+                        fontSize: ResponsiveHelper.of(context).sp(12),
                         fontWeight: FontWeight.w400,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -2046,7 +2065,7 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
               Icon(
                 Icons.chevron_right_rounded,
                 color: Colors.grey.shade300,
-                size: 20,
+                size: ResponsiveHelper.of(context).iconSize(20),
               ),
             ],
           ),
