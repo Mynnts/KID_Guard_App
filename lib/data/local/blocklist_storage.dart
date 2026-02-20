@@ -7,7 +7,7 @@ class BlocklistStorage {
   static const platform = MethodChannel('com.kidguard/native');
 
   /// Get the files directory path that matches Kotlin's applicationContext.filesDir
-  Future<String> get _localPath async {
+  Future<String> get localPath async {
     try {
       // Try to get the native files directory path
       final String? path = await platform.invokeMethod('getFilesDir');
@@ -23,7 +23,7 @@ class BlocklistStorage {
   }
 
   Future<File> get _localFile async {
-    final path = await _localPath;
+    final path = await localPath;
     return File('$path/$_fileName');
   }
 

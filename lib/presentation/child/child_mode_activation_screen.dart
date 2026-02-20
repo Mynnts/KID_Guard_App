@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../logic/services/background_service.dart';
 import '../../logic/services/overlay_service.dart';
+<<<<<<< 20/2/2569Arm
+import 'package:shared_preferences/shared_preferences.dart';
+=======
 import '../../core/utils/responsive_helper.dart';
+>>>>>>> main
 
 class ChildModeActivationScreen extends StatefulWidget {
   const ChildModeActivationScreen({super.key});
@@ -30,6 +34,7 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
   @override
   void initState() {
     super.initState();
+    _restoreState();
     _backgroundService = BackgroundService(
       onBlockedAppDetected: (packageName) {
         OverlayService().showBlockOverlay(packageName);
@@ -41,6 +46,18 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
         OverlayService().hideOverlay();
       },
     );
+  }
+
+  Future<void> _restoreState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isActive = prefs.getBool('isChildModeActive') ?? false;
+    if (isActive) {
+      if (mounted) {
+        setState(() {
+          _isChildrenModeActive = true;
+        });
+      }
+    }
   }
 
   @override
@@ -67,9 +84,15 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
             builder: (context) => AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
+<<<<<<< 20/2/2569Arm
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Row(
+=======
                 borderRadius: BorderRadius.circular(r.radius(24)),
               ),
               title: Row(
+>>>>>>> main
                 children: [
                   Icon(
                     Icons.shield_rounded,
@@ -309,9 +332,12 @@ class _ChildModeActivationScreenState extends State<ChildModeActivationScreen> {
   Widget _buildToggleSwitch() {
     final r = ResponsiveHelper.of(context);
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final newState = !_isChildrenModeActive;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isChildModeActive', newState);
         setState(() {
-          _isChildrenModeActive = !_isChildrenModeActive;
+          _isChildrenModeActive = newState;
         });
       },
       child: AnimatedContainer(
