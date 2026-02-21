@@ -12,6 +12,7 @@ import 'child_location_screen.dart';
 import 'schedule_screen.dart';
 import 'parent_rewards_screen.dart';
 import 'all_children_screen.dart';
+import 'apps/parent_app_control_screen.dart';
 
 import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:kidguard/data/models/notification_model.dart';
@@ -1483,7 +1484,21 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         label: 'Apps',
         subtitle: 'Manage apps',
         color: const Color(0xFF6B9080),
-        onTap: () => Navigator.pushNamed(context, '/parent/app_control'),
+        onTap: () {
+          final selectedChild =
+              children.isNotEmpty && _selectedChildIndex != null
+              ? children[_selectedChildIndex!]
+              : null;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ParentAppControlScreen(
+                childId: selectedChild?.id,
+                childName: selectedChild?.name,
+              ),
+            ),
+          );
+        },
       ),
       _QuickAction(
         icon: Icons.timer_rounded,

@@ -53,7 +53,8 @@ class AppService {
       List<AppInfoModel> filteredApps = [];
 
       for (var app in allApps) {
-        if (systemAppMap.containsKey(app.packageName)) {
+        if (systemAppMap.containsKey(app.packageName) &&
+            app.name.trim().isNotEmpty) {
           String? iconBase64;
           if (app.icon != null) {
             iconBase64 = base64Encode(app.icon!);
@@ -62,7 +63,7 @@ class AppService {
           filteredApps.add(
             AppInfoModel(
               packageName: app.packageName,
-              name: app.name,
+              name: app.name.trim(),
               isSystemApp: systemAppMap[app.packageName] ?? false,
               isLocked: false,
               iconBase64: iconBase64,
@@ -90,7 +91,14 @@ class AppService {
         'Syncing ${apps.length} apps for child $childId on device $deviceId',
       );
 
-      final collectionRef = _firestore
+      final masterCollectionRef = _firestore
+          .collection('users')
+          .doc(parentUid)
+          .collection('children')
+          .doc(childId)
+          .collection('apps');
+
+      final deviceCollectionRef = _firestore
           .collection('users')
           .doc(parentUid)
           .collection('children')
@@ -103,23 +111,32 @@ class AppService {
       int count = 0;
 
       for (var app in apps) {
-        // แปลง package name เป็น document ID (แทน . ด้วย _)
         final docId = app.packageName.replaceAll('.', '_');
-        final docRef = collectionRef.doc(docId);
 
         final data = {
           'packageName': app.packageName,
           'name': app.name,
           'isSystemApp': app.isSystemApp,
           'iconBase64': app.iconBase64,
-          // ไม่ overwrite isLocked เพื่อรักษาการตั้งค่าของผู้ปกครอง
+          'childId': childId,
+          'parentUid': parentUid,
+          'updatedAt': FieldValue.serverTimestamp(),
         };
 
-        batch.set(docRef, data, SetOptions(merge: true));
+        // Sync to both Master List and Device List
+        batch.set(
+          masterCollectionRef.doc(docId),
+          data,
+          SetOptions(merge: true),
+        );
+        batch.set(
+          deviceCollectionRef.doc(docId),
+          data,
+          SetOptions(merge: true),
+        );
 
-        count++;
-        // Firestore จำกัด 500 operations ต่อ batch
-        if (count >= 400) {
+        count += 2; // Two sets per app
+        if (count >= 450) {
           await batch.commit();
           batch = _firestore.batch();
           count = 0;
@@ -232,41 +249,61 @@ class AppService {
         .get();
 
     final batch = _firestore.batch();
+    final timestamp = FieldValue.serverTimestamp();
+
+    // 1. Update Master List (Main source of truth for Parent UI)
+    final masterAppRef = _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId)
+        .collection('apps')
+        .doc(docId);
+    batch.set(masterAppRef, {
+      'isLocked': isLocked,
+      'updatedAt': timestamp,
+    }, SetOptions(merge: true));
+
+    // 2. Update all Device Lists (Source of truth for Child Devices)
     for (var deviceDoc in devicesSnapshot.docs) {
       final appRef = deviceDoc.reference.collection('apps').doc(docId);
-      batch.set(appRef, {'isLocked': isLocked}, SetOptions(merge: true));
+      batch.set(appRef, {
+        'isLocked': isLocked,
+        'updatedAt': timestamp,
+      }, SetOptions(merge: true));
     }
+
+    // 3. Force trigger on child doc for maximum reactivity
+    final childRef = _firestore
+        .collection('users')
+        .doc(parentUid)
+        .collection('children')
+        .doc(childId);
+    batch.set(childRef, {
+      'lastAppUpdate': timestamp,
+      'toggleTrigger': DateTime.now().millisecondsSinceEpoch,
+    }, SetOptions(merge: true));
+
     await batch.commit();
   }
 
   /// Stream blocked apps from all devices for this child
   /// Used by child device to get blocklist
   Stream<List<String>> streamBlockedApps(String parentUid, String childId) {
+    // Listen directly to the Master List for immediate updates
     return _firestore
         .collection('users')
         .doc(parentUid)
         .collection('children')
         .doc(childId)
-        .collection('devices')
+        .collection('apps')
+        .where('isLocked', isEqualTo: true)
         .snapshots()
-        .asyncMap((devicesSnapshot) async {
-          final Set<String> blockedPackages = {};
-
-          for (var deviceDoc in devicesSnapshot.docs) {
-            final appsSnapshot = await deviceDoc.reference
-                .collection('apps')
-                .where('isLocked', isEqualTo: true)
-                .get();
-
-            for (var appDoc in appsSnapshot.docs) {
-              final packageName = appDoc.data()['packageName'] as String?;
-              if (packageName != null) {
-                blockedPackages.add(packageName);
-              }
-            }
-          }
-
-          return blockedPackages.toList();
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => doc.data()['packageName'] as String?)
+              .whereType<String>()
+              .toList();
         });
   }
 
@@ -278,49 +315,29 @@ class AppService {
     await syncAppsForDevice(parentUid, childId);
   }
 
-  /// Legacy: Stream apps from old structure (for backward compatibility)
   Stream<List<AppInfoModel>> streamApps(String parentUid, String childId) {
-    // First try to get from devices structure, fallback to old structure
+    // Real-time stream from Master List - No manual refresh needed!
     return _firestore
         .collection('users')
         .doc(parentUid)
         .collection('children')
         .doc(childId)
-        .collection('devices')
+        .collection('apps')
         .snapshots()
-        .asyncMap((devicesSnapshot) async {
-          if (devicesSnapshot.docs.isEmpty) {
-            // Fallback to old structure
-            final oldAppsSnapshot = await _firestore
-                .collection('users')
-                .doc(parentUid)
-                .collection('children')
-                .doc(childId)
-                .collection('apps')
-                .get();
+        .map((snapshot) {
+          final List<AppInfoModel> apps = snapshot.docs
+              .map((doc) => AppInfoModel.fromMap(doc.data()))
+              .where(
+                (app) =>
+                    app.name.trim().isNotEmpty && app.packageName.isNotEmpty,
+              )
+              .toList();
 
-            return oldAppsSnapshot.docs.map((doc) {
-              return AppInfoModel.fromMap(doc.data());
-            }).toList();
-          }
-
-          // Use new devices structure
-          final Map<String, AppInfoModel> appMap = {};
-          for (var deviceDoc in devicesSnapshot.docs) {
-            final appsSnapshot = await deviceDoc.reference
-                .collection('apps')
-                .get();
-            for (var appDoc in appsSnapshot.docs) {
-              final app = AppInfoModel.fromMap(appDoc.data());
-              if (!appMap.containsKey(app.packageName)) {
-                appMap[app.packageName] = app;
-              } else if (app.isLocked) {
-                appMap[app.packageName] = app;
-              }
-            }
-          }
-
-          return appMap.values.toList();
+          // Sort alphabetically
+          apps.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+          return apps;
         });
   }
 

@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/app_info_model.dart';
-import '../../../data/models/device_model.dart';
 import '../../../data/services/app_service.dart';
 import '../../../data/services/device_service.dart';
 import '../../../logic/providers/auth_provider.dart';
 import '../../../core/utils/responsive_helper.dart';
 
 class ParentAppControlScreen extends StatefulWidget {
-  const ParentAppControlScreen({super.key});
+  final String? childId;
+  final String? childName;
+
+  const ParentAppControlScreen({super.key, this.childId, this.childName});
 
   @override
   State<ParentAppControlScreen> createState() => _ParentAppControlScreenState();
@@ -19,7 +21,8 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   String _searchQuery = '';
   bool _showSystemApps = true;
   String? _selectedChildId;
-  String? _selectedDeviceId; // null means "All Devices"
+  final Map<String, bool> _optimisticLocks =
+      {}; // Local state for instant feedback
 
   final AppService _appService = AppService();
   final DeviceService _deviceService = DeviceService();
@@ -27,9 +30,11 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedChildId = widget.childId;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.children.isNotEmpty && _selectedChildId == null) {
+      if (_selectedChildId == null && authProvider.children.isNotEmpty) {
         setState(() {
           _selectedChildId = authProvider.children.first.id;
         });
@@ -57,9 +62,11 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          'App Control',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          widget.childName != null
+              ? 'App Control - ${widget.childName}'
+              : 'App Control',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           // Refresh button
@@ -88,183 +95,12 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       ),
       body: Column(
         children: [
-          // Selectors Section
-          _buildSelectorsSection(children, childId),
-          // Device Selector
-          _buildDeviceSelector(user.uid, childId),
           // Search Field
           _buildSearchField(),
           // Apps List
           Expanded(child: _buildAppsList(user.uid, childId)),
         ],
       ),
-    );
-  }
-
-  Widget _buildSelectorsSection(List<dynamic> children, String childId) {
-    if (children.length <= 1) return const SizedBox.shrink();
-    final r = ResponsiveHelper.of(context);
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(16), r.wp(16), r.hp(8)),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(r.radius(12)),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: childId,
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down),
-            items: children.map((child) {
-              return DropdownMenuItem<String>(
-                value: child.id,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: r.wp(14),
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      child: Text(
-                        child.name.isNotEmpty
-                            ? child.name[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          fontSize: r.sp(12),
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: r.wp(12)),
-                    Text(
-                      child.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: r.sp(14),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedChildId = value;
-                  _selectedDeviceId = null;
-                });
-              }
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeviceSelector(String parentUid, String childId) {
-    final r = ResponsiveHelper.of(context);
-    return StreamBuilder<List<DeviceModel>>(
-      stream: _deviceService.streamDevices(parentUid, childId),
-      builder: (context, snapshot) {
-        final devices = snapshot.data ?? [];
-
-        if (devices.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Padding(
-          padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(8), r.wp(16), r.hp(8)),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(r.radius(12)),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                value: _selectedDeviceId,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down),
-                hint: Row(
-                  children: [
-                    Icon(
-                      Icons.devices,
-                      size: r.iconSize(20),
-                      color: Colors.grey,
-                    ),
-                    SizedBox(width: r.wp(12)),
-                    const Text('ทุกอุปกรณ์'),
-                  ],
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.devices,
-                          size: r.iconSize(20),
-                          color: Colors.grey,
-                        ),
-                        SizedBox(width: r.wp(12)),
-                        const Text('ทุกอุปกรณ์'),
-                      ],
-                    ),
-                  ),
-                  ...devices.map((device) {
-                    return DropdownMenuItem<String?>(
-                      value: device.deviceId,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.smartphone,
-                            size: r.iconSize(20),
-                            color: device.isOnline ? Colors.green : Colors.grey,
-                          ),
-                          SizedBox(width: r.wp(12)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  device.deviceName,
-                                  style: TextStyle(fontSize: r.sp(14)),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  device.isOnline ? 'ออนไลน์' : 'ออฟไลน์',
-                                  style: TextStyle(
-                                    fontSize: r.sp(11),
-                                    color: device.isOnline
-                                        ? Colors.green
-                                        : Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDeviceId = value;
-                  });
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -295,17 +131,10 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
 
   Widget _buildAppsList(String parentUid, String childId) {
     final r = ResponsiveHelper.of(context);
-    final Stream<List<AppInfoModel>> appsStream;
-
-    if (_selectedDeviceId != null) {
-      appsStream = _appService.streamAppsForDevice(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
-      );
-    } else {
-      appsStream = _appService.streamApps(parentUid, childId);
-    }
+    final Stream<List<AppInfoModel>> appsStream = _appService.streamApps(
+      parentUid,
+      childId,
+    );
 
     return StreamBuilder<List<AppInfoModel>>(
       stream: appsStream,
@@ -418,7 +247,19 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                 padding: EdgeInsets.symmetric(horizontal: r.wp(16)),
                 itemCount: apps.length,
                 itemBuilder: (context, index) {
-                  final app = apps[index];
+                  var app = apps[index];
+                  // Use optimistic state if available
+                  if (_optimisticLocks.containsKey(app.packageName)) {
+                    if (_optimisticLocks[app.packageName] == app.isLocked) {
+                      // Stream has caught up! remove from optimistic map
+                      _optimisticLocks.remove(app.packageName);
+                    } else {
+                      // Still waiting, override with optimistic
+                      app = app.copyWith(
+                        isLocked: _optimisticLocks[app.packageName]!,
+                      );
+                    }
+                  }
                   return _buildAppCard(context, app, parentUid, childId);
                 },
               ),
@@ -430,52 +271,25 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   }
 
   Future<void> _onRefreshPressed(String parentUid, String childId) async {
-    if (_selectedDeviceId != null) {
-      // Refresh specific device
-      await _deviceService.requestDeviceSync(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
+    // Refresh all devices for the selected child
+    await _deviceService.requestAllDevicesSync(parentUid, childId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.sync, color: Colors.white, size: 18),
+              SizedBox(width: 12),
+              Expanded(child: Text('กำลังขอข้อมูลแอพจากอุปกรณ์ลูก...')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
       );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.sync, color: Colors.white, size: 18),
-                SizedBox(width: 12),
-                Expanded(child: Text('กำลังขอข้อมูลแอพจากอุปกรณ์ที่เลือก...')),
-              ],
-            ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } else {
-      // Refresh all devices
-      await _deviceService.requestAllDevicesSync(parentUid, childId);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.sync, color: Colors.white, size: 18),
-                SizedBox(width: 12),
-                Expanded(child: Text('กำลังขอข้อมูลแอพจากทุกอุปกรณ์...')),
-              ],
-            ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
@@ -634,23 +448,18 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                   child: Switch(
                     value: !isBlocked,
                     onChanged: (value) {
+                      final newLockedState = !value;
+
+                      // Optimistic Update: Update UI immediately
+                      setState(() {
+                        _optimisticLocks[app.packageName] = newLockedState;
+                      });
+
                       _toggleAppLock(
                         parentUid,
                         childId,
                         app.packageName,
-                        !value,
-                      );
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            value
-                                ? '${app.name} is now allowed'
-                                : '${app.name} is now blocked',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                        ),
+                        newLockedState,
                       );
                     },
                     activeColor: Colors.green,
@@ -669,24 +478,27 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     String childId,
     String packageName,
     bool isLocked,
-  ) {
-    if (_selectedDeviceId != null) {
-      // Toggle for specific device
-      _appService.toggleAppLockForDevice(
-        parentUid,
-        childId,
-        _selectedDeviceId!,
-        packageName,
-        isLocked,
-      );
-    } else {
-      // Toggle for all devices
-      _appService.toggleAppLockAllDevices(
+  ) async {
+    try {
+      await _appService.toggleAppLockAllDevices(
         parentUid,
         childId,
         packageName,
         isLocked,
       );
+
+      // We don't remove from _optimisticLocks here anymore.
+      // Instead, we let the StreamBuilder handle it when it sees the updated value.
+      // This prevents the "flicker" if Firestore is slow.
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _optimisticLocks.remove(packageName);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating lock status: $e')),
+        );
+      }
     }
   }
 

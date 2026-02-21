@@ -32,4 +32,20 @@ class AppInfoModel {
       iconBase64: map['iconBase64'],
     );
   }
+
+  AppInfoModel copyWith({
+    String? packageName,
+    String? name,
+    bool? isSystemApp,
+    bool? isLocked,
+    String? iconBase64,
+  }) {
+    return AppInfoModel(
+      packageName: packageName ?? this.packageName,
+      name: name ?? this.name,
+      isSystemApp: isSystemApp ?? this.isSystemApp,
+      isLocked: isLocked ?? this.isLocked,
+      iconBase64: iconBase64 ?? this.iconBase64,
+    );
+  }
 }
