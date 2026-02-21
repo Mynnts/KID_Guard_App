@@ -54,9 +54,20 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _restoreChildModeState();
     _initializeServices();
     _startSyncing();
     _checkIntent();
+  }
+
+  /// Restore child mode toggle state from SharedPreferences
+  /// (เมื่อแอพเด้งกลับหลังปัดทิ้ง ปุ่มจะแสดงเป็น "เปิด" ตามสถานะจริง)
+  Future<void> _restoreChildModeState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isActive = prefs.getBool('isChildModeActive') ?? false;
+    if (isActive && mounted) {
+      setState(() => _isChildrenModeActive = true);
+    }
   }
 
   void _checkIntent() {
@@ -146,7 +157,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
                 children: [
                   Icon(Icons.accessibility_new, color: _primaryColor),
                   SizedBox(width: 12),
-                  Text('ต้องเปิด Accessibility'),
+                  Flexible(child: Text('ต้องเปิด Accessibility')),
                 ],
               ),
               content: const Text(
@@ -201,9 +212,14 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isChildModeActive', true);
+        await prefs.setString('activeChildId', child.id);
+        await prefs.setString('activeParentUid', user.uid);
 
         await _backgroundService.startMonitoring(child.id, user.uid);
         await _locationService.startTracking(user.uid, child.id);
+
+        // Reset shutdown flag (protect against swipe-away)
+        await ChildModeService.setAllowShutdown(false);
 
         // Start foreground notification service
         await ChildModeService.start(
@@ -417,10 +433,15 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
   }
 
   Future<void> _disableChildMode() async {
+    // Allow shutdown (parent PIN verified) → swipe-away won't relaunch
+    await ChildModeService.setAllowShutdown(true);
+
     await NativeSettingsSync().disableChildMode();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isChildModeActive', false);
+    await prefs.remove('activeChildId');
+    await prefs.remove('activeParentUid');
 
     await _backgroundService.stopMonitoring();
     _locationService.stopTracking();

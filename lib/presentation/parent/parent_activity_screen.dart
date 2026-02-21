@@ -772,6 +772,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     );
   }
 
+  // Helper: แปลง DateTime เป็น YYYY-MM-DD string
+  String _getDateStr(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   // ─── Weekly Chart + Apps ──────────────────────────────────
   // ดึงข้อมูล daily_stats 7 วันย้อนหลังโดยใช้ document ID (YYYY-MM-DD) โดยตรง
   // แทนการใช้ orderBy('timestamp') ที่ต้องการ Firestore Index
@@ -907,17 +911,71 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
         List<String> dayLabels = [];
         final now = DateTime.now();
 
+        // Auto-select วันล่าสุดที่มีข้อมูล ถ้าวันที่เลือกไม่มีข้อมูล
+        final latestDataIndex = snapshot.data!['latestDataIndex'] as int? ?? 6;
+        final currentDateStr = _getDateStr(
+          now.subtract(Duration(days: 6 - _selectedBarIndex)),
+        );
+        if (!screenTimeMap.containsKey(currentDateStr) &&
+            screenTimeMap.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _selectedBarIndex != latestDataIndex) {
+              setState(() => _selectedBarIndex = latestDataIndex);
+            }
+          });
+        }
+
         final selectedDate = now.subtract(
           Duration(days: 6 - _selectedBarIndex),
         );
-        final selectedDateStr =
-            '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+        final selectedDateStr = _getDateStr(selectedDate);
+
+        // คำนวณ maxY แบบ dynamic จากข้อมูลจริง
+        final maxHours = screenTimeMap.values.isNotEmpty
+            ? screenTimeMap.values.reduce((a, b) => a > b ? a : b)
+            : 0.0;
+        final bool useMinutes =
+            maxHours < 1.0; // ถ้าใช้ไม่ถึง 1 ชม. แสดงเป็นนาที
+        double chartMaxY;
+        double chartInterval;
+
+        if (useMinutes) {
+          final maxMinutes = maxHours * 60;
+          if (maxMinutes <= 5) {
+            chartMaxY = 5;
+            chartInterval = 1;
+          } else if (maxMinutes <= 15) {
+            chartMaxY = 15;
+            chartInterval = 5;
+          } else if (maxMinutes <= 30) {
+            chartMaxY = 30;
+            chartInterval = 10;
+          } else {
+            chartMaxY = 60;
+            chartInterval = 15;
+          }
+        } else {
+          if (maxHours <= 2) {
+            chartMaxY = 2;
+            chartInterval = 0.5;
+          } else if (maxHours <= 4) {
+            chartMaxY = 4;
+            chartInterval = 1;
+          } else if (maxHours <= 8) {
+            chartMaxY = 8;
+            chartInterval = 2;
+          } else {
+            chartMaxY = 12;
+            chartInterval = 4;
+          }
+        }
 
         for (int i = 6; i >= 0; i--) {
           final d = now.subtract(Duration(days: i));
           final dateStr =
               '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
           final hours = screenTimeMap[dateStr] ?? 0.0;
+          final barValue = useMinutes ? hours * 60 : hours;
           final xIndex = 6 - i;
           final isSelected = xIndex == _selectedBarIndex;
           final isToday = i == 0;
@@ -927,7 +985,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
               x: xIndex,
               barRods: [
                 BarChartRodData(
-                  toY: hours > 0 ? hours : 0.15,
+                  toY: barValue > 0 ? barValue : (chartMaxY * 0.02),
                   gradient: isSelected
                       ? const LinearGradient(
                           colors: [_primaryGreen, _secondaryGreen],
@@ -941,7 +999,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                   borderRadius: BorderRadius.circular(10),
                   backDrawRodData: BackgroundBarChartRodData(
                     show: true,
-                    toY: 12,
+                    toY: chartMaxY,
                     color: Colors.grey.shade50,
                   ),
                 ),
@@ -990,7 +1048,14 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Chart Card
-            _buildChartCard(barGroups, dayLabels, screenTimeMap),
+            _buildChartCard(
+              barGroups,
+              dayLabels,
+              screenTimeMap,
+              chartMaxY,
+              chartInterval,
+              useMinutes,
+            ),
             const SizedBox(height: 20),
             // App Usage Section
             _buildAppUsageSection(
@@ -1009,6 +1074,9 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     List<BarChartGroupData> barGroups,
     List<String> dayLabels,
     Map<String, double> screenTimeMap,
+    double maxY,
+    double interval,
+    bool useMinutes,
   ) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1078,8 +1146,20 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => _primaryGreen,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      // แสดง tooltip ตามหน่วยที่ใช้
+                      String tip;
+                      if (useMinutes) {
+                        final mins = rod.toY;
+                        if (mins < 1) {
+                          tip = '${(mins * 60).toInt()}s';
+                        } else {
+                          tip = '${mins.toStringAsFixed(1)}m';
+                        }
+                      } else {
+                        tip = '${rod.toY.toStringAsFixed(1)}h';
+                      }
                       return BarTooltipItem(
-                        '${rod.toY.toStringAsFixed(1)}h',
+                        tip,
                         const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -1092,7 +1172,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: 4,
+                  horizontalInterval: interval,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: Colors.grey.shade100,
                     strokeWidth: 1,
@@ -1103,19 +1183,31 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 32,
-                      interval: 4,
-                      getTitlesWidget: (value, meta) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          '${value.toInt()}h',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
+                      reservedSize: 36,
+                      interval: interval,
+                      getTitlesWidget: (value, meta) {
+                        // ไม่แสดง label ที่ 0
+                        if (value == 0) return const SizedBox();
+                        String label;
+                        if (useMinutes) {
+                          label = '${value.toInt()}m';
+                        } else {
+                          label = value == value.toInt()
+                              ? '${value.toInt()}h'
+                              : '${value.toStringAsFixed(1)}h';
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                   topTitles: const AxisTitles(
@@ -1155,7 +1247,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: barGroups,
-                maxY: 12,
+                maxY: maxY,
               ),
             ),
           ),
@@ -1411,9 +1503,13 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
         : 0;
 
     String timeStr = '';
-    if (hours > 0) timeStr += '${hours}h ';
-    timeStr += '${minutes}m';
-    if (hours == 0 && minutes == 0) timeStr = '< 1m';
+    if (hours > 0) {
+      timeStr = '${hours}h ${minutes}m';
+    } else if (minutes > 0) {
+      timeStr = '${minutes}m ${duration.inSeconds.remainder(60)}s';
+    } else {
+      timeStr = '${duration.inSeconds}s';
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1535,9 +1631,13 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
         : 0;
 
     String timeStr = '';
-    if (hours > 0) timeStr += '${hours}h ';
-    timeStr += '${minutes}m';
-    if (hours == 0 && minutes == 0) timeStr = '< 1m';
+    if (hours > 0) {
+      timeStr = '${hours}h ${minutes}m';
+    } else if (minutes > 0) {
+      timeStr = '${minutes}m ${duration.inSeconds.remainder(60)}s';
+    } else {
+      timeStr = '${duration.inSeconds}s';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1799,8 +1899,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
   String _formatTotalTime(int seconds) {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
     if (h > 0) return '${h}h ${m}m total';
-    return '${m}m total';
+    if (m > 0) return '${m}m ${s}s total';
+    return '${s}s total';
   }
 
   String _getDateLabel(DateTime date) {

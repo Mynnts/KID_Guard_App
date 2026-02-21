@@ -65,6 +65,19 @@ class ChildModeService {
     }
   }
 
+  /// Set allow shutdown flag (call with true before stop() when PIN verified)
+  /// When true: swiping app away will NOT relaunch it
+  /// When false: swiping app away will auto-relaunch (child mode protection)
+  static Future<bool> setAllowShutdown(bool allow) async {
+    try {
+      await _channel.invokeMethod('setAllowShutdown', {'allow': allow});
+      return true;
+    } catch (e) {
+      print('ChildModeService.setAllowShutdown error: $e');
+      return false;
+    }
+  }
+
   /// Get launch action from notification click
   /// Returns "com.kidguard.ACTION_STOP_CHILD_MODE" if user clicked stop button
   static Future<String?> getLaunchAction() async {

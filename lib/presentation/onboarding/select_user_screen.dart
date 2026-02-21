@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/routes.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../core/utils/responsive_helper.dart';
@@ -57,16 +59,77 @@ class _SelectUserScreenState extends State<SelectUserScreen>
   }
 
   Future<void> _checkAuthState() async {
-    // Use Firebase Auth directly to check if user is logged in
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
     if (!mounted) return;
 
-    if (firebaseUser != null) {
-      // User is logged in, wait for AuthProvider to load user data
+    // FIRST: Check if child mode is active (app relaunched after swipe-away)
+    // This must be checked before Firebase Auth because child device
+    // uses PIN login (no Firebase Auth session)
+    final prefs = await SharedPreferences.getInstance();
+    final isChildModeActive = prefs.getBool('isChildModeActive') ?? false;
+    final activeChildId = prefs.getString('activeChildId');
+    final activeParentUid = prefs.getString('activeParentUid');
+
+    if (isChildModeActive && activeChildId != null && activeParentUid != null) {
+      // Restore child session without Firebase Auth
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // Wait for AuthProvider to sync with Firebase (max 3 seconds)
+      // Wait for AuthProvider to be ready (max 3 seconds)
+      int attempts = 0;
+      while (authProvider.userModel == null && attempts < 30) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+        if (!mounted) return;
+      }
+
+      // If AuthProvider didn't load (no Firebase Auth), manually restore via Firestore
+      if (authProvider.userModel == null) {
+        try {
+          // Restore parent data from Firestore using saved parentUid
+          final parentDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(activeParentUid)
+              .get();
+
+          if (parentDoc.exists && parentDoc.data() != null) {
+            // Use childLogin with the parent's PIN to restore session
+            final parentPin = parentDoc.data()!['pin'] as String?;
+            if (parentPin != null) {
+              await authProvider.childLogin(parentPin);
+            }
+          }
+        } catch (e) {
+          print('Failed to restore child session: $e');
+        }
+      }
+
+      // Now try to select the child
+      if (authProvider.children.isNotEmpty) {
+        try {
+          final child = authProvider.children.firstWhere(
+            (c) => c.id == activeChildId,
+          );
+          await authProvider.selectChild(child);
+
+          if (mounted && !_hasNavigated) {
+            _hasNavigated = true;
+            Navigator.pushReplacementNamed(context, AppRoutes.childHome);
+          }
+          return;
+        } catch (_) {
+          // Child not found, clear stale data and fall through
+          await prefs.setBool('isChildModeActive', false);
+          await prefs.remove('activeChildId');
+          await prefs.remove('activeParentUid');
+        }
+      }
+    }
+
+    // SECOND: Check Firebase Auth for parent login
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+
+    if (firebaseUser != null) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
       int attempts = 0;
       while (authProvider.userModel == null && attempts < 30) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -80,7 +143,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
         Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
       }
     } else {
-      // User is not logged in, show select user screen
+      // Not logged in, show select user screen
       if (mounted) {
         setState(() {
           _isCheckingAuth = false;

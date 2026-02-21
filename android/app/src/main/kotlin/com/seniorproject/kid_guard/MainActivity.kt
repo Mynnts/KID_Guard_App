@@ -225,6 +225,12 @@ class MainActivity: FlutterActivity() {
                 "isServiceRunning" -> {
                     result.success(ChildModeService.isServiceRunning())
                 }
+                // ตั้งค่า flag อนุญาตให้ปิดแอพได้ (หลังกรอก PIN ผู้ปกครอง)
+                "setAllowShutdown" -> {
+                    val allow = call.argument<Boolean>("allow") ?: false
+                    ChildModeService.setAllowShutdown(this, allow)
+                    result.success(true)
+                }
                 // ดึง action ที่เปิดมา (เช่น จากการกด notification)
                 "getLaunchAction" -> {
                     val action = intent.getStringExtra("action")

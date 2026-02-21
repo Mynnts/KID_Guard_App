@@ -29,10 +29,21 @@ class ChildModeService : Service() {
         const val EXTRA_CHILD_NAME = "childName"
         const val EXTRA_SCREEN_TIME = "screenTime"
         const val EXTRA_DAILY_LIMIT = "dailyLimit"
+        const val PREF_ALLOW_SHUTDOWN = "allowShutdown"
         
         private var isRunning = false
         
         fun isServiceRunning(): Boolean = isRunning
+        
+        /**
+         * ตั้งค่า flag อนุญาตให้ปิดแอพได้ (เรียกหลังจากกรอก PIN ผู้ปกครองถูกต้อง)
+         * - true = อนุญาตให้ปิด (ปัดทิ้งแล้วไม่เปิดกลับ)
+         * - false = ไม่อนุญาต (ปัดทิ้งแล้วเปิดกลับอัตโนมัติ)
+         */
+        fun setAllowShutdown(context: Context, allow: Boolean) {
+            context.getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
+                .edit().putBoolean(PREF_ALLOW_SHUTDOWN, allow).apply()
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -182,9 +193,40 @@ class ChildModeService : Service() {
     
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // Restart service if app is killed (force stop won't work but swipe-away will)
-        val restartIntent = Intent(applicationContext, ChildModeService::class.java)
+        
         val prefs = getSharedPreferences("ChildModePrefs", Context.MODE_PRIVATE)
+        val allowShutdown = prefs.getBoolean(PREF_ALLOW_SHUTDOWN, false)
+        
+        // ถ้าผู้ปกครองกรอก PIN แล้ว → ปล่อยให้ปิดจริง ไม่ต้อง restart
+        if (allowShutdown) {
+            prefs.edit().putBoolean(PREF_ALLOW_SHUTDOWN, false).apply()
+            println("ChildModeService: PIN-authorized shutdown, not restarting")
+            return
+        }
+        
+        // ตรวจสอบว่าโหมดเด็กยังเปิดอยู่หรือไม่
+        val flutterPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val isChildModeActive = prefs.getBoolean("isChildModeActive", false) ||
+            flutterPrefs.getBoolean("flutter.isChildModeActive", false)
+        
+        if (!isChildModeActive) {
+            println("ChildModeService: Child mode not active, not restarting")
+            return
+        }
+        
+        // เปิดแอพกลับมาอัตโนมัติเมื่อเด็กปัดทิ้ง
+        try {
+            val relaunchIntent = Intent(applicationContext, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            applicationContext.startActivity(relaunchIntent)
+            println("ChildModeService: App relaunched after swipe-away")
+        } catch (e: Exception) {
+            println("ChildModeService: Failed to relaunch app: ${e.message}")
+        }
+        
+        // Restart service
+        val restartIntent = Intent(applicationContext, ChildModeService::class.java)
         restartIntent.putExtra(EXTRA_CHILD_NAME, prefs.getString("childName", "ลูก"))
         restartIntent.putExtra(EXTRA_SCREEN_TIME, prefs.getInt("screenTime", 0))
         restartIntent.putExtra(EXTRA_DAILY_LIMIT, prefs.getInt("dailyLimit", 0))
