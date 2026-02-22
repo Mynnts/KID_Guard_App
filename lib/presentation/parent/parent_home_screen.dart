@@ -1573,31 +1573,21 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     final user = authProvider.userModel;
     if (user == null) return;
 
-    if (children.length == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChildLocationScreen(
-            childId: children.first.id,
-            parentUid: user.uid,
-            childName: children.first.name,
-          ),
+    final selectedChild =
+        (_selectedChildIndex != null && children.length > _selectedChildIndex!)
+        ? children[_selectedChildIndex!]
+        : children.first;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChildLocationScreen(
+          childId: selectedChild.id,
+          parentUid: user.uid,
+          childName: selectedChild.name,
         ),
-      );
-    } else {
-      _showChildSelector(context, children, (child) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChildLocationScreen(
-              childId: child.id,
-              parentUid: user.uid,
-              childName: child.name,
-            ),
-          ),
-        );
-      });
-    }
+      ),
+    );
   }
 
   void _navigateToRewards(BuildContext context, List<ChildModel> children) {
@@ -1608,21 +1598,17 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       return;
     }
 
-    if (children.length == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ParentRewardsScreen(child: children.first),
-        ),
-      );
-    } else {
-      _showChildSelector(context, children, (child) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ParentRewardsScreen(child: child)),
-        );
-      });
-    }
+    final selectedChild =
+        (_selectedChildIndex != null && children.length > _selectedChildIndex!)
+        ? children[_selectedChildIndex!]
+        : children.first;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ParentRewardsScreen(child: selectedChild),
+      ),
+    );
   }
 
   void _showInstantPauseDialog(
@@ -1767,63 +1753,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  void _showChildSelector(
-    BuildContext context,
-    List<ChildModel> children,
-    Function(ChildModel) onSelect,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Select Child',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ...children.map(
-              (child) => ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: child.avatar != null
-                      ? AssetImage(child.avatar!)
-                      : null,
-                  child: child.avatar == null ? Text(child.name[0]) : null,
-                ),
-                title: Text(
-                  child.name,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.pop(context);
-                  onSelect(child);
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
         ),
       ),
     );
