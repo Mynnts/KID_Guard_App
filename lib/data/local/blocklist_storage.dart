@@ -15,7 +15,7 @@ class BlocklistStorage {
         return path;
       }
     } catch (e) {
-      print("Error getting native files dir: $e");
+      // Error getting native files dir
     }
     // Fallback: construct the path manually (this is the standard Android files dir)
     // On Android, filesDir is typically /data/data/<package>/files
@@ -37,7 +37,7 @@ class BlocklistStorage {
     // Native expects a JSON array of strings
     String jsonString = jsonEncode(blockedApps);
     await file.writeAsString(jsonString, flush: true);
-    print("Blocklist saved to ${file.path} with ${blockedApps.length} apps");
+    // Blocklist saved
   }
 
   Future<List<String>> readBlocklist() async {
@@ -48,7 +48,7 @@ class BlocklistStorage {
       List<dynamic> jsonList = jsonDecode(contents);
       return jsonList.cast<String>();
     } catch (e) {
-      print("Error reading blocklist: $e");
+      // Error reading blocklist
       return [];
     }
   }

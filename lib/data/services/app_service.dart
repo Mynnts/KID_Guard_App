@@ -74,7 +74,7 @@ class AppService {
 
       return filteredApps;
     } catch (e) {
-      print("Error fetching apps: $e");
+      // Error fetching installed apps
       return [];
     }
   }
@@ -87,9 +87,6 @@ class AppService {
     try {
       final deviceId = await _deviceService.getDeviceId();
       final apps = await fetchInstalledApps();
-      print(
-        'Syncing ${apps.length} apps for child $childId on device $deviceId',
-      );
 
       final masterCollectionRef = _firestore
           .collection('users')
@@ -148,7 +145,7 @@ class AppService {
         await batch.commit();
       }
     } catch (e) {
-      print('Error syncing apps: $e');
+      // Error syncing apps
     }
   }
 

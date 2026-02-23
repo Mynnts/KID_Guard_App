@@ -166,7 +166,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print(e.toString());
+      // Error fetching user data
       return null;
     }
   }
@@ -218,7 +218,7 @@ class AuthService {
         throw Exception('Failed to generate unique PIN');
       }
     } catch (e) {
-      print(e.toString());
+      // Error generating PIN
       return null;
     }
   }
@@ -248,7 +248,7 @@ class AuthService {
       await docRef.set(child.toMap());
       return child;
     } catch (e) {
-      print(e.toString());
+      // Error registering child
       return null;
     }
   }
@@ -266,7 +266,7 @@ class AuthService {
           .map((doc) => ChildModel.fromMap(doc.data(), doc.id))
           .toList();
     } catch (e) {
-      print(e.toString());
+      // Error fetching children
       return [];
     }
   }
@@ -288,7 +288,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print(e.toString());
+      // Error verifying PIN
       return null;
     }
   }
@@ -304,7 +304,7 @@ class AuthService {
           .doc(childId)
           .delete();
     } catch (e) {
-      print(e.toString());
+      // Error deleting child
       rethrow;
     }
   }
@@ -327,7 +327,7 @@ class AuthService {
             'lastActive': FieldValue.serverTimestamp(),
           });
     } catch (e) {
-      print(e.toString());
+      // Error updating child status
     }
   }
 
@@ -341,7 +341,7 @@ class AuthService {
       // อัปเดตใน Firebase Auth ด้วย
       await _auth.currentUser?.updateDisplayName(newName);
     } catch (e) {
-      print(e.toString());
+      // Error updating display name
       rethrow;
     }
   }
@@ -368,7 +368,7 @@ class AuthService {
       // เปลี่ยนรหัสผ่านใหม่
       await user.updatePassword(newPassword);
     } catch (e) {
-      print(e.toString());
+      // Error updating password
       rethrow;
     }
   }

@@ -17,7 +17,7 @@ class LocationService {
     if (!serviceEnabled) {
       // Service disabled, cannot track.
       // In a real app, you might ask user to enable it.
-      print('Location services are disabled.');
+      // Location services disabled, cannot track
       return;
     }
 
@@ -26,13 +26,13 @@ class LocationService {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        print('Location permissions are denied');
+        // Location permissions denied
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      print('Location permissions are permanently denied');
+      // Location permissions permanently denied
       return;
     }
 
@@ -82,7 +82,7 @@ class LocationService {
       // Optional: Add to history collection if you want a path trail later
       // For MVP, just current location is often enough.
     } catch (e) {
-      print('Error uploading location: $e');
+      // Error uploading location
     }
   }
 

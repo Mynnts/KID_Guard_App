@@ -579,17 +579,15 @@ class AppAccessibilityService : AccessibilityService() {
                 return
             }
             
-            // Check blocked apps
+            // Check blocked apps - ส่งกลับ Home ทันทีไม่แสดง overlay
             if (isAppBlocked(packageName)) {
-                if (lastBlockedPackage != packageName || currentRestrictionType != RestrictionType.BLOCKED_APP) {
-                    currentRestrictionType = RestrictionType.BLOCKED_APP
-                    showOverlay(packageName)
-                    lastBlockedPackage = packageName
-                }
+                currentRestrictionType = RestrictionType.BLOCKED_APP
+                lastBlockedPackage = packageName
+                // เด้งกลับ Home screen ทันที
+                performGlobalAction(GLOBAL_ACTION_HOME)
             } else {
-                // App is allowed - hide overlay if it was showing for blocked app
-                if (isOverlayShowing && currentRestrictionType == RestrictionType.BLOCKED_APP) {
-                    hideOverlay()
+                // App is allowed - clear blocked state
+                if (currentRestrictionType == RestrictionType.BLOCKED_APP) {
                     lastBlockedPackage = null
                     currentRestrictionType = RestrictionType.NONE
                 }

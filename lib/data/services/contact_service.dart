@@ -56,7 +56,7 @@ class ContactService {
       }
       await batch.commit();
     } catch (e) {
-      print('Error syncing contacts: $e');
+      // Error syncing contacts
     }
   }
 

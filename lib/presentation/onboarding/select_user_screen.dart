@@ -98,7 +98,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
             }
           }
         } catch (e) {
-          print('Failed to restore child session: $e');
+          // Failed to restore child session
         }
       }
 

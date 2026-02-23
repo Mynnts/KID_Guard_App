@@ -814,20 +814,11 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
         final seconds = data['screenTime'] as int? ?? 0;
         screenTimeMap[dateStrs[i]] = seconds / 3600.0;
 
-        // Debug: ดูโครงสร้างข้อมูลจริงจาก Firestore
-        print('📊 [${dateStrs[i]}] keys: ${data.keys.toList()}');
-        print(
-          '📊 [${dateStrs[i]}] containsKey(apps): ${data.containsKey('apps')}',
-        );
-
         // ลอง 2 รูปแบบ: nested map หรือ flat dot-notation keys
         if (data.containsKey('apps') && data['apps'] is Map) {
           // รูปแบบ 1: Nested map — data['apps'] = {'com_facebook_katana': {'name': 'Facebook', ...}}
           appsDataMap[dateStrs[i]] = Map<String, dynamic>.from(
             data['apps'] as Map,
-          );
-          print(
-            '📊 [${dateStrs[i]}] Found nested apps map with ${(data['apps'] as Map).length} apps',
           );
         } else {
           // รูปแบบ 2: Flat dot-notation keys — 'apps.com_facebook_katana.duration': 6
@@ -854,11 +845,6 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
           });
           if (extractedApps.isNotEmpty) {
             appsDataMap[dateStrs[i]] = extractedApps.cast<String, dynamic>();
-            print(
-              '📊 [${dateStrs[i]}] Extracted ${extractedApps.length} apps from flat keys',
-            );
-          } else {
-            print('📊 [${dateStrs[i]}] No apps data found');
           }
         }
       }

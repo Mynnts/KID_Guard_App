@@ -9,7 +9,7 @@ class OverlayService {
     try {
       await _channel.invokeMethod('showOverlay', {'packageName': packageName});
     } catch (e) {
-      print('Error showing overlay: $e');
+      // Error showing overlay
     }
   }
 
@@ -17,7 +17,7 @@ class OverlayService {
     try {
       await _channel.invokeMethod('hideOverlay');
     } catch (e) {
-      print('Error hiding overlay: $e');
+      // Error hiding overlay
     }
   }
 
@@ -26,7 +26,7 @@ class OverlayService {
       final bool result = await _channel.invokeMethod('checkPermission');
       return result;
     } catch (e) {
-      print('Error checking overlay permission: $e');
+      // Error checking overlay permission
       return false;
     }
   }
@@ -35,7 +35,7 @@ class OverlayService {
     try {
       await _channel.invokeMethod('requestPermission');
     } catch (e) {
-      print('Error requesting overlay permission: $e');
+      // Error requesting overlay permission
     }
   }
 }

@@ -9,7 +9,6 @@ void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       await Firebase.initializeApp();
-      print("Background Worker Started: $task");
 
       // We need childId and parentUid.
       // Since WorkManager spawns a new isolate, we can't access Provider.
@@ -33,14 +32,11 @@ void callbackDispatcher() {
             .toList();
 
         await BlocklistStorage().saveBlocklist(blockedApps);
-        print("Background Sync Success: Updated ${blockedApps.length} apps.");
-      } else {
-        print("Background Sync Skipped: No child/parent ID in prefs.");
-      }
+      } else {}
 
       return Future.value(true);
     } catch (e) {
-      print("Background Sync Failed: $e");
+      // Background sync failed
       return Future.value(false);
     }
   });

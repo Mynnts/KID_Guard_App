@@ -51,9 +51,9 @@ class NativeSettingsSync {
       };
 
       await file.writeAsString(jsonEncode(settings));
-      print('NativeSettingsSync: Settings synced to native');
+      // Settings synced to native successfully
     } catch (e) {
-      print('NativeSettingsSync: Error syncing settings: $e');
+      // Error syncing settings to native
     }
   }
 
@@ -68,7 +68,7 @@ class NativeSettingsSync {
         return jsonDecode(content) as Map<String, dynamic>;
       }
     } catch (e) {
-      print('NativeSettingsSync: Error reading screen time: $e');
+      // Error reading screen time from native
     }
     return null;
   }
@@ -93,9 +93,9 @@ class NativeSettingsSync {
             'lastActive': FieldValue.serverTimestamp(),
           });
 
-      print('NativeSettingsSync: Screen time synced to Firebase');
+      // Screen time synced to Firebase
     } catch (e) {
-      print('NativeSettingsSync: Error syncing to Firebase: $e');
+      // Error syncing screen time to Firebase
     }
   }
 
@@ -162,7 +162,7 @@ class NativeSettingsSync {
         quietTimes: quietTimes,
       );
     } catch (e) {
-      print('NativeSettingsSync: Error loading from Firebase: $e');
+      // Error loading settings from Firebase
     }
   }
 
@@ -197,7 +197,7 @@ class NativeSettingsSync {
         await file.writeAsString(jsonEncode(settings));
       }
     } catch (e) {
-      print('NativeSettingsSync: Error disabling child mode: $e');
+      // Error disabling child mode
     }
   }
 }

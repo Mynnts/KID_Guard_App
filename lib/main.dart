@@ -25,7 +25,7 @@ void main() async {
   await Firebase.initializeApp();
 
   // ตั้งค่า WorkManager สำหรับงาน background (sync, tracking)
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 
   runApp(const MyApp());
 }

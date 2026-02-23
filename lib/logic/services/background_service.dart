@@ -113,7 +113,7 @@ class BackgroundService {
             'lastActive': FieldValue.serverTimestamp(),
           });
     } catch (e) {
-      print('Error setting online status: $e');
+      // Error setting online status
     }
 
     _monitorTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
@@ -137,7 +137,7 @@ class BackgroundService {
               'lastActive': FieldValue.serverTimestamp(),
             });
       } catch (e) {
-        print('Error setting offline status: $e');
+        // Error setting offline status
       }
     }
 
@@ -167,12 +167,12 @@ class BackgroundService {
             _blockedPackages = snapshot.docs
                 .map((doc) => doc['packageName'] as String)
                 .toSet();
-            print('Updated blocklist: $_blockedPackages');
+            // Blocklist updated
             // Save to local storage for Native Service (and offline backup)
             BlocklistStorage().saveBlocklist(_blockedPackages.toList());
           },
           onError: (e) {
-            print('Error listening to blocklist: $e');
+            // Error listening to blocklist
           },
         );
   }
@@ -255,17 +255,13 @@ class BackgroundService {
                       .doc(_currentChildId)
                       .update({'unlockRequested': false});
 
-                  print('Parent unlock received - hiding overlay');
+                  // Parent unlock received
                 }
-
-                print(
-                  'Updated settings: Limit=$_dailyTimeLimit, Sleep=${_sleepScheduleEnabled ? "ON" : "OFF"}, QuietTimes=${_quietTimes.length}',
-                );
               }
             }
           },
           onError: (e) {
-            print('Error listening to child settings: $e');
+            // Error listening to child settings
           },
         );
   }
@@ -285,9 +281,9 @@ class BackgroundService {
             'lockReason': reason,
             'lockedAt': isLocked ? FieldValue.serverTimestamp() : null,
           });
-      print('Firestore: isLocked=$isLocked, reason=$reason');
+      // Firestore locked status updated
     } catch (e) {
-      print('Error updating isLocked in Firestore: $e');
+      // Error updating isLocked in Firestore
     }
   }
 
@@ -457,7 +453,7 @@ class BackgroundService {
         }
       }
     } catch (e) {
-      print('Error checking usage stats: $e');
+      // Error checking usage stats
     }
   }
 
@@ -515,14 +511,10 @@ class BackgroundService {
             .doc(dateStr)
             .set(appUpdates, SetOptions(merge: true));
 
-        print(
-          '📊 BackgroundService: Saved app usage - ${appUpdates.keys.where((k) => k.startsWith('apps.')).length} apps, screenTime incremented, date: $dateStr',
-        );
-
         // Clear session buffer
         _appUsageSession.clear();
       } catch (e) {
-        print('Error updating screen time: $e');
+        // Error updating screen time
       }
     }
   }
@@ -557,7 +549,7 @@ class BackgroundService {
           .update({'isLocked': false, 'pauseUntil': null});
       // Local state will be updated via listener
     } catch (e) {
-      print('Error unlocking device: $e');
+      // Error unlocking device
     }
   }
 }

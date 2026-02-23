@@ -64,7 +64,7 @@ class AuthProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print(e);
+      // Error registering child
       return false;
     } finally {
       _isLoading = false;
@@ -82,7 +82,7 @@ class AuthProvider with ChangeNotifier {
       }
       return true;
     } catch (e) {
-      print(e);
+      // Error signing in
       return false;
     } finally {
       _isLoading = false;
@@ -97,7 +97,7 @@ class AuthProvider with ChangeNotifier {
       _userModel = await _authService.register(email, password, name);
       return true;
     } catch (e) {
-      print(e);
+      // Error registering
       return false;
     } finally {
       _isLoading = false;
@@ -115,7 +115,7 @@ class AuthProvider with ChangeNotifier {
       }
       return _userModel != null;
     } catch (e) {
-      print(e);
+      // Error signing in with Google
       return false;
     } finally {
       _isLoading = false;
@@ -162,7 +162,7 @@ class AuthProvider with ChangeNotifier {
       }
       return pin;
     } catch (e) {
-      print(e);
+      // Error generating PIN
       return null;
     } finally {
       _isLoading = false;
@@ -229,7 +229,7 @@ class AuthProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print(e);
+      // Error during child login
       return false;
     } finally {
       _isLoading = false;
@@ -246,7 +246,7 @@ class AuthProvider with ChangeNotifier {
       _children.removeWhere((child) => child.id == childId);
       return true;
     } catch (e) {
-      print(e);
+      // Error deleting child
       return false;
     } finally {
       _isLoading = false;
@@ -271,7 +271,7 @@ class AuthProvider with ChangeNotifier {
       );
       return true;
     } catch (e) {
-      print(e);
+      // Error updating display name
       return false;
     } finally {
       _isLoading = false;
@@ -290,7 +290,7 @@ class AuthProvider with ChangeNotifier {
       await _authService.updatePassword(currentPassword, newPassword);
       return true;
     } catch (e) {
-      print(e);
+      // Error updating password
       return false;
     } finally {
       _isLoading = false;

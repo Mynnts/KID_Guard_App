@@ -19,7 +19,7 @@ class ChildModeService {
       });
       return result == true;
     } catch (e) {
-      print('ChildModeService.start error: $e');
+      // Error starting service
       return false;
     }
   }
@@ -30,7 +30,7 @@ class ChildModeService {
       final result = await _channel.invokeMethod('stopService');
       return result == true;
     } catch (e) {
-      print('ChildModeService.stop error: $e');
+      // Error stopping service
       return false;
     }
   }
@@ -49,7 +49,7 @@ class ChildModeService {
       });
       return result == true;
     } catch (e) {
-      print('ChildModeService.update error: $e');
+      // Error updating service
       return false;
     }
   }
@@ -60,7 +60,7 @@ class ChildModeService {
       final result = await _channel.invokeMethod('isServiceRunning');
       return result == true;
     } catch (e) {
-      print('ChildModeService.isRunning error: $e');
+      // Error checking service status
       return false;
     }
   }
@@ -73,7 +73,7 @@ class ChildModeService {
       await _channel.invokeMethod('setAllowShutdown', {'allow': allow});
       return true;
     } catch (e) {
-      print('ChildModeService.setAllowShutdown error: $e');
+      // Error setting shutdown flag
       return false;
     }
   }
@@ -85,7 +85,7 @@ class ChildModeService {
       final result = await _channel.invokeMethod('getLaunchAction');
       return result as String?;
     } catch (e) {
-      print('ChildModeService.getLaunchAction error: $e');
+      // Error getting launch action
       return null;
     }
   }
