@@ -29,11 +29,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
   Future<Map<String, dynamic>>? _weeklyDataFuture;
   String? _lastFetchedChildId;
 
-  // Color constants - sage green palette
+  // Color constants - will be replaced by theme in most places
   static const _primaryGreen = Color(0xFF6B9080);
   static const _secondaryGreen = Color(0xFF84A98C);
   static const _accentGreen = Color(0xFF10B981);
-  static const _bgColor = Color(0xFFF5F8F6);
   static const _cardColor = Colors.white;
 
   // สีสำหรับ letter avatar — กำหนดตาม hash ของ package name
@@ -142,13 +141,14 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (authProvider.userModel == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
@@ -294,7 +294,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                   fontSize: r.sp(28),
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
-                  color: const Color(0xFF1A1A2E),
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               SizedBox(height: r.hp(2)),
@@ -315,9 +315,13 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
             vertical: r.hp(10),
           ),
           decoration: BoxDecoration(
-            color: _cardColor,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(r.radius(14)),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.1),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.04),
@@ -339,7 +343,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: r.sp(13),
-                  color: const Color(0xFF1A1A2E),
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
             ],
@@ -477,21 +481,22 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
       }
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(r.wp(16)),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(r.radius(20)),
         border: Border.all(
           color: isOnline
-              ? _accentGreen.withOpacity(0.3)
-              : Colors.grey.shade200,
+              ? colorScheme.primary.withValues(alpha: 0.3)
+              : colorScheme.outline.withValues(alpha: 0.1),
         ),
         boxShadow: [
           BoxShadow(
             color: isOnline
-                ? _accentGreen.withOpacity(0.08)
-                : Colors.black.withOpacity(0.03),
+                ? colorScheme.primary.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -854,6 +859,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
   }
 
   Widget _buildChartAndApps(String parentUid, String childId) {
+    final colorScheme = Theme.of(context).colorScheme;
     return FutureBuilder<Map<String, dynamic>>(
       future: _weeklyDataFuture,
       builder: (context, snapshot) {
@@ -973,13 +979,16 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                 BarChartRodData(
                   toY: barValue > 0 ? barValue : (chartMaxY * 0.02),
                   gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [_primaryGreen, _secondaryGreen],
+                      ? LinearGradient(
+                          colors: [colorScheme.primary, colorScheme.secondary],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         )
                       : LinearGradient(
-                          colors: [Colors.grey.shade200, Colors.grey.shade200],
+                          colors: [
+                            colorScheme.outline.withOpacity(0.1),
+                            colorScheme.outline.withOpacity(0.1),
+                          ],
                         ),
                   width: 28,
                   borderRadius: BorderRadius.circular(10),
@@ -1064,12 +1073,13 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     double interval,
     bool useMinutes,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -1086,23 +1096,23 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _primaryGreen.withOpacity(0.1),
+                  color: colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.bar_chart_rounded,
                   size: 18,
-                  color: _primaryGreen,
+                  color: colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Weekly Overview',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -1130,7 +1140,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                     }
                   },
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => _primaryGreen,
+                    getTooltipColor: (_) => colorScheme.primary,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       // แสดง tooltip ตามหน่วยที่ใช้
                       String tip;
@@ -1216,7 +1226,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                               dayLabels[value.toInt()],
                               style: TextStyle(
                                 color: isSelected
-                                    ? _primaryGreen
+                                    ? colorScheme.primary
                                     : Colors.grey[400],
                                 fontWeight: isSelected
                                     ? FontWeight.w700
@@ -1249,6 +1259,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     int totalDurationSec,
     DateTime selectedDate,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1258,13 +1269,13 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _primaryGreen.withOpacity(0.1),
+                color: colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.apps_rounded,
                 size: 18,
-                color: _primaryGreen,
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(width: 10),
@@ -1274,10 +1285,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                 children: [
                   Text(
                     _getDateLabel(selectedDate),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A2E),
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (appList.isNotEmpty)
@@ -1299,15 +1310,15 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: _primaryGreen.withOpacity(0.1),
+                  color: colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _formatTotalTime(totalDurationSec),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: _primaryGreen,
+                    color: colorScheme.primary,
                   ),
                 ),
               ),
@@ -1325,13 +1336,14 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
   }
 
   Widget _buildEmptyAppUsage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -1395,11 +1407,12 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
       const Color(0xFFD97706),
     ];
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: _cardColor,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -1453,10 +1466,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                       _showAllApps
                           ? 'Show less'
                           : 'Show ${appList.length - 5} more',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _primaryGreen,
+                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -1465,7 +1478,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                           ? Icons.keyboard_arrow_up_rounded
                           : Icons.keyboard_arrow_down_rounded,
                       size: 18,
-                      color: _primaryGreen,
+                      color: colorScheme.primary,
                     ),
                   ],
                 ),
@@ -1481,6 +1494,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     Color color,
     int totalDuration,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final duration = Duration(seconds: app['duration'] as int);
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -1501,12 +1515,16 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [_primaryGreen.withOpacity(0.05), Colors.transparent],
+          colors: [colorScheme.primary.withOpacity(0.05), Colors.transparent],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -1522,10 +1540,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                     Flexible(
                       child: Text(
                         app['name'],
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: Color(0xFF1A1A2E),
+                          color: colorScheme.onSurface,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1537,15 +1555,15 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: _accentGreen.withOpacity(0.1),
+                        color: colorScheme.secondary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Most Used',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
-                          color: _accentGreen,
+                          color: colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -1563,9 +1581,9 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                       return LinearProgressIndicator(
                         value: value,
                         minHeight: 6,
-                        backgroundColor: Colors.grey.shade100,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          _primaryGreen,
+                        backgroundColor: colorScheme.outline.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
                         ),
                       );
                     },
@@ -1580,10 +1598,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
             children: [
               Text(
                 timeStr,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 14,
-                  color: _primaryGreen,
+                  color: colorScheme.primary,
                 ),
               ),
               Text(
@@ -1608,6 +1626,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
     int totalDuration,
     bool isLast,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final duration = Duration(seconds: app['duration'] as int);
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -1630,7 +1649,9 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : Border(bottom: BorderSide(color: Colors.grey.shade100)),
+            : Border(
+                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
+              ),
       ),
       child: Row(
         children: [
@@ -1643,10 +1664,10 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
               children: [
                 Text(
                   app['name'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
-                    color: Color(0xFF1A1A2E),
+                    color: colorScheme.onSurface,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1661,7 +1682,7 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
                       return LinearProgressIndicator(
                         value: value,
                         minHeight: 4,
-                        backgroundColor: Colors.grey.shade100,
+                        backgroundColor: colorScheme.outline.withOpacity(0.1),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           color.withOpacity(0.7),
                         ),

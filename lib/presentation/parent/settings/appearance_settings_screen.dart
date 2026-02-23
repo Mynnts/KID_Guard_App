@@ -8,11 +8,8 @@ import '../../../logic/providers/auth_provider.dart';
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
 
-  // Colors
+  // Colors - Base Primary remains the same for brand identity
   static const _accentColor = Color(0xFF6B9080);
-  static const _bgColor = Color(0xFFF8FAFC);
-  static const _textPrimary = Color(0xFF1E293B);
-  static const _textSecondary = Color(0xFF64748B);
 
   static final List<Map<String, dynamic>> _themes = [
     {
@@ -40,21 +37,26 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final selectedTheme = themeProvider.themeModeString;
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: _bgColor,
+        backgroundColor: colorScheme.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: _textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Appearance',
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -67,7 +69,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_accentColor, _accentColor.withOpacity(0.8)],
+                  colors: [_accentColor, _accentColor.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -78,7 +80,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -115,10 +117,10 @@ class AppearanceSettingsScreen extends StatelessWidget {
             const SizedBox(height: 28),
 
             // Theme Selection
-            const Text(
+            Text(
               'เลือกธีม',
               style: TextStyle(
-                color: _textSecondary,
+                color: colorScheme.onBackground.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -139,17 +141,19 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   Widget _buildThemeCard(
     BuildContext context,
-    Map<String, dynamic> theme,
+    Map<String, dynamic> themeData,
     String selectedTheme,
     ThemeProvider themeProvider,
   ) {
-    final isSelected = selectedTheme == theme['id'];
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isSelected = selectedTheme == themeData['id'];
 
     return GestureDetector(
       onTap: () async {
         if (isSelected) return; // Verify change
 
-        themeProvider.setThemeMode(theme['id']);
+        themeProvider.setThemeMode(themeData['id']);
 
         // Send notification
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -160,7 +164,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             NotificationModel(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
               title: 'Theme Changed',
-              message: 'App theme has been updated to ${theme['title']}.',
+              message: 'App theme has been updated to ${themeData['title']}.',
               timestamp: DateTime.now(),
               type: 'system',
               iconName: 'settings_rounded',
@@ -172,7 +176,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('เปลี่ยนเป็น ${theme['title']} แล้ว'),
+              content: Text('เปลี่ยนเป็น ${themeData['title']} แล้ว'),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -187,17 +191,19 @@ class AppearanceSettingsScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? _accentColor : Colors.grey.shade200,
+            color: isSelected
+                ? _accentColor
+                : colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? _accentColor.withOpacity(0.15)
-                  : Colors.black.withOpacity(0.04),
+                  ? _accentColor.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.04),
               blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
@@ -211,16 +217,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: theme['colors'],
+                  colors: themeData['colors'],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.3),
+                ),
               ),
               child: Icon(
-                theme['icon'],
-                color: theme['id'] == 'dark' ? Colors.white : _textPrimary,
+                themeData['icon'],
+                color: themeData['id'] == 'dark' ? Colors.white : Colors.black,
                 size: 24,
               ),
             ),
@@ -230,17 +238,20 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    theme['title'],
-                    style: const TextStyle(
-                      color: _textPrimary,
+                    themeData['title'],
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    theme['subtitle'],
-                    style: const TextStyle(color: _textSecondary, fontSize: 13),
+                    themeData['subtitle'],
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -251,7 +262,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? _accentColor : Colors.grey.shade200,
+                color: isSelected
+                    ? _accentColor
+                    : colorScheme.outline.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: isSelected

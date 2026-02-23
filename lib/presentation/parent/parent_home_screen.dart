@@ -128,7 +128,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF6FBF4),
+          backgroundColor: colorScheme.background,
           // Floating unlock button - appears only when child device is locked
           floatingActionButton: anyChildLocked && lockedChild != null
               ? _buildUnlockFAB(user.uid, lockedChild, colorScheme)
@@ -243,7 +243,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                   fontSize: r.sp(26),
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
-                  color: const Color(0xFF1F2937),
+                  color: colorScheme.onBackground,
                 ),
               ),
             ],
@@ -260,9 +260,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               child: Container(
                 padding: EdgeInsets.all(r.wp(12)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(r.radius(16)),
-                  border: Border.all(color: Colors.grey.shade100),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.1),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -342,9 +344,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,6 +387,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               child: StreamBuilder<List<NotificationModel>>(
                 stream: _notificationService.getNotifications(userId),
                 builder: (context, snapshot) {
+                  final colorScheme = Theme.of(context).colorScheme;
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -454,13 +457,13 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: !item.isRead
-                                ? const Color(0xFFF0FDF4)
-                                : Colors.white,
+                                ? colorScheme.primary.withValues(alpha: 0.1)
+                                : colorScheme.surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: !item.isRead
-                                  ? const Color(0xFF10B981).withOpacity(0.3)
-                                  : Colors.grey.shade200,
+                                  ? colorScheme.primary.withValues(alpha: 0.3)
+                                  : colorScheme.outline.withValues(alpha: 0.1),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -496,10 +499,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                                       children: [
                                         Text(
                                           item.title,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
-                                            color: Color(0xFF1F2937),
+                                            color: colorScheme.onSurface,
                                           ),
                                         ),
                                         Text(
@@ -808,7 +811,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             fontSize: r.sp(20),
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
-            color: const Color(0xFF1F2937),
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         if (onSeeAll != null)
@@ -847,13 +850,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                 MaterialPageRoute(builder: (_) => const ChildSetupScreen()),
               ),
               child: Container(
-                width: r.wp(120),
+                width: r.wp(160),
+                margin: EdgeInsets.only(right: r.wp(16), bottom: r.hp(8)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(r.radius(20)),
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(r.radius(24)),
                   border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    width: 2,
+                    color: colorScheme.outline.withOpacity(0.1),
+                    width: 1,
                     strokeAlign: BorderSide.strokeAlignInside,
                   ),
                 ),
@@ -1023,7 +1027,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: r.sp(16),
-                      color: isSelected ? Colors.white : Colors.black87,
+                      color: isSelected ? Colors.white : colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1080,8 +1084,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+        gradient: LinearGradient(
+          colors: [colorScheme.primary, colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1089,14 +1093,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         boxShadow: [
           // Primary color-tinted shadow (far, soft)
           BoxShadow(
-            color: const Color(0xFF6B9080).withOpacity(0.15),
+            color: colorScheme.primary.withValues(alpha: 0.15),
             blurRadius: 40,
             offset: const Offset(0, 20),
             spreadRadius: -8,
           ),
           // Secondary shadow (near, crisp)
           BoxShadow(
-            color: const Color(0xFF6B9080).withOpacity(0.10),
+            color: colorScheme.primary.withValues(alpha: 0.10),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -1335,8 +1339,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Colors.white, Color(0xFFFCFDFC)],
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.surface,
+            colorScheme.surface.withValues(alpha: 0.95),
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -1345,14 +1352,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         boxShadow: [
           // Soft outer glow
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: -5,
           ),
           // Subtle inner highlight
           BoxShadow(
-            color: Colors.white.withOpacity(0.8),
+            color: colorScheme.surface.withValues(alpha: 0.8),
             blurRadius: 8,
             offset: const Offset(-2, -2),
           ),
@@ -1630,9 +1637,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -1660,9 +1667,13 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Instant Pause',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1734,7 +1745,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F7),
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withOpacity(0.5),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -1759,8 +1772,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   }
 
   Widget _buildShimmerLoading() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FBF4),
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -1908,16 +1922,12 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
         },
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Colors.white, Color(0xFFFAFBFA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(
               ResponsiveHelper.of(context).radius(22),
             ),
             border: Border.all(
-              color: Colors.grey.shade100.withOpacity(0.8),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
               width: 1,
             ),
             boxShadow: [
@@ -1954,7 +1964,7 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: ResponsiveHelper.of(context).sp(11),
-                    color: const Color(0xFF3F4E4F),
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                   textAlign: TextAlign.center,

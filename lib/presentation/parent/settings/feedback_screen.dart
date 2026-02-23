@@ -18,9 +18,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   // Colors
   static const _accentColor = Color(0xFF6B9080);
-  static const _bgColor = Color(0xFFF8FAFC);
-  static const _textPrimary = Color(0xFF1E293B);
-  static const _textSecondary = Color(0xFF64748B);
 
   final List<Map<String, dynamic>> _categories = [
     {
@@ -104,18 +101,24 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: _bgColor,
+        backgroundColor: colorScheme.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: _textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Send Feedback',
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -128,7 +131,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_accentColor, _accentColor.withOpacity(0.8)],
+                  colors: [_accentColor, _accentColor.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -139,7 +142,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -176,10 +179,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             const SizedBox(height: 28),
 
             // Rating Section
-            const Text(
+            Text(
               'ให้คะแนนแอพ',
               style: TextStyle(
-                color: _textSecondary,
+                color: colorScheme.onBackground.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -189,11 +192,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -216,7 +219,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               : Icons.star_border_rounded,
                           color: _rating >= starIndex
                               ? Colors.amber
-                              : Colors.grey[300],
+                              : colorScheme.onSurface.withValues(alpha: 0.2),
                           size: 40,
                         ),
                       ),
@@ -229,10 +232,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             const SizedBox(height: 24),
 
             // Category Section
-            const Text(
+            Text(
               'หมวดหมู่',
               style: TextStyle(
-                color: _textSecondary,
+                color: colorScheme.onBackground.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -253,15 +256,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? _accentColor : Colors.white,
+                      color: isSelected ? _accentColor : colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? _accentColor : Colors.grey.shade200,
+                        color: isSelected
+                            ? _accentColor
+                            : colorScheme.outline.withValues(alpha: 0.1),
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: _accentColor.withOpacity(0.3),
+                                color: _accentColor.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -274,13 +279,17 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         Icon(
                           cat['icon'],
                           size: 18,
-                          color: isSelected ? Colors.white : _textSecondary,
+                          color: isSelected
+                              ? Colors.white
+                              : colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           cat['label'],
                           style: TextStyle(
-                            color: isSelected ? Colors.white : _textPrimary,
+                            color: isSelected
+                                ? Colors.white
+                                : colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -294,10 +303,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             const SizedBox(height: 24),
 
             // Message Section
-            const Text(
+            Text(
               'ข้อความ',
               style: TextStyle(
-                color: _textSecondary,
+                color: colorScheme.onBackground.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -306,11 +315,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -319,9 +328,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               child: TextField(
                 controller: _feedbackController,
                 maxLines: 5,
+                style: TextStyle(color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'เขียนความคิดเห็นของคุณที่นี่...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  hintStyle: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -341,6 +353,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onPressed: _isSending ? null : _sendFeedback,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accentColor,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
