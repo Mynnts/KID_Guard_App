@@ -146,28 +146,14 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                       ),
                     ),
                     _SettingItem(
-                      icon: Icons.info_outline,
+                      icon: Icons.info_outline_rounded,
                       title: AppLocalizations.of(context)!.about,
-                      subtitle: 'Coming Soon',
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Soon',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      onTap: () {},
+                      subtitle:
+                          Localizations.localeOf(context).languageCode == 'th'
+                          ? 'ข้อมูลแอปพลิเคชัน'
+                          : 'App information',
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.settingsAbout),
                     ),
                   ]),
 
