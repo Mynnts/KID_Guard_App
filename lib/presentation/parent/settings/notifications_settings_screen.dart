@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../../logic/providers/auth_provider.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -37,6 +40,37 @@ class _NotificationsSettingsScreenState
       _soundEnabled = prefs.getBool('notif_sound') ?? true;
       _vibrationEnabled = prefs.getBool('notif_vibration') ?? true;
     });
+
+    // Sync from Firestore if available
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.userModel != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.userModel!.uid)
+          .get();
+
+      if (doc.exists &&
+          doc.data()?.containsKey('notificationSettings') == true) {
+        final settings =
+            doc.data()!['notificationSettings'] as Map<String, dynamic>;
+        setState(() {
+          _appBlockedAlerts = settings['appBlocked'] ?? _appBlockedAlerts;
+          _timeLimitAlerts = settings['timeLimit'] ?? _timeLimitAlerts;
+          _locationAlerts = settings['location'] ?? _locationAlerts;
+          _dailyReports = settings['dailyReports'] ?? _dailyReports;
+          _soundEnabled = settings['sound'] ?? _soundEnabled;
+          _vibrationEnabled = settings['vibration'] ?? _vibrationEnabled;
+        });
+
+        // Update local prefs to match Firestore
+        await prefs.setBool('notif_app_blocked', _appBlockedAlerts);
+        await prefs.setBool('notif_time_limit', _timeLimitAlerts);
+        await prefs.setBool('notif_location', _locationAlerts);
+        await prefs.setBool('notif_daily_reports', _dailyReports);
+        await prefs.setBool('notif_sound', _soundEnabled);
+        await prefs.setBool('notif_vibration', _vibrationEnabled);
+      }
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -47,6 +81,24 @@ class _NotificationsSettingsScreenState
     await prefs.setBool('notif_daily_reports', _dailyReports);
     await prefs.setBool('notif_sound', _soundEnabled);
     await prefs.setBool('notif_vibration', _vibrationEnabled);
+
+    // Save to Firestore for cross-device sync
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.userModel != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.userModel!.uid)
+          .set({
+            'notificationSettings': {
+              'appBlocked': _appBlockedAlerts,
+              'timeLimit': _timeLimitAlerts,
+              'location': _locationAlerts,
+              'dailyReports': _dailyReports,
+              'sound': _soundEnabled,
+              'vibration': _vibrationEnabled,
+            },
+          }, SetOptions(merge: true));
+    }
   }
 
   @override

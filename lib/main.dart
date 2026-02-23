@@ -14,6 +14,7 @@ import 'core/utils/security_logger.dart';
 
 import 'package:workmanager/workmanager.dart';
 import 'logic/background_worker.dart';
+import 'data/services/local_notification_service.dart';
 
 // ==================== จุดเริ่มต้นแอพ ====================
 /// ฟังก์ชัน main() - จุดเริ่มต้นของแอพ
@@ -23,6 +24,9 @@ import 'logic/background_worker.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Initialize Local Notifications
+  await LocalNotificationService.initialize();
 
   // ตั้งค่า WorkManager สำหรับงาน background (sync, tracking)
   Workmanager().initialize(callbackDispatcher, isInDebugMode: false);

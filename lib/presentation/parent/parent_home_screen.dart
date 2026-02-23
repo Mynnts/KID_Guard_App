@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,6 +18,7 @@ import 'apps/parent_app_control_screen.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:kidguard/data/models/notification_model.dart';
 import 'package:kidguard/data/services/notification_service.dart';
+import 'package:kidguard/data/services/local_notification_service.dart';
 
 /// Parent Home Screen - displays children overview, stats, and quick actions
 class ParentHomeScreen extends StatefulWidget {
@@ -34,6 +36,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   late AnimationController _pulseController;
   late Animation<double> _fadeAnimation;
   final NotificationService _notificationService = NotificationService();
+  StreamSubscription<List<NotificationModel>>? _notificationSubscription;
+  DateTime? _lastNotificationTime;
 
   @override
   void initState() {
@@ -53,12 +57,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
 
     _fadeController.forward();
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    final user = Provider.of<AuthProvider>(context, listen: false).userModel;
+    if (user != null) {
+      _lastNotificationTime = DateTime.now();
+      _notificationSubscription = _notificationService
+          .getNotifications(user.uid)
+          .listen((notifications) {
+            if (notifications.isNotEmpty) {
+              final latest = notifications.first;
+              // Only show local notification if it's newer than app start
+              // and hasn't been processed yet
+              if (latest.timestamp.isAfter(_lastNotificationTime!)) {
+                _lastNotificationTime = latest.timestamp;
+                LocalNotificationService.showNotification(
+                  id: latest.id.hashCode,
+                  title: latest.title,
+                  body: latest.message,
+                );
+              }
+            }
+          });
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _pulseController.dispose();
+    _notificationSubscription?.cancel();
     super.dispose();
   }
 

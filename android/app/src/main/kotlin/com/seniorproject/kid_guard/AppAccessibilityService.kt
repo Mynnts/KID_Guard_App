@@ -707,6 +707,10 @@ class AppAccessibilityService : AccessibilityService() {
                 .update(updates as Map<String, Any>)
                 .addOnSuccessListener {
                     println("KidGuard: Firestore isLocked=$isLocked, reason=$reason")
+                    // If locked, also add a notification record for the parent
+                    if (isLocked) {
+                        sendNotificationToParent(reason)
+                    }
                 }
                 .addOnFailureListener { e ->
                     println("KidGuard: Failed to update lock status: ${e.message}")
@@ -714,6 +718,40 @@ class AppAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    /**
+     * Send notification document to Firestore
+     */
+    private fun sendNotificationToParent(reason: String) {
+        if (parentId.isEmpty()) return
+
+        val notification = mutableMapOf<String, Any>(
+            "title" to when (reason) {
+                "blocked_app" -> "App Blocked"
+                "sleep" -> "Sleep Time"
+                "quiet" -> "Restricted Time"
+                "time_limit" -> "Time Limit Reached"
+                else -> "Device Locked"
+            },
+            "message" to when (reason) {
+                "blocked_app" -> "Child tried to open a blocked app: $lastBlockedPackage"
+                "sleep" -> "Child's device is now locked for sleep schedule."
+                "quiet" -> "Child's device is now locked during restricted time."
+                "time_limit" -> "Child has reached their daily screen time limit."
+                else -> "The device has been locked by system."
+            },
+            "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+            "type" to "alert",
+            "isRead" to false,
+            "iconName" to "warning_rounded",
+            "colorValue" to -0x10000 // Red
+        )
+
+        firestore.collection("users")
+            .document(parentId)
+            .collection("notifications")
+            .add(notification)
     }
 
     override fun onInterrupt() {
