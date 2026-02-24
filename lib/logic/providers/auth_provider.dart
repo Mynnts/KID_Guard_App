@@ -19,13 +19,19 @@ class AuthProvider with ChangeNotifier {
   // Initialize auth state
   List<ChildModel> _children = [];
   ChildModel? _currentChild;
+  StreamSubscription<User?>? _authStateSubscription;
   StreamSubscription<DocumentSnapshot>? _currentChildSubscription;
 
   List<ChildModel> get children => _children;
   ChildModel? get currentChild => _currentChild;
 
   Future<void> init() async {
-    _authService.authStateChanges.listen((User? user) async {
+    // Cancel existing subscription if init is called again
+    await _authStateSubscription?.cancel();
+
+    _authStateSubscription = _authService.authStateChanges.listen((
+      User? user,
+    ) async {
       if (user != null) {
         _userModel = await _authService.getUserData(user.uid);
         if (_userModel != null) {
@@ -37,6 +43,13 @@ class AuthProvider with ChangeNotifier {
       }
       notifyListeners();
     });
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    _currentChildSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> fetchChildren() async {

@@ -123,6 +123,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     _blockedAppsSubscription?.cancel();
     _childDocSubscription?.cancel();
     _screenTimeTimer?.cancel();
+    _backgroundService.stopMonitoring();
     _updateOnlineStatus(false);
     super.dispose();
   }
@@ -133,9 +134,10 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
       _updateOnlineStatus(true);
       // Check if user tapped "หยุดบริการ" from notification
       _checkIntentOnResume();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      _updateOnlineStatus(false);
+    } else if (state == AppLifecycleState.detached) {
+      // We no longer call _updateOnlineStatus(false) in detached/paused state
+      // because it's asynchronous and often fails on app close.
+      // Instead, we rely on the heartbeat (lastActive) to determine offline status reliably.
     }
   }
 

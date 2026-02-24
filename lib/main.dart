@@ -52,7 +52,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final SecurityService _securityService = SecurityService();
-  bool _securityCheckDone = false; // ตรวจสอบเสร็จแล้วหรือยัง
   SecurityStatus? _securityStatus; // ผลการตรวจสอบความปลอดภัย
 
   @override
@@ -71,7 +70,6 @@ class _MyAppState extends State<MyApp> {
       final status = await _securityService.performSecurityCheck();
       setState(() {
         _securityStatus = status;
-        _securityCheckDone = true;
       });
 
       // บันทึก log ถ้าพบปัญหาความปลอดภัย
@@ -85,11 +83,17 @@ class _MyAppState extends State<MyApp> {
             'riskLevel': status.riskLevel,
           },
         );
+
+        // Show dialog
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navContext = _navigatorKey.currentContext;
+          if (navContext != null) {
+            _showSecurityWarningDialog(navContext);
+          }
+        });
       }
     } catch (e) {
-      setState(() {
-        _securityCheckDone = true;
-      });
+      // Security check error handled silently
     }
   }
 
@@ -133,17 +137,6 @@ class _MyAppState extends State<MyApp> {
             routes: AppRoutes.getRoutes(),
             debugShowCheckedModeBanner: false,
             builder: (context, child) {
-              // แสดง dialog เตือนความปลอดภัยถ้าพบปัญหา
-              if (_securityCheckDone &&
-                  _securityStatus != null &&
-                  _securityStatus!.hasSecurityIssue) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final navContext = _navigatorKey.currentContext;
-                  if (navContext != null) {
-                    _showSecurityWarningDialog(navContext);
-                  }
-                });
-              }
               return child ?? const SizedBox.shrink();
             },
           );

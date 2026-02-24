@@ -10,6 +10,24 @@ class NativeSettingsSync {
   factory NativeSettingsSync() => _instance;
   NativeSettingsSync._internal();
 
+  /// Get the target directory where native service expects files
+  Future<Directory> _getNativeDataDirectory() async {
+    Directory? directory;
+    if (Platform.isAndroid) {
+      // On Android, native service usually looks in the standard 'files' directory
+      // which corresponds to getApplicationSupportDirectory()
+      directory = await getApplicationSupportDirectory();
+    } else {
+      directory = await getApplicationDocumentsDirectory();
+    }
+
+    // Ensure directory exists
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+    return directory;
+  }
+
   /// Save all settings to JSON file that Accessibility Service can read
   Future<void> syncSettingsToNative({
     required String childId,
@@ -27,10 +45,8 @@ class NativeSettingsSync {
     List<Map<String, dynamic>> quietTimes = const [],
   }) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File(
-        '${directory.parent.path}/files/kid_guard_settings.json',
-      );
+      final directory = await _getNativeDataDirectory();
+      final file = File('${directory.path}/kid_guard_settings.json');
 
       final settings = {
         'childId': childId,
@@ -51,7 +67,6 @@ class NativeSettingsSync {
       };
 
       await file.writeAsString(jsonEncode(settings));
-      // Settings synced to native successfully
     } catch (e) {
       // Error syncing settings to native
     }
@@ -60,8 +75,8 @@ class NativeSettingsSync {
   /// Read screen time data from Accessibility Service
   Future<Map<String, dynamic>?> readScreenTimeFromNative() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.parent.path}/files/screen_time_data.json');
+      final directory = await _getNativeDataDirectory();
+      final file = File('${directory.path}/screen_time_data.json');
 
       if (await file.exists()) {
         final content = await file.readAsString();
@@ -92,8 +107,6 @@ class NativeSettingsSync {
             'limitUsedTime': limitUsedTime,
             'lastActive': FieldValue.serverTimestamp(),
           });
-
-      // Screen time synced to Firebase
     } catch (e) {
       // Error syncing screen time to Firebase
     }
@@ -171,8 +184,8 @@ class NativeSettingsSync {
     await loadFromFirebaseAndSync(parentId, childId);
 
     // Update just the child mode flag
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.parent.path}/files/kid_guard_settings.json');
+    final directory = await _getNativeDataDirectory();
+    final file = File('${directory.path}/kid_guard_settings.json');
 
     if (await file.exists()) {
       final content = await file.readAsString();
@@ -185,10 +198,8 @@ class NativeSettingsSync {
   /// Disable child mode
   Future<void> disableChildMode() async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File(
-        '${directory.parent.path}/files/kid_guard_settings.json',
-      );
+      final directory = await _getNativeDataDirectory();
+      final file = File('${directory.path}/kid_guard_settings.json');
 
       if (await file.exists()) {
         final content = await file.readAsString();
