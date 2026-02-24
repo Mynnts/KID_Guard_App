@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/time_limit_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../core/utils/who_guidelines.dart';
 import '../../core/utils/responsive_helper.dart';
@@ -565,15 +566,14 @@ class _ChildListItemState extends State<_ChildListItem> {
   }
 
   Future<void> _resetScreenTime() async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.parentId)
-          .collection('children')
-          .doc(widget.child.id)
-          .update({'limitUsedTime': 0});
+    final provider = context.read<TimeLimitProvider>();
+    final success = await provider.resetScreenTime(
+      parentId: widget.parentId,
+      childId: widget.child.id,
+    );
 
-      if (mounted) {
+    if (mounted) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -594,9 +594,7 @@ class _ChildListItemState extends State<_ChildListItem> {
             ),
           ),
         );
-      }
-    } catch (e) {
-      if (mounted) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('เกิดข้อผิดพลาด กรุณาลองใหม่'),
@@ -1134,39 +1132,41 @@ class _TimePickerModalState extends State<_TimePickerModal> {
   }
 
   void _saveAndClose() async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.parentId)
-        .collection('children')
-        .doc(widget.child.id)
-        .update({'dailyTimeLimit': _totalSeconds});
+    final provider = context.read<TimeLimitProvider>();
+    final success = await provider.saveTimeLimit(
+      parentId: widget.parentId,
+      childId: widget.child.id,
+      totalSeconds: _totalSeconds,
+    );
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                _totalSeconds == 0
-                    ? '${widget.child.name} set to unlimited'
-                    : '${widget.child.name}\'s limit saved',
-              ),
-            ],
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  _totalSeconds == 0
+                      ? '${widget.child.name} set to unlimited'
+                      : '${widget.child.name}\'s limit saved',
+                ),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFF10B981),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF10B981),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+        );
+      }
     }
   }
 }

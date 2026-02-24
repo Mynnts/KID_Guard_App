@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../core/utils/responsive_helper.dart';
@@ -111,6 +112,185 @@ class _LoginScreenState extends State<LoginScreen>
       _passwordController.clear();
     });
     _animController.forward();
+  }
+
+  // ==================== ลืมรหัสผ่าน ====================
+  void _showForgotPasswordDialog() {
+    final resetEmailController = TextEditingController(
+      text: _emailController.text,
+    );
+    final r = ResponsiveHelper.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(r.radius(24)),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.lock_reset_rounded,
+              color: _primaryColor,
+              size: r.iconSize(24),
+            ),
+            SizedBox(width: r.wp(10)),
+            Text(
+              'ลืมรหัสผ่าน',
+              style: TextStyle(
+                fontSize: r.sp(18),
+                fontWeight: FontWeight.w700,
+                color: _textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'กรอกอีเมลที่ใช้สมัคร ระบบจะส่งลิงก์\nรีเซ็ตรหัสผ่านไปที่อีเมลของคุณ',
+              style: TextStyle(
+                fontSize: r.sp(13),
+                color: _textSecondary,
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: r.hp(16)),
+            TextField(
+              controller: resetEmailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: 'example@email.com',
+                prefixIcon: Icon(
+                  Icons.mail_outline_rounded,
+                  color: _textMuted,
+                  size: r.iconSize(20),
+                ),
+                filled: true,
+                fillColor: _inputBg,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(r.radius(14)),
+                  borderSide: BorderSide(color: _borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(r.radius(14)),
+                  borderSide: BorderSide(color: _borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(r.radius(14)),
+                  borderSide: BorderSide(color: _primaryColor, width: 1.5),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'ยกเลิก',
+              style: TextStyle(color: _textSecondary, fontSize: r.sp(14)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = resetEmailController.text.trim();
+              if (email.isEmpty || !email.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('กรุณากรอกอีเมลให้ถูกต้อง'),
+                    backgroundColor: const Color(0xFFEF4444),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              Navigator.pop(ctx);
+
+              try {
+                await FirebaseAuth.instance.sendPasswordResetEmail(
+                  email: email,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'ส่งลิงค์รีเซ็ตรหัสผ่านไปที่ $email แล้ว',
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: _primaryColor,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(20),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              } on FirebaseAuthException catch (e) {
+                if (mounted) {
+                  String msg = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+                  if (e.code == 'user-not-found') {
+                    msg = 'ไม่พบบัญชีที่ใช้อีเมลนี้';
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(msg),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFFEF4444),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(20),
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(r.radius(12)),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: r.wp(20),
+                vertical: r.hp(12),
+              ),
+            ),
+            child: Text('ส่งลิงค์รีเซ็ต', style: TextStyle(fontSize: r.sp(14))),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -238,7 +418,7 @@ class _LoginScreenState extends State<LoginScreen>
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: _showForgotPasswordDialog,
                         style: TextButton.styleFrom(
                           foregroundColor: _primaryColor,
                           padding: EdgeInsets.zero,

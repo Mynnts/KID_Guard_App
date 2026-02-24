@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
+import '../onboarding/onboarding_screen.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
 import '../../core/utils/responsive_helper.dart';
 
@@ -127,6 +128,18 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   _buildSectionTitle(AppLocalizations.of(context)!.support),
                   const SizedBox(height: 12),
                   _buildSettingsGroup([
+                    _SettingItem(
+                      icon: Icons.play_circle_outline_rounded,
+                      title: 'วิธีใช้งาน',
+                      subtitle: 'ดู Tutorial อีกครั้ง',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const OnboardingScreen(fromSettings: true),
+                        ),
+                      ),
+                    ),
                     _SettingItem(
                       icon: Icons.help_outline,
                       title: AppLocalizations.of(context)!.helpCenter,

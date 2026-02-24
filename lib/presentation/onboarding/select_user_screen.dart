@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/routes.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/onboarding_provider.dart';
 import '../../core/utils/responsive_helper.dart';
 
 class SelectUserScreen extends StatefulWidget {
@@ -60,6 +61,21 @@ class _SelectUserScreenState extends State<SelectUserScreen>
 
   Future<void> _checkAuthState() async {
     if (!mounted) return;
+
+    // ตรวจว่าเคยเห็น onboarding หรือยัง
+    final onboardingProvider = context.read<OnboardingProvider>();
+    // รอจนโหลดเสร็จ
+    while (!onboardingProvider.isLoaded) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      if (!mounted) return;
+    }
+    if (!onboardingProvider.hasSeenOnboarding) {
+      if (mounted && !_hasNavigated) {
+        _hasNavigated = true;
+        Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+      }
+      return;
+    }
 
     // FIRST: Check if child mode is active (app relaunched after swipe-away)
     // This must be checked before Firebase Auth because child device

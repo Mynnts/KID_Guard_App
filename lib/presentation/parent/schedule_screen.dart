@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/schedule_provider.dart';
 import '../../data/models/child_model.dart';
+import '../../data/models/schedule_period_model.dart';
 import '../../core/utils/responsive_helper.dart';
 
 /// Unified Schedule Screen - combines Sleep Schedule and Quiet Time
@@ -107,162 +109,19 @@ class _ScheduleCard extends StatefulWidget {
 }
 
 class _ScheduleCardState extends State<_ScheduleCard> {
-  List<SchedulePeriod> _periods = [];
+  late ScheduleProvider _scheduleProvider;
 
   @override
   void initState() {
     super.initState();
-    _loadSchedules();
-  }
-
-  void _loadSchedules() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.parentId)
-        .collection('children')
-        .doc(widget.child.id)
-        .get();
-
-    if (doc.exists) {
-      final data = doc.data();
-      if (data != null) {
-        List<SchedulePeriod> loadedPeriods = [];
-
-        // Load Sleep Schedule
-        if (data['sleepSchedule'] != null) {
-          final sleep = data['sleepSchedule'] as Map<String, dynamic>;
-          loadedPeriods.add(
-            SchedulePeriod(
-              name: 'เวลานอน',
-              type: ScheduleType.sleep,
-              startHour: sleep['bedtimeHour'] ?? 21,
-              startMinute: sleep['bedtimeMinute'] ?? 0,
-              endHour: sleep['wakeHour'] ?? 6,
-              endMinute: sleep['wakeMinute'] ?? 0,
-              enabled: sleep['enabled'] ?? false,
-            ),
-          );
-        }
-
-        // Load Quiet Times
-        if (data['quietTimes'] != null) {
-          final list = data['quietTimes'] as List<dynamic>;
-          for (var item in list) {
-            loadedPeriods.add(
-              SchedulePeriod(
-                name: item['name'] ?? 'เวลาพัก',
-                type: ScheduleType.quietTime,
-                startHour: item['startHour'] ?? 12,
-                startMinute: item['startMinute'] ?? 0,
-                endHour: item['endHour'] ?? 13,
-                endMinute: item['endMinute'] ?? 0,
-                enabled: item['enabled'] ?? true,
-              ),
-            );
-          }
-        }
-
-        // If no sleep schedule exists, add default
-        if (!loadedPeriods.any((p) => p.type == ScheduleType.sleep)) {
-          loadedPeriods.insert(
-            0,
-            SchedulePeriod(
-              name: 'เวลานอน',
-              type: ScheduleType.sleep,
-              startHour: 21,
-              startMinute: 0,
-              endHour: 6,
-              endMinute: 0,
-              enabled: false,
-            ),
-          );
-        }
-
-        setState(() {
-          _periods = loadedPeriods;
-        });
-      }
-    }
-  }
-
-  void _saveSchedules() {
-    // Separate sleep and quiet times
-    final sleepPeriod = _periods.firstWhere(
-      (p) => p.type == ScheduleType.sleep,
-      orElse: () => SchedulePeriod(
-        name: 'เวลานอน',
-        type: ScheduleType.sleep,
-        startHour: 21,
-        startMinute: 0,
-        endHour: 6,
-        endMinute: 0,
-        enabled: false,
-      ),
-    );
-
-    final quietTimes = _periods
-        .where((p) => p.type == ScheduleType.quietTime)
-        .map((p) => p.toQuietTimeMap())
-        .toList();
-
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.parentId)
-        .collection('children')
-        .doc(widget.child.id)
-        .update({
-          'sleepSchedule': {
-            'enabled': sleepPeriod.enabled,
-            'bedtimeHour': sleepPeriod.startHour,
-            'bedtimeMinute': sleepPeriod.startMinute,
-            'wakeHour': sleepPeriod.endHour,
-            'wakeMinute': sleepPeriod.endMinute,
-          },
-          'quietTimes': quietTimes,
-        });
-  }
-
-  void _addQuietTime() {
-    setState(() {
-      _periods.add(
-        SchedulePeriod(
-          name:
-              'เวลาพัก ${_periods.where((p) => p.type == ScheduleType.quietTime).length + 1}',
-          type: ScheduleType.quietTime,
-          startHour: 12,
-          startMinute: 0,
-          endHour: 13,
-          endMinute: 0,
-          enabled: true,
-        ),
-      );
+    _scheduleProvider = context.read<ScheduleProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduleProvider.loadSchedules(widget.parentId, widget.child.id);
     });
-    _saveSchedules();
-  }
-
-  void _removePeriod(int index) {
-    if (_periods[index].type == ScheduleType.sleep) {
-      // Don't remove sleep, just disable
-      setState(() {
-        _periods[index] = _periods[index].copyWith(enabled: false);
-      });
-    } else {
-      setState(() {
-        _periods.removeAt(index);
-      });
-    }
-    _saveSchedules();
-  }
-
-  void _togglePeriod(int index, bool enabled) {
-    setState(() {
-      _periods[index] = _periods[index].copyWith(enabled: enabled);
-    });
-    _saveSchedules();
   }
 
   Future<void> _editPeriod(int index) async {
-    final period = _periods[index];
+    final period = _scheduleProvider.getPeriodsForChild(widget.child.id)[index];
 
     final result = await showDialog<SchedulePeriod>(
       context: context,
@@ -270,17 +129,21 @@ class _ScheduleCardState extends State<_ScheduleCard> {
     );
 
     if (result != null) {
-      setState(() {
-        _periods[index] = result;
-      });
-      _saveSchedules();
+      await _scheduleProvider.updatePeriod(
+        index,
+        result,
+        widget.parentId,
+        widget.child.id,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final r = ResponsiveHelper.of(context);
-    final enabledCount = _periods.where((p) => p.enabled).length;
+    final scheduleProvider = context.watch<ScheduleProvider>();
+    final periods = scheduleProvider.getPeriodsForChild(widget.child.id);
+    final enabledCount = periods.where((p) => p.enabled).length;
 
     return Container(
       margin: EdgeInsets.only(bottom: r.hp(20)),
@@ -344,8 +207,8 @@ class _ScheduleCardState extends State<_ScheduleCard> {
               ],
             ),
             SizedBox(height: r.hp(20)),
-            ...List.generate(_periods.length, (index) {
-              final period = _periods[index];
+            ...List.generate(periods.length, (index) {
+              final period = periods[index];
               final isSleep = period.type == ScheduleType.sleep;
               return Container(
                 margin: EdgeInsets.only(bottom: r.hp(12)),
@@ -453,7 +316,12 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                     ),
                     Switch(
                       value: period.enabled,
-                      onChanged: (value) => _togglePeriod(index, value),
+                      onChanged: (value) => scheduleProvider.togglePeriod(
+                        index,
+                        value,
+                        widget.parentId,
+                        widget.child.id,
+                      ),
                       activeColor: isSleep
                           ? const Color(0xFF6B9080)
                           : const Color(0xFF10B981),
@@ -462,7 +330,11 @@ class _ScheduleCardState extends State<_ScheduleCard> {
                       IconButton(
                         icon: Icon(Icons.delete_outline, size: r.iconSize(20)),
                         color: Colors.grey[400],
-                        onPressed: () => _removePeriod(index),
+                        onPressed: () => scheduleProvider.removePeriod(
+                          index,
+                          widget.parentId,
+                          widget.child.id,
+                        ),
                       ),
                   ],
                 ),
@@ -470,7 +342,10 @@ class _ScheduleCardState extends State<_ScheduleCard> {
             }),
             SizedBox(height: r.hp(16)),
             GestureDetector(
-              onTap: _addQuietTime,
+              onTap: () => scheduleProvider.addQuietTime(
+                widget.parentId,
+                widget.child.id,
+              ),
               child: Container(
                 padding: EdgeInsets.all(r.wp(16)),
                 decoration: BoxDecoration(
@@ -529,68 +404,6 @@ class _ScheduleCardState extends State<_ScheduleCard> {
       return Icons.bathtub_outlined;
     }
     return Icons.schedule_outlined;
-  }
-}
-
-// Schedule Period Model
-enum ScheduleType { sleep, quietTime }
-
-class SchedulePeriod {
-  final String name;
-  final ScheduleType type;
-  final int startHour;
-  final int startMinute;
-  final int endHour;
-  final int endMinute;
-  final bool enabled;
-
-  SchedulePeriod({
-    required this.name,
-    required this.type,
-    required this.startHour,
-    required this.startMinute,
-    required this.endHour,
-    required this.endMinute,
-    required this.enabled,
-  });
-
-  SchedulePeriod copyWith({
-    String? name,
-    ScheduleType? type,
-    int? startHour,
-    int? startMinute,
-    int? endHour,
-    int? endMinute,
-    bool? enabled,
-  }) {
-    return SchedulePeriod(
-      name: name ?? this.name,
-      type: type ?? this.type,
-      startHour: startHour ?? this.startHour,
-      startMinute: startMinute ?? this.startMinute,
-      endHour: endHour ?? this.endHour,
-      endMinute: endMinute ?? this.endMinute,
-      enabled: enabled ?? this.enabled,
-    );
-  }
-
-  String formatStart() {
-    return '${startHour.toString().padLeft(2, '0')}:${startMinute.toString().padLeft(2, '0')}';
-  }
-
-  String formatEnd() {
-    return '${endHour.toString().padLeft(2, '0')}:${endMinute.toString().padLeft(2, '0')}';
-  }
-
-  Map<String, dynamic> toQuietTimeMap() {
-    return {
-      'name': name,
-      'startHour': startHour,
-      'startMinute': startMinute,
-      'endHour': endHour,
-      'endMinute': endMinute,
-      'enabled': enabled,
-    };
   }
 }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../data/models/child_model.dart';
 import '../../logic/providers/auth_provider.dart';
+import '../../logic/providers/rewards_provider.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
 import '../../core/utils/responsive_helper.dart';
 
@@ -17,12 +17,6 @@ class ParentRewardsScreen extends StatefulWidget {
 }
 
 class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
-  int _currentPoints = 0;
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  Map<DateTime, List<dynamic>> _events = {};
-  bool _isLoading = false;
-
   // Helper method to get localized quick reasons
   List<Map<String, dynamic>> _getQuickReasons(BuildContext context) {
     return [
@@ -80,107 +74,57 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
   @override
   void initState() {
     super.initState();
-    _currentPoints = widget.child.points;
-    _selectedDay = _focusedDay;
-    _fetchHistory();
-  }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rewardsProvider = context.read<RewardsProvider>();
+      rewardsProvider.initializePoints(widget.child.points);
 
-  Future<void> _fetchHistory() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.userModel;
-    if (user == null) return;
-
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('children')
-        .doc(widget.child.id)
-        .collection('point_history')
-        .orderBy('date', descending: true)
-        .limit(100)
-        .get();
-
-    final Map<DateTime, List<dynamic>> newEvents = {};
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final date = (data['date'] as Timestamp).toDate();
-      final dayKey = DateTime(date.year, date.month, date.day);
-      newEvents[dayKey] = [
-        ...(newEvents[dayKey] ?? []),
-        {...data, 'id': doc.id},
-      ];
-    }
-
-    if (mounted) setState(() => _events = newEvents);
-  }
-
-  List<dynamic> _getEventsForDay(DateTime day) {
-    return _events[DateTime(day.year, day.month, day.day)] ?? [];
+      final authProvider = context.read<AuthProvider>();
+      final user = authProvider.userModel;
+      if (user != null) {
+        rewardsProvider.fetchHistory(user.uid, widget.child.id);
+      }
+    });
   }
 
   Future<void> _addPoints(int amount, String reason) async {
-    setState(() => _isLoading = true);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = context.read<AuthProvider>();
     final user = authProvider.userModel;
     if (user == null) return;
 
-    try {
-      final newPoints = _currentPoints + amount;
-      final entryDate = _selectedDay ?? DateTime.now();
+    final rewardsProvider = context.read<RewardsProvider>();
+    final success = await rewardsProvider.addPoints(
+      userId: user.uid,
+      childId: widget.child.id,
+      amount: amount,
+      reason: reason,
+    );
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc(widget.child.id)
-          .update({'points': newPoints});
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc(widget.child.id)
-          .collection('point_history')
-          .add({
-            'amount': amount,
-            'reason': reason,
-            'type': 'earn',
-            'date': Timestamp.fromDate(entryDate),
-          });
-
-      setState(() {
-        _currentPoints = newPoints;
-        _isLoading = false;
-      });
-      await _fetchHistory();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.pointsEarned(amount, reason),
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.pointsEarned(amount, reason),
           ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
   Future<void> _redeemReward(Map<String, dynamic> reward) async {
-    if (_currentPoints < reward['cost']) {
+    final rewardsProvider = context.read<RewardsProvider>();
+
+    if (rewardsProvider.currentPoints < reward['cost']) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             AppLocalizations.of(
               context,
-            )!.needMorePoints(reward['cost'] - _currentPoints),
+            )!.needMorePoints(reward['cost'] - rewardsProvider.currentPoints),
           ),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -222,40 +166,21 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
     );
 
     if (confirmed == true) {
-      setState(() => _isLoading = true);
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final authProvider = context.read<AuthProvider>();
       final user = authProvider.userModel;
       if (user == null) return;
 
-      final newPoints = _currentPoints - (reward['cost'] as int);
+      final redeemReason = AppLocalizations.of(
+        context,
+      )!.redeemed(reward['name']);
+      final success = await rewardsProvider.redeemReward(
+        userId: user.uid,
+        childId: widget.child.id,
+        cost: reward['cost'],
+        rewardName: redeemReason,
+      );
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc(widget.child.id)
-          .update({'points': newPoints});
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('children')
-          .doc(widget.child.id)
-          .collection('point_history')
-          .add({
-            'amount': reward['cost'],
-            'reason': AppLocalizations.of(context)!.redeemed(reward['name']),
-            'type': 'redeem',
-            'date': Timestamp.now(),
-          });
-
-      setState(() {
-        _currentPoints = newPoints;
-        _isLoading = false;
-      });
-      await _fetchHistory();
-
-      if (mounted) {
+      if (success && mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -299,6 +224,9 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
   @override
   Widget build(BuildContext context) {
     final r = ResponsiveHelper.of(context);
+    final rewardsProvider = context.watch<RewardsProvider>();
+    final currentPoints = rewardsProvider.currentPoints;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6FBF4),
       body: Stack(
@@ -390,7 +318,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                                         TweenAnimationBuilder<int>(
                                           tween: IntTween(
                                             begin: 0,
-                                            end: _currentPoints,
+                                            end: currentPoints,
                                           ),
                                           duration: const Duration(
                                             milliseconds: 600,
@@ -575,7 +503,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                           itemBuilder: (context, index) {
                             final reward = _getRewards(context)[index];
                             final canAfford =
-                                _currentPoints >= (reward['cost'] as int);
+                                currentPoints >= (reward['cost'] as int);
                             return GestureDetector(
                               onTap: () => _redeemReward(reward),
                               child: Container(
@@ -700,17 +628,14 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
                         child: TableCalendar(
                           firstDay: DateTime.utc(2024, 1, 1),
                           lastDay: DateTime.utc(2030, 12, 31),
-                          focusedDay: _focusedDay,
+                          focusedDay: rewardsProvider.focusedDay,
                           calendarFormat: CalendarFormat.week,
                           selectedDayPredicate: (day) =>
-                              isSameDay(_selectedDay, day),
+                              isSameDay(rewardsProvider.selectedDay, day),
                           onDaySelected: (selectedDay, focusedDay) {
-                            setState(() {
-                              _selectedDay = selectedDay;
-                              _focusedDay = focusedDay;
-                            });
+                            rewardsProvider.selectDay(selectedDay, focusedDay);
                           },
-                          eventLoader: _getEventsForDay,
+                          eventLoader: rewardsProvider.getEventsForDay,
                           calendarStyle: CalendarStyle(
                             selectedDecoration: const BoxDecoration(
                               color: Color(0xFF6B9080),
@@ -761,7 +686,7 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
           ),
 
           // Loading Overlay
-          if (_isLoading)
+          if (rewardsProvider.isLoading)
             Container(
               color: Colors.black26,
               child: const Center(
@@ -774,7 +699,10 @@ class _ParentRewardsScreenState extends State<ParentRewardsScreen> {
   }
 
   Widget _buildActivityList() {
-    final events = _selectedDay != null ? _getEventsForDay(_selectedDay!) : [];
+    final rewardsProvider = context.watch<RewardsProvider>();
+    final events = rewardsProvider.selectedDay != null
+        ? rewardsProvider.getEventsForDay(rewardsProvider.selectedDay!)
+        : [];
     final r = ResponsiveHelper.of(context);
 
     if (events.isEmpty) {

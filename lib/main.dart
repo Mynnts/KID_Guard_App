@@ -7,6 +7,10 @@ import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
 import 'config/routes.dart';
 import 'logic/providers/auth_provider.dart';
+import 'logic/providers/rewards_provider.dart';
+import 'logic/providers/schedule_provider.dart';
+import 'logic/providers/time_limit_provider.dart';
+import 'logic/providers/onboarding_provider.dart';
 import 'logic/providers/theme_provider.dart';
 import 'logic/providers/locale_provider.dart';
 import 'data/services/security_service.dart';
@@ -90,6 +94,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   // ==================== สร้าง UI ====================
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -99,6 +105,10 @@ class _MyAppState extends State<MyApp> {
       // LocaleProvider - จัดการภาษา (ไทย/อังกฤษ)
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
+        ChangeNotifierProvider(create: (_) => RewardsProvider()),
+        ChangeNotifierProvider(create: (_) => ScheduleProvider()),
+        ChangeNotifierProvider(create: (_) => TimeLimitProvider()),
+        ChangeNotifierProvider(create: (_) => OnboardingProvider()..init()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
@@ -117,6 +127,7 @@ class _MyAppState extends State<MyApp> {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            navigatorKey: _navigatorKey,
             initialRoute:
                 AppRoutes.selectUser, // เริ่มที่หน้าเลือก parent/child
             routes: AppRoutes.getRoutes(),
@@ -127,7 +138,10 @@ class _MyAppState extends State<MyApp> {
                   _securityStatus != null &&
                   _securityStatus!.hasSecurityIssue) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _showSecurityWarningDialog(context);
+                  final navContext = _navigatorKey.currentContext;
+                  if (navContext != null) {
+                    _showSecurityWarningDialog(navContext);
+                  }
                 });
               }
               return child ?? const SizedBox.shrink();

@@ -4,6 +4,7 @@ import '../presentation/shared/parent_shell.dart';
 import '../presentation/child/child_home_screen.dart';
 import '../presentation/child/child_mode_activation_screen.dart';
 import '../presentation/onboarding/select_user_screen.dart';
+import '../presentation/onboarding/onboarding_screen.dart';
 import '../presentation/child/child_pin_screen.dart';
 import '../presentation/parent/parent_settings_screen.dart';
 import '../presentation/child/child_profile_setup_screen.dart';
@@ -41,6 +42,7 @@ class AppRoutes {
   static const String settingsFeedback = '/settings/feedback';
   static const String settingsAbout = '/settings/about';
   static const String childFriendlyLock = '/child/friendly-lock';
+  static const String onboarding = '/onboarding';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -64,6 +66,7 @@ class AppRoutes {
       settingsFeedback: (context) => const FeedbackScreen(),
       settingsAbout: (context) => const AboutScreen(),
       childFriendlyLock: (context) => const FriendlyLockScreen(),
+      onboarding: (context) => const OnboardingScreen(),
     };
   }
 }
