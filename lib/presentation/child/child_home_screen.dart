@@ -89,14 +89,31 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     _backgroundService = BackgroundService(
       onBlockedAppDetected: (packageName) {
         OverlayService().showBlockOverlay(packageName);
+        _kickToHome();
       },
       onTimeLimitReached: () {
         OverlayService().showBlockOverlay("Time Limit Reached");
+        _kickToHome();
       },
       onAppAllowed: () {
         OverlayService().hideOverlay();
       },
     );
+  }
+
+  void _kickToHome() async {
+    if (Platform.isAndroid) {
+      const intent = AndroidIntent(
+        action: 'android.intent.action.MAIN',
+        category: 'android.intent.category.HOME',
+        flags: [Flag.FLAG_ACTIVITY_NEW_TASK],
+      );
+      try {
+        await intent.launch();
+      } catch (e) {
+        debugPrint("Failed to launch home intent: $e");
+      }
+    }
   }
 
   @override
@@ -490,8 +507,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
         '📱 ChildHome: Registering device $deviceId for child ${child.name}',
       );
       await _deviceService.registerDevice(user.uid, child.id);
-      await _appService.syncAppsForDevice(user.uid, child.id);
-      debugPrint('✅ ChildHome: Apps synced for device $deviceId');
+      debugPrint('✅ ChildHome: Device registered for $deviceId');
 
       // Listen for sync requests for this device
       _syncRequestSubscription = _deviceService

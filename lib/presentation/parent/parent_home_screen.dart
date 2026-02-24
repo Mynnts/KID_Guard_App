@@ -320,7 +320,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         color: const Color(0xFFEF4444),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ParentAppControlScreen()),
+          MaterialPageRoute(
+            builder: (_) => ParentAppControlScreen(
+              childId: selectedChild?.id,
+              childName: selectedChild?.name,
+            ),
+          ),
         ),
       ),
       if (selectedChild != null)

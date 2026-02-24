@@ -5,6 +5,7 @@ import '../../../data/models/app_info_model.dart';
 import '../../../data/services/app_service.dart';
 import '../../../data/services/device_service.dart';
 import '../../../logic/providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/utils/responsive_helper.dart';
 
 class ParentAppControlScreen extends StatefulWidget {
@@ -26,6 +27,11 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
 
   final AppService _appService = AppService();
   final DeviceService _deviceService = DeviceService();
+
+  Stream<List<AppInfoModel>>? _appsStream;
+  Stream<DocumentSnapshot>? _childStream;
+  String? _lastStreamChildId;
+  String? _lastStreamParentUid;
 
   @override
   void initState() {
@@ -58,67 +64,156 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        title: Text(
-          widget.childName != null
-              ? 'App Control - ${widget.childName}'
-              : 'App Control',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          // Refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh apps from device',
-            onPressed: () => _onRefreshPressed(user.uid, childId),
-          ),
-          PopupMenuButton<bool>(
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filter Apps',
-            onSelected: (value) {
-              setState(() {
-                _showSystemApps = value;
-              });
-            },
-            itemBuilder: (context) => [
-              CheckedPopupMenuItem(
-                value: !_showSystemApps,
-                checked: _showSystemApps,
-                child: const Text('Show System Apps'),
+    // Initialize or update streams only if IDs changed
+    if (_appsStream == null ||
+        _childStream == null ||
+        _lastStreamChildId != childId ||
+        _lastStreamParentUid != user.uid) {
+      _lastStreamChildId = childId;
+      _lastStreamParentUid = user.uid;
+      _appsStream = _appService.streamApps(user.uid, childId);
+      _childStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('children')
+          .doc(childId)
+          .snapshots();
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: _childStream,
+      builder: (context, childSnapshot) {
+        final childData = childSnapshot.data?.data() as Map<String, dynamic>?;
+        final bool isSystemActive = childData?['isChildModeActive'] ?? false;
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: AppBar(
+            elevation: 0,
+            title: Text(
+              widget.childName != null
+                  ? 'App Control - ${widget.childName}'
+                  : 'App Control',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              // Refresh button
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: isSystemActive
+                    ? 'Refresh apps from device'
+                    : 'Child Mode must be active to refresh',
+                onPressed: isSystemActive
+                    ? () => _onRefreshPressed(user.uid, childId)
+                    : null,
+              ),
+              PopupMenuButton<bool>(
+                icon: const Icon(Icons.filter_list),
+                tooltip: 'Filter Apps',
+                onSelected: (value) {
+                  setState(() {
+                    _showSystemApps = value;
+                  });
+                },
+                itemBuilder: (context) => [
+                  CheckedPopupMenuItem(
+                    value: !_showSystemApps,
+                    checked: _showSystemApps,
+                    child: const Text('Show System Apps'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search Field
-          _buildSearchField(),
-          // Apps List
-          Expanded(child: _buildAppsList(user.uid, childId)),
-        ],
-      ),
+          body: Column(
+            children: [
+              if (!isSystemActive)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.amber[800],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'กรุณาเปิด "โหมดป้องกัน" ที่เครื่องของลูกก่อน เพื่อดึงข้อมูลและจัดการแอป',
+                          style: TextStyle(
+                            color: Colors.amber[900],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Search Field
+              _buildSearchField(isSystemActive),
+
+              // Apps List
+              Expanded(
+                child: isSystemActive
+                    ? _buildAppsList(user.uid, childId, isSystemActive)
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.lock_clock_rounded,
+                              size: 64,
+                              color: Colors.grey[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'ระบบป้องกันยังไม่ได้ถูกเปิดใช้งาน',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'เปิดโหมดเด็กที่เครื่องลูกเพื่อเริ่มจัดการ',
+                              style: TextStyle(color: Colors.grey[500]),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(bool isSystemActive) {
     final r = ResponsiveHelper.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(r.wp(16), r.hp(8), r.wp(16), r.hp(16)),
       child: TextField(
+        enabled: isSystemActive,
         onChanged: (value) {
           setState(() {
             _searchQuery = value.toLowerCase();
           });
         },
         decoration: InputDecoration(
-          hintText: 'Search apps...',
+          hintText: isSystemActive ? 'Search apps...' : 'ระบบไม่ทำงาน',
           prefixIcon: const Icon(Icons.search),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: isSystemActive ? Colors.white : Colors.grey[200],
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(r.radius(12)),
             borderSide: BorderSide.none,
@@ -129,17 +224,14 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     );
   }
 
-  Widget _buildAppsList(String parentUid, String childId) {
+  Widget _buildAppsList(String parentUid, String childId, bool isSystemActive) {
     final r = ResponsiveHelper.of(context);
-    final Stream<List<AppInfoModel>> appsStream = _appService.streamApps(
-      parentUid,
-      childId,
-    );
 
     return StreamBuilder<List<AppInfoModel>>(
-      stream: appsStream,
+      stream: _appsStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -260,7 +352,13 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                       );
                     }
                   }
-                  return _buildAppCard(context, app, parentUid, childId);
+                  return _buildAppCard(
+                    context,
+                    app,
+                    parentUid,
+                    childId,
+                    isSystemActive,
+                  );
                 },
               ),
             ),
@@ -325,6 +423,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     AppInfoModel app,
     String parentUid,
     String childId,
+    bool isSystemActive,
   ) {
     final isBlocked = app.isLocked;
     final r = ResponsiveHelper.of(context);
@@ -332,29 +431,38 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: r.hp(12)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isSystemActive ? Colors.white : Colors.grey[50],
         borderRadius: BorderRadius.circular(r.radius(16)),
         border: Border.all(
           color: isBlocked
-              ? Colors.red.withOpacity(0.3)
-              : Colors.green.withOpacity(0.3),
+              ? Colors.red.withOpacity(isSystemActive ? 0.3 : 0.1)
+              : Colors.green.withOpacity(isSystemActive ? 0.3 : 0.1),
           width: 2,
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          if (isSystemActive)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(r.radius(16)),
-          onTap: () {
-            _showAppDetailsDialog(context, app, parentUid, childId);
-          },
+          onTap: isSystemActive
+              ? () {
+                  _showAppDetailsDialog(
+                    context,
+                    app,
+                    parentUid,
+                    childId,
+                    isSystemActive,
+                  );
+                }
+              : null,
           child: Padding(
             padding: EdgeInsets.all(r.wp(16)),
             child: Row(
@@ -371,17 +479,25 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                   child: app.iconBase64 != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(r.radius(12)),
-                          child: Image.memory(
-                            base64Decode(app.iconBase64!),
-                            width: r.wp(56),
-                            height: r.wp(56),
-                            fit: BoxFit.cover,
+                          child: Opacity(
+                            opacity: isSystemActive ? 1.0 : 0.5,
+                            child: Image.memory(
+                              base64Decode(app.iconBase64!),
+                              key: ValueKey(
+                                '${app.packageName}_${app.iconBase64!.hashCode}',
+                              ),
+                              width: r.wp(56),
+                              height: r.wp(56),
+                              fit: BoxFit.cover,
+                              gaplessPlayback: true,
+                            ),
                           ),
                         )
                       : Icon(
                           Icons.android,
                           size: r.iconSize(32),
-                          color: isBlocked ? Colors.red : Colors.green,
+                          color: (isBlocked ? Colors.red : Colors.green)
+                              .withOpacity(isSystemActive ? 1.0 : 0.5),
                         ),
                 ),
                 SizedBox(width: r.wp(16)),
@@ -394,6 +510,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                         style: TextStyle(
                           fontSize: r.sp(16),
                           fontWeight: FontWeight.bold,
+                          color: isSystemActive ? Colors.black : Colors.grey,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -403,7 +520,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                         app.packageName,
                         style: TextStyle(
                           fontSize: r.sp(12),
-                          color: Colors.grey[600],
+                          color: Colors.grey[isSystemActive ? 600 : 400],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -447,21 +564,24 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
                   scale: 0.9,
                   child: Switch(
                     value: !isBlocked,
-                    onChanged: (value) {
-                      final newLockedState = !value;
+                    onChanged: isSystemActive
+                        ? (value) {
+                            final newLockedState = !value;
 
-                      // Optimistic Update: Update UI immediately
-                      setState(() {
-                        _optimisticLocks[app.packageName] = newLockedState;
-                      });
+                            // Optimistic Update: Update UI immediately
+                            setState(() {
+                              _optimisticLocks[app.packageName] =
+                                  newLockedState;
+                            });
 
-                      _toggleAppLock(
-                        parentUid,
-                        childId,
-                        app.packageName,
-                        newLockedState,
-                      );
-                    },
+                            _toggleAppLock(
+                              parentUid,
+                              childId,
+                              app.packageName,
+                              newLockedState,
+                            );
+                          }
+                        : null,
                     activeColor: Colors.green,
                   ),
                 ),
@@ -507,6 +627,7 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
     AppInfoModel app,
     String parentUid,
     String childId,
+    bool isSystemActive,
   ) {
     showDialog(
       context: context,
@@ -543,23 +664,24 @@ class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
           ),
-          ElevatedButton.icon(
-            onPressed: () {
-              _toggleAppLock(
-                parentUid,
-                childId,
-                app.packageName,
-                !app.isLocked,
-              );
-              Navigator.pop(context);
-            },
-            icon: Icon(app.isLocked ? Icons.check_circle : Icons.block),
-            label: Text(app.isLocked ? 'Allow' : 'Block'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: app.isLocked ? Colors.green : Colors.red,
-              foregroundColor: Colors.white,
+          if (isSystemActive)
+            ElevatedButton.icon(
+              onPressed: () {
+                _toggleAppLock(
+                  parentUid,
+                  childId,
+                  app.packageName,
+                  !app.isLocked,
+                );
+                Navigator.pop(context);
+              },
+              icon: Icon(app.isLocked ? Icons.check_circle : Icons.block),
+              label: Text(app.isLocked ? 'Allow' : 'Block'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: app.isLocked ? Colors.green : Colors.red,
+                foregroundColor: Colors.white,
+              ),
             ),
-          ),
         ],
       ),
     );
