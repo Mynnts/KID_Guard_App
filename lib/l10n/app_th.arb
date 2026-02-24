@@ -106,5 +106,9 @@
   "profileUpdatedMessage": "โปรไฟล์ของ {name} ได้รับการอัปเดตเรียบร้อยแล้ว",
   "@profileUpdatedMessage": { "placeholders": { "name": {} } },
   "online": "ออนไลน์",
-  "offline": "ออฟไลน์"
+  "offline": "ออฟไลน์",
+  "noNotifications": "ยังไม่มีการแจ้งเตือน",
+  "notificationDismissed": "ลบการแจ้งเตือนแล้ว",
+  "markAllRead": "อ่านทั้งหมด",
+  "justNow": "เมื่อสักครู่"
 }

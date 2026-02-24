@@ -341,4 +341,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offline => 'Offline';
+
+  @override
+  String get noNotifications => 'No notifications yet';
+
+  @override
+  String get notificationDismissed => 'Notification dismissed';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get justNow => 'Just now';
 }

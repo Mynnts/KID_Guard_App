@@ -155,6 +155,7 @@ class AuthProvider with ChangeNotifier {
             message: 'Your connection PIN has been regenerated.',
             timestamp: DateTime.now(),
             type: 'system',
+            category: 'system',
             iconName: 'vpn_key_rounded',
             colorValue: Colors.orange.value,
           ),

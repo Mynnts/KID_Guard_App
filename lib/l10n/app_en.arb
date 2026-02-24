@@ -115,5 +115,9 @@
   "profileUpdatedMessage": "{name}'s profile has been updated.",
   "@profileUpdatedMessage": { "placeholders": { "name": {} } },
   "online": "Online",
-  "offline": "Offline"
+  "offline": "Offline",
+  "noNotifications": "No notifications yet",
+  "notificationDismissed": "Notification dismissed",
+  "markAllRead": "Mark all read",
+  "justNow": "Just now"
 }

@@ -167,6 +167,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               message: 'App theme has been updated to ${themeData['title']}.',
               timestamp: DateTime.now(),
               type: 'system',
+              category: 'system',
               iconName: 'settings_rounded',
               colorValue: Colors.purple.value,
             ),

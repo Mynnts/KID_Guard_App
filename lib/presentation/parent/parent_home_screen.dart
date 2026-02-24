@@ -45,6 +45,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   final NotificationService _notificationService = NotificationService();
   StreamSubscription<List<NotificationModel>>? _notificationSubscription;
   DateTime? _lastNotificationTime;
+  final Set<String> _shownNotificationIds = {};
+  bool _hasSeededNotifications = false;
 
   @override
   void initState() {
@@ -76,12 +78,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           .listen((notifications) {
             if (notifications.isNotEmpty) {
               final latest = notifications.first;
-              if (latest.timestamp.isAfter(_lastNotificationTime!)) {
+              // Dedup: skip if already shown or if timestamp is not newer
+              if (latest.timestamp.isAfter(_lastNotificationTime!) &&
+                  !_shownNotificationIds.contains(latest.id)) {
                 _lastNotificationTime = latest.timestamp;
+                _shownNotificationIds.add(latest.id);
+                // Keep dedup set bounded
+                if (_shownNotificationIds.length > 100) {
+                  _shownNotificationIds.clear();
+                }
                 LocalNotificationService.showNotification(
                   id: latest.id.hashCode,
                   title: latest.title,
                   body: latest.message,
+                  category: latest.category,
                 );
               }
             }
@@ -246,7 +256,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   }
 
   void _checkAndSeedNotifications(String uid, List<ChildModel> children) {
+    if (_hasSeededNotifications) return;
+    _hasSeededNotifications = true;
     _notificationService.seedInitialNotifications(uid, children);
+    // Clean up any existing duplicates from previous bugs
+    _notificationService.removeDuplicateNotifications(uid);
   }
 
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {

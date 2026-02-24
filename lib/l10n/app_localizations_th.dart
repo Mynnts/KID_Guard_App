@@ -338,4 +338,16 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get offline => 'ออฟไลน์';
+
+  @override
+  String get noNotifications => 'ยังไม่มีการแจ้งเตือน';
+
+  @override
+  String get notificationDismissed => 'ลบการแจ้งเตือนแล้ว';
+
+  @override
+  String get markAllRead => 'อ่านทั้งหมด';
+
+  @override
+  String get justNow => 'เมื่อสักครู่';
 }

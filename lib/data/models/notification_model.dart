@@ -7,9 +7,11 @@ class NotificationModel {
   final String message;
   final DateTime timestamp;
   final String type; // 'system', 'child_activity', 'alert'
+  final String
+  category; // 'app_blocked', 'time_limit', 'location', 'daily_report', 'system'
   final bool isRead;
-  final String? iconName; // Store icon name as string to be serializable
-  final int? colorValue; // Store color as int
+  final String? iconName;
+  final int? colorValue;
 
   NotificationModel({
     required this.id,
@@ -17,6 +19,7 @@ class NotificationModel {
     required this.message,
     required this.timestamp,
     required this.type,
+    this.category = 'system',
     this.isRead = false,
     this.iconName,
     this.colorValue,
@@ -31,6 +34,7 @@ class NotificationModel {
           ? (map['timestamp'] as Timestamp).toDate()
           : DateTime.now(),
       type: map['type'] ?? 'system',
+      category: map['category'] ?? 'system',
       isRead: map['isRead'] ?? false,
       iconName: map['iconName'],
       colorValue: map['colorValue'],
@@ -43,6 +47,7 @@ class NotificationModel {
       'message': message,
       'timestamp': Timestamp.fromDate(timestamp),
       'type': type,
+      'category': category,
       'isRead': isRead,
       'iconName': iconName,
       'colorValue': colorValue,
@@ -60,6 +65,18 @@ class NotificationModel {
         return Icons.warning_rounded;
       case 'check_circle_rounded':
         return Icons.check_circle_rounded;
+      case 'edit_rounded':
+        return Icons.edit_rounded;
+      case 'vpn_key_rounded':
+        return Icons.vpn_key_rounded;
+      case 'schedule_rounded':
+        return Icons.schedule_rounded;
+      case 'location_on_rounded':
+        return Icons.location_on_rounded;
+      case 'block_rounded':
+        return Icons.block_rounded;
+      case 'shield_rounded':
+        return Icons.shield_rounded;
       default:
         return Icons.notifications_rounded;
     }

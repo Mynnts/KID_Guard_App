@@ -44,9 +44,25 @@ void showNotificationsSheet(BuildContext context, String userId) {
                     letterSpacing: -0.5,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
+                Row(
+                  children: [
+                    // Mark all as read button
+                    TextButton.icon(
+                      onPressed: () {
+                        notificationService.markAllAsRead(userId);
+                      },
+                      icon: const Icon(Icons.done_all, size: 18),
+                      label: Text(AppLocalizations.of(context)!.markAllRead),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF6B9080),
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(AppLocalizations.of(context)!.close),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -74,7 +90,7 @@ void showNotificationsSheet(BuildContext context, String userId) {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No notifications',
+                          AppLocalizations.of(context)!.noNotifications,
                           style: TextStyle(
                             color: Colors.grey.shade500,
                             fontSize: 16,
@@ -97,8 +113,12 @@ void showNotificationsSheet(BuildContext context, String userId) {
                       onDismissed: (direction) {
                         notificationService.deleteNotification(userId, item.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Notification dismissed'),
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.notificationDismissed,
+                            ),
                           ),
                         );
                       },
@@ -158,16 +178,20 @@ void showNotificationsSheet(BuildContext context, String userId) {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        item.title,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Color(0xFF1F2937),
+                                      Expanded(
+                                        child: Text(
+                                          item.title,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Color(0xFF1F2937),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        _formatTime(item.timestamp),
+                                        _formatTime(context, item.timestamp),
                                         style: TextStyle(
                                           color: Colors.grey.shade500,
                                           fontSize: 12,
@@ -202,11 +226,13 @@ void showNotificationsSheet(BuildContext context, String userId) {
   );
 }
 
-String _formatTime(DateTime time) {
+String _formatTime(BuildContext context, DateTime time) {
   final now = DateTime.now();
   final difference = now.difference(time);
 
-  if (difference.inMinutes < 60) {
+  if (difference.inMinutes < 1) {
+    return AppLocalizations.of(context)!.justNow;
+  } else if (difference.inMinutes < 60) {
     return '${difference.inMinutes}m ago';
   } else if (difference.inHours < 24) {
     return '${difference.inHours}h ago';

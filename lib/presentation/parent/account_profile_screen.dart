@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/services/notification_service.dart';
 import '../../data/models/notification_model.dart';
-import '../../data/models/notification_model.dart';
 import 'package:kidguard/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/utils/responsive_helper.dart';
@@ -123,6 +122,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             message: AppLocalizations.of(context)!.displayNameChanged(name),
             timestamp: DateTime.now(),
             type: 'system',
+            category: 'system',
             iconName: 'check_circle_rounded',
             colorValue: Colors.blue.value,
           ),
@@ -189,6 +189,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
               message: AppLocalizations.of(context)!.passwordChangedSuccess,
               timestamp: DateTime.now(),
               type: 'alert',
+              category: 'system',
               iconName: 'warning_rounded',
               colorValue: Colors.red.value,
             ),
