@@ -64,25 +64,27 @@ class NotificationService {
         }
       }
 
-      // 2. Dedup: skip if same title+type exists within last 5 minutes
-      final fiveMinutesAgo = DateTime.now().subtract(
-        const Duration(minutes: 5),
-      );
-      final recentDups = await _firestore
+      // 2. Dedup: check only the single most recent notification
+      // This avoids the need for a composite index and handles 99% of duplicate cases.
+      final lastNotifSnapshot = await _firestore
           .collection('users')
           .doc(userId)
           .collection('notifications')
-          .where('title', isEqualTo: notification.title)
-          .where('type', isEqualTo: notification.type)
-          .where('timestamp', isGreaterThan: Timestamp.fromDate(fiveMinutesAgo))
+          .orderBy('timestamp', descending: true)
           .limit(1)
           .get();
 
-      if (recentDups.docs.isNotEmpty) {
-        debugPrint(
-          'Notification deduped: "${notification.title}" already exists.',
-        );
-        return;
+      if (lastNotifSnapshot.docs.isNotEmpty) {
+        final lastNotif = lastNotifSnapshot.docs.first.data();
+        final lastTimestamp = (lastNotif['timestamp'] as Timestamp).toDate();
+
+        // If same content within 2 minutes, it's a duplicate
+        if (lastNotif['title'] == notification.title &&
+            lastNotif['message'] == notification.message &&
+            DateTime.now().difference(lastTimestamp).inMinutes < 2) {
+          debugPrint('Notification suppressed: Duplicate of most recent.');
+          return;
+        }
       }
 
       // 3. Add to Firestore
@@ -91,6 +93,8 @@ class NotificationService {
           .doc(userId)
           .collection('notifications')
           .add(notification.toMap());
+
+      debugPrint('Notification added successfully: ${notification.title}');
 
       // 4. Cleanup old notifications (keep max 50, delete > 30 days)
       _cleanupOldNotifications(userId);
@@ -150,73 +154,13 @@ class NotificationService {
     }
   }
 
-  // Static lock to prevent concurrent seeding
-  static bool _isSeeding = false;
-
   // Seed initial notifications if empty (for demo/reality check)
   Future<void> seedInitialNotifications(
     String userId,
     List<ChildModel> children, {
     bool force = false,
   }) async {
-    // Prevent concurrent/duplicate seeding
-    if (_isSeeding) return;
-    _isSeeding = true;
-
-    try {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('notifications')
-          .limit(1)
-          .get();
-
-      // Only seed if collection is truly empty (first time)
-      if (snapshot.docs.isEmpty || force) {
-        final batch = _firestore.batch();
-        final collectionRef = _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('notifications');
-
-        // Add "Child Added" notifications for existing children
-        for (var child in children) {
-          final docRef = collectionRef.doc();
-          final notification = {
-            'title': 'Child Added',
-            'message': '${child.name} has been added to the family group.',
-            'timestamp': Timestamp.now(),
-            'type': 'system',
-            'category': 'system',
-            'isRead': false,
-            'iconName': 'person_add_rounded',
-            'colorValue': Colors.blue.value,
-          };
-          batch.set(docRef, notification);
-        }
-
-        // Add a system welcome message if no children yet
-        if (children.isEmpty) {
-          final docRef = collectionRef.doc();
-          final notification = {
-            'title': 'Welcome to Kid Guard',
-            'message': 'Get started by adding your child\'s profile.',
-            'timestamp': Timestamp.now(),
-            'type': 'system',
-            'category': 'system',
-            'isRead': false,
-            'iconName': 'check_circle_rounded',
-            'colorValue': Colors.green.value,
-          };
-          batch.set(docRef, notification);
-        }
-
-        await batch.commit();
-      }
-    } catch (e) {
-      debugPrint('Error seeding notifications: $e');
-    }
-    // Keep _isSeeding = true so it never runs again in this app session
+    // Seeding disabled to ensure notifications only reflect real user actions.
   }
 
   /// Remove duplicate notifications (same title + message within 1 minute)

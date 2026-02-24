@@ -1,11 +1,13 @@
 // ==================== นำเข้า Packages ====================
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:installed_apps/installed_apps.dart';
-import 'package:installed_apps/app_info.dart';
+import 'package:device_apps/device_apps.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/app_info_model.dart';
+import '../models/notification_model.dart';
+import 'notification_service.dart';
 import 'device_service.dart';
+import 'package:flutter/material.dart';
 
 // ==================== AppService ====================
 /// บริการจัดการแอพที่ติดตั้งในเครื่อง
@@ -26,45 +28,33 @@ class AppService {
 
   // ==================== ดึงรายการแอพ ====================
   /// ดึงรายการแอพที่ติดตั้งในเครื่อง
-  /// - ใช้ InstalledApps plugin ดึงข้อมูลแอพ
+  /// - ใช้ DeviceApps plugin ดึงข้อมูลแอพ
   /// - กรองเฉพาะ launcher apps (แอพที่ผู้ใช้เปิดได้)
   /// - แปลง icon เป็น base64 สำหรับบันทึก
   Future<List<AppInfoModel>> fetchInstalledApps() async {
     try {
-      // ดึงแอพทั้งหมดพร้อม icon
-      List<AppInfo> allApps = await InstalledApps.getInstalledApps(
-        withIcon: true,
+      // ดึงแอพทั้งหมดพร้อม icon (DeviceApps เสถียรกว่า)
+      List<Application> allApps = await DeviceApps.getInstalledApplications(
+        includeAppIcons: true,
+        includeSystemApps: true,
+        onlyAppsWithLaunchIntent: true,
       );
-
-      // ดึง launcher apps จาก native (กรองแอพที่ผู้ใช้เปิดได้)
-      final List<dynamic> launcherAppsData = await platform.invokeMethod(
-        'getLauncherApps',
-      );
-
-      // สร้าง map เพื่อตรวจสอบว่าเป็น system app หรือไม่
-      final Map<String, bool> systemAppMap = {};
-      for (var data in launcherAppsData) {
-        if (data is Map) {
-          systemAppMap[data['packageName']] = data['isSystem'] ?? false;
-        }
-      }
 
       // กรองและแปลงข้อมูล
       List<AppInfoModel> filteredApps = [];
 
       for (var app in allApps) {
-        if (systemAppMap.containsKey(app.packageName) &&
-            app.name.trim().isNotEmpty) {
+        if (app.appName.trim().isNotEmpty) {
           String? iconBase64;
-          if (app.icon != null) {
-            iconBase64 = base64Encode(app.icon!);
+          if (app is ApplicationWithIcon) {
+            iconBase64 = base64Encode(app.icon);
           }
 
           filteredApps.add(
             AppInfoModel(
               packageName: app.packageName,
-              name: app.name.trim(),
-              isSystemApp: systemAppMap[app.packageName] ?? false,
+              name: app.appName.trim(),
+              isSystemApp: app.systemApp,
               isLocked: false,
               iconBase64: iconBase64,
             ),
@@ -282,6 +272,27 @@ class AppService {
     }, SetOptions(merge: true));
 
     await batch.commit();
+
+    // 4. Send notification for app lock change
+    try {
+      await NotificationService().addNotification(
+        parentUid,
+        NotificationModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: isLocked ? 'แอปถูกบล็อก' : 'ปลดบล็อกแอปแล้ว',
+          message: isLocked
+              ? 'แอป $packageName ถูกจำกัดการใช้งานแล้ว'
+              : 'แอป $packageName สามารถใช้งานได้ตามปกติ',
+          timestamp: DateTime.now(),
+          type: isLocked ? 'alert' : 'success',
+          category: 'app_blocked',
+          iconName: isLocked ? 'block_rounded' : 'check_circle_rounded',
+          colorValue: isLocked ? Colors.red.value : Colors.green.value,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error sending app lock notification: $e');
+    }
   }
 
   /// Stream blocked apps from all devices for this child

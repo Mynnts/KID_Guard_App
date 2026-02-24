@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/providers/locale_provider.dart';
+import '../../../logic/providers/auth_provider.dart';
+import '../../../data/services/notification_service.dart';
+import '../../../data/models/notification_model.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class LanguageSettingsScreen extends StatelessWidget {
   const LanguageSettingsScreen({super.key});
@@ -156,8 +160,31 @@ class LanguageSettingsScreen extends StatelessWidget {
     final isSelected = selectedLanguage == lang['id'];
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final oldLocale = localeProvider.languageCode;
+        if (oldLocale == lang['id']) return;
+
         localeProvider.setLocale(lang['id']!);
+
+        // Send notification
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.userModel != null) {
+          final l10n = AppLocalizations.of(context)!;
+          await NotificationService().addNotification(
+            authProvider.userModel!.uid,
+            NotificationModel(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              title: l10n.languageChangedTitle,
+              message: l10n.languageChangedMessage(lang['name']!),
+              timestamp: DateTime.now(),
+              type: 'system',
+              category: 'system',
+              iconName: 'settings_rounded',
+              colorValue: _accentColor.value,
+            ),
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

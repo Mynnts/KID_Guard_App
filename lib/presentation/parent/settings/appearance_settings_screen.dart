@@ -4,6 +4,7 @@ import '../../../logic/providers/theme_provider.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../logic/providers/auth_provider.dart';
+import 'package:kidguard/l10n/app_localizations.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -159,12 +160,17 @@ class AppearanceSettingsScreen extends StatelessWidget {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final user = authProvider.userModel;
         if (user != null) {
+          debugPrint(
+            'Triggering theme change notification for user: ${user.uid}',
+          );
           await NotificationService().addNotification(
             user.uid,
             NotificationModel(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
-              title: 'Theme Changed',
-              message: 'App theme has been updated to ${themeData['title']}.',
+              title: AppLocalizations.of(context)!.themeChangedTitle,
+              message: AppLocalizations.of(
+                context,
+              )!.themeChangedMessage(themeData['title']),
               timestamp: DateTime.now(),
               type: 'system',
               category: 'system',

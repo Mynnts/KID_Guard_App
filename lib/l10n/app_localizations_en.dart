@@ -353,4 +353,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get justNow => 'Just now';
+
+  @override
+  String get themeChangedTitle => 'Theme Changed';
+
+  @override
+  String themeChangedMessage(Object theme) {
+    return 'App theme has been updated to $theme.';
+  }
+
+  @override
+  String get languageChangedTitle => 'Language Changed';
+
+  @override
+  String languageChangedMessage(Object language) {
+    return 'App language has been updated to $language.';
+  }
+
+  @override
+  String get settingsUpdatedTitle => 'Settings Updated';
+
+  @override
+  String get settingsUpdatedMessage => 'Your preferences have been saved.';
+
+  @override
+  String get feedbackSentTitle => 'Feedback Sent';
+
+  @override
+  String get feedbackSentMessage => 'Thank you for your feedback!';
 }

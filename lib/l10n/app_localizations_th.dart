@@ -350,4 +350,32 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get justNow => 'เมื่อสักครู่';
+
+  @override
+  String get themeChangedTitle => 'เปลี่ยนธีมแล้ว';
+
+  @override
+  String themeChangedMessage(Object theme) {
+    return 'ธีมของแอปถูกเปลี่ยนเป็น $theme เรียบร้อยแล้ว';
+  }
+
+  @override
+  String get languageChangedTitle => 'เปลี่ยนภาษาแล้ว';
+
+  @override
+  String languageChangedMessage(Object language) {
+    return 'ภาษาของแอปถูกเปลี่ยนเป็น $language เรียบร้อยแล้ว';
+  }
+
+  @override
+  String get settingsUpdatedTitle => 'อัปเดตการตั้งค่าแล้ว';
+
+  @override
+  String get settingsUpdatedMessage => 'บันทึกการตั้งค่าของคุณเรียบร้อยแล้ว';
+
+  @override
+  String get feedbackSentTitle => 'ส่งความคิดเห็นแล้ว';
+
+  @override
+  String get feedbackSentMessage => 'ขอบคุณสำหรับความคิดเห็นของคุณ!';
 }

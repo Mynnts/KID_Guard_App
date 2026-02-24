@@ -48,7 +48,6 @@
   "close": "ปิด",
   "pointsEarned": "+{amount} แต้ม สำหรับ {reason}",
   "redeemed": "แลก: {reward}",
-
   "editChildProfile": "แก้ไขโปรไฟล์บุตรหลาน",
   "addChildProfile": "เพิ่มโปรไฟล์บุตรหลาน",
   "updateProfileDesc": "อัปเดตการตั้งค่าโปรไฟล์ของบุตรหลาน",
@@ -70,7 +69,6 @@
   "profileUpdated": "อัปเดตโปรไฟล์เรียบร้อยแล้ว!",
   "profileCreated": "สร้างโปรไฟล์สำหรับ {name} เรียบร้อยแล้ว!",
   "errorSavingProfile": "เกิดข้อผิดพลาดในการบันทึก: {error}",
-  
   "accountProfile": "บัญชีของฉัน",
   "displayName": "ชื่อที่แสดง",
   "displayNameDesc": "ชื่อที่จะแสดงในแอป",
@@ -101,14 +99,40 @@
   "edit": "แก้ไข",
   "childAddedTitle": "เพิ่มบุตรหลานแล้ว",
   "childAddedMessage": "เพิ่ม {name} เข้ามาในครอบครัวของคุณแล้ว",
-  "@childAddedMessage": { "placeholders": { "name": {} } },
+  "@childAddedMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "profileUpdatedTitle": "อัปเดตโปรไฟล์แล้ว",
   "profileUpdatedMessage": "โปรไฟล์ของ {name} ได้รับการอัปเดตเรียบร้อยแล้ว",
-  "@profileUpdatedMessage": { "placeholders": { "name": {} } },
+  "@profileUpdatedMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "online": "ออนไลน์",
   "offline": "ออฟไลน์",
   "noNotifications": "ยังไม่มีการแจ้งเตือน",
   "notificationDismissed": "ลบการแจ้งเตือนแล้ว",
   "markAllRead": "อ่านทั้งหมด",
-  "justNow": "เมื่อสักครู่"
+  "justNow": "เมื่อสักครู่",
+  "themeChangedTitle": "เปลี่ยนธีมแล้ว",
+  "themeChangedMessage": "ธีมของแอปถูกเปลี่ยนเป็น {theme} เรียบร้อยแล้ว",
+  "@themeChangedMessage": {
+    "placeholders": {
+      "theme": {}
+    }
+  },
+  "languageChangedTitle": "เปลี่ยนภาษาแล้ว",
+  "languageChangedMessage": "ภาษาของแอปถูกเปลี่ยนเป็น {language} เรียบร้อยแล้ว",
+  "@languageChangedMessage": {
+    "placeholders": {
+      "language": {}
+    }
+  },
+  "settingsUpdatedTitle": "อัปเดตการตั้งค่าแล้ว",
+  "settingsUpdatedMessage": "บันทึกการตั้งค่าของคุณเรียบร้อยแล้ว",
+  "feedbackSentTitle": "ส่งความคิดเห็นแล้ว",
+  "feedbackSentMessage": "ขอบคุณสำหรับความคิดเห็นของคุณ!"
 }

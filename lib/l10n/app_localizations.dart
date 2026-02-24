@@ -739,6 +739,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Just now'**
   String get justNow;
+
+  /// No description provided for @themeChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Changed'**
+  String get themeChangedTitle;
+
+  /// No description provided for @themeChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'App theme has been updated to {theme}.'**
+  String themeChangedMessage(Object theme);
+
+  /// No description provided for @languageChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language Changed'**
+  String get languageChangedTitle;
+
+  /// No description provided for @languageChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'App language has been updated to {language}.'**
+  String languageChangedMessage(Object language);
+
+  /// No description provided for @settingsUpdatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings Updated'**
+  String get settingsUpdatedTitle;
+
+  /// No description provided for @settingsUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your preferences have been saved.'**
+  String get settingsUpdatedMessage;
+
+  /// No description provided for @feedbackSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback Sent'**
+  String get feedbackSentTitle;
+
+  /// No description provided for @feedbackSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your feedback!'**
+  String get feedbackSentMessage;
 }
 
 class _AppLocalizationsDelegate

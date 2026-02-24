@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/providers/auth_provider.dart';
+import '../../../data/services/notification_service.dart';
+import '../../../data/models/notification_model.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -65,6 +68,24 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         'createdAt': FieldValue.serverTimestamp(),
         'platform': 'android',
       });
+
+      // Send notification
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        await NotificationService().addNotification(
+          user?.uid ?? 'anonymous',
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: l10n.feedbackSentTitle,
+            message: l10n.feedbackSentMessage,
+            timestamp: DateTime.now(),
+            type: 'system',
+            category: 'system',
+            iconName: 'check_circle_rounded',
+            colorValue: Colors.green.value,
+          ),
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

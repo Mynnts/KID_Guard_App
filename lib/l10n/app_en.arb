@@ -38,23 +38,48 @@
   "stayUp": "Stay Up Late",
   "parkTrip": "Park Trip",
   "needMorePoints": "Need {amount} more points",
-  "@needMorePoints": { "placeholders": { "amount": {} } },
+  "@needMorePoints": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
   "redeem": "Redeem",
   "cancel": "Cancel",
   "redeemConfirm": "Redeem {reward}?",
-  "@redeemConfirm": { "placeholders": { "reward": {} } },
+  "@redeemConfirm": {
+    "placeholders": {
+      "reward": {}
+    }
+  },
   "redeemCost": "Use {cost} points",
-  "@redeemCost": { "placeholders": { "cost": {} } },
+  "@redeemCost": {
+    "placeholders": {
+      "cost": {}
+    }
+  },
   "redeemNow": "Redeem Now",
   "success": "Success!",
   "earnedReward": "{child} earned {reward}",
-  "@earnedReward": { "placeholders": { "child": {}, "reward": {} } },
+  "@earnedReward": {
+    "placeholders": {
+      "child": {},
+      "reward": {}
+    }
+  },
   "close": "Close",
   "pointsEarned": "+{amount} points for {reason}",
-  "@pointsEarned": { "placeholders": { "amount": {}, "reason": {} } },
+  "@pointsEarned": {
+    "placeholders": {
+      "amount": {},
+      "reason": {}
+    }
+  },
   "redeemed": "Redeemed: {reward}",
-  "@redeemed": { "placeholders": { "reward": {} } },
-  
+  "@redeemed": {
+    "placeholders": {
+      "reward": {}
+    }
+  },
   "editChildProfile": "Edit Child Profile",
   "addChildProfile": "Add Child Profile",
   "updateProfileDesc": "Update your child's profile settings.",
@@ -75,10 +100,17 @@
   "enterValidAge": "Please enter a valid age",
   "profileUpdated": "Profile updated successfully!",
   "profileCreated": "Profile for {name} created successfully!",
-  "@profileCreated": { "placeholders": { "name": {} } },
+  "@profileCreated": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "errorSavingProfile": "Error saving profile: {error}",
-  "@errorSavingProfile": { "placeholders": { "error": {} } },
-  
+  "@errorSavingProfile": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "accountProfile": "My Account",
   "displayName": "Display Name",
   "displayNameDesc": "Name to be displayed in app",
@@ -96,7 +128,11 @@
   "enterDisplayName": "Please enter display name",
   "nameLengthError": "Name must be at least 2 characters",
   "displayNameChanged": "Your display name has been changed to \"{name}\".",
-  "@displayNameChanged": { "placeholders": { "name": {} } },
+  "@displayNameChanged": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "updateSuccess": "Update successful",
   "updateError": "An error occurred, please try again",
   "enterCurrentPassword": "Please enter current password",
@@ -110,14 +146,40 @@
   "edit": "Edit",
   "childAddedTitle": "Child Added",
   "childAddedMessage": "{name} has been added to your family.",
-  "@childAddedMessage": { "placeholders": { "name": {} } },
+  "@childAddedMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "profileUpdatedTitle": "Profile Updated",
   "profileUpdatedMessage": "{name}'s profile has been updated.",
-  "@profileUpdatedMessage": { "placeholders": { "name": {} } },
+  "@profileUpdatedMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "online": "Online",
   "offline": "Offline",
   "noNotifications": "No notifications yet",
   "notificationDismissed": "Notification dismissed",
   "markAllRead": "Mark all read",
-  "justNow": "Just now"
+  "justNow": "Just now",
+  "themeChangedTitle": "Theme Changed",
+  "themeChangedMessage": "App theme has been updated to {theme}.",
+  "@themeChangedMessage": {
+    "placeholders": {
+      "theme": {}
+    }
+  },
+  "languageChangedTitle": "Language Changed",
+  "languageChangedMessage": "App language has been updated to {language}.",
+  "@languageChangedMessage": {
+    "placeholders": {
+      "language": {}
+    }
+  },
+  "settingsUpdatedTitle": "Settings Updated",
+  "settingsUpdatedMessage": "Your preferences have been saved.",
+  "feedbackSentTitle": "Feedback Sent",
+  "feedbackSentMessage": "Thank you for your feedback!"
 }

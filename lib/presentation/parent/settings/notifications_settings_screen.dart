@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../../logic/providers/auth_provider.dart';
+import '../../../data/services/notification_service.dart';
+import '../../../data/models/notification_model.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -98,6 +101,24 @@ class _NotificationsSettingsScreenState
               'vibration': _vibrationEnabled,
             },
           }, SetOptions(merge: true));
+
+      // Send notification
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        await NotificationService().addNotification(
+          authProvider.userModel!.uid,
+          NotificationModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: l10n.settingsUpdatedTitle,
+            message: l10n.settingsUpdatedMessage,
+            timestamp: DateTime.now(),
+            type: 'system',
+            category: 'system',
+            iconName: 'settings_rounded',
+            colorValue: _accentColor.value,
+          ),
+        );
+      }
     }
   }
 
