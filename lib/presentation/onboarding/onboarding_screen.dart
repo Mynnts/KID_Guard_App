@@ -40,7 +40,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       subtitle: 'ปกป้อง ดูแล เข้าใจ',
       description:
           'เลือกบทบาทเป็น ผู้ปกครอง หรือ เด็ก เพื่อเริ่มต้นใช้งาน\nผู้ปกครองจะดูแลและจัดการอุปกรณ์ของลูก',
-      emoji: '🛡️',
     ),
     _OnboardingPage(
       icon: Icons.people_alt_outlined,
@@ -49,7 +48,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       subtitle: 'ง่ายๆ ด้วยรหัส PIN',
       description:
           'เพิ่มโปรไฟล์เด็กในหน้าผู้ปกครอง\nใช้ PIN 6 หลักเพื่อเชื่อมต่อมือถือของลูก',
-      emoji: '🔗',
     ),
     _OnboardingPage(
       icon: Icons.timer_outlined,
@@ -57,7 +55,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       title: 'ตั้ง Time Limit & Schedule',
       subtitle: 'ควบคุมเวลาหน้าจอ',
       description: 'กำหนดเวลาใช้งานต่อวัน\nตั้งเวลานอน & ช่วงเวลาพักตามต้องการ',
-      emoji: '⏰',
     ),
     _OnboardingPage(
       icon: Icons.apps_rounded,
@@ -66,7 +63,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       subtitle: 'ล็อคแอพ + ให้รางวัล',
       description:
           'เลือกแอพที่ต้องการบล็อคได้ทันที\nให้คะแนนเป็นรางวัลเมื่อลูกทำตามกฎ ⭐',
-      emoji: '🎁',
     ),
   ];
 
@@ -239,12 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
           ),
 
-          SizedBox(height: r.hp(16)),
-
-          // Emoji
-          Text(page.emoji, style: TextStyle(fontSize: r.sp(40))),
-
-          SizedBox(height: r.hp(24)),
+          SizedBox(height: r.hp(32)),
 
           // Title
           Text(
@@ -366,7 +357,6 @@ class _OnboardingPage {
   final String title;
   final String subtitle;
   final String description;
-  final String emoji;
 
   const _OnboardingPage({
     required this.icon,
@@ -374,6 +364,5 @@ class _OnboardingPage {
     required this.title,
     required this.subtitle,
     required this.description,
-    required this.emoji,
   });
 }
