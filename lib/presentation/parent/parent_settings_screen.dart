@@ -332,13 +332,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       child: Container(
         padding: EdgeInsets.all(r.wp(20)),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.white, Color(0xFFFCFDFC)],
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.surface,
+              colorScheme.surface.withValues(alpha: 0.95),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(r.radius(24)),
-          border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -381,7 +384,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                       Text(
                         'Use this to link child devices',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: r.sp(12),
                         ),
                       ),
@@ -453,12 +456,13 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
   Widget _buildSectionTitle(String title) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.only(left: r.wp(4)),
       child: Text(
         title,
         style: TextStyle(
-          color: Colors.grey[600],
+          color: colorScheme.onBackground.withValues(alpha: 0.6),
           fontSize: r.sp(13),
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -473,13 +477,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Colors.white, Color(0xFFFCFDFC)],
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.surface,
+            colorScheme.surface.withValues(alpha: 0.95),
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(r.radius(24)),
-        border: Border.all(color: Colors.grey.shade200.withOpacity(0.6)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -532,7 +539,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   subtitle: Text(
                     item.subtitle,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: r.sp(12),
                     ),
                   ),
@@ -554,7 +561,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                   Divider(
                     height: 1,
                     indent: r.wp(56),
-                    color: Colors.grey.shade200,
+                    color: colorScheme.outline.withValues(alpha: 0.1),
                   ),
               ],
             ),

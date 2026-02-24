@@ -7,9 +7,6 @@ class LanguageSettingsScreen extends StatelessWidget {
 
   // Colors
   static const _accentColor = Color(0xFF6B9080);
-  static const _bgColor = Color(0xFFF8FAFC);
-  static const _textPrimary = Color(0xFF1E293B);
-  static const _textSecondary = Color(0xFF64748B);
 
   static const List<Map<String, String>> _languages = [
     {'id': 'th', 'name': 'ไทย', 'nativeName': 'Thai', 'flag': '🇹🇭'},
@@ -18,21 +15,26 @@ class LanguageSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final localeProvider = Provider.of<LocaleProvider>(context);
     final selectedLanguage = localeProvider.languageCode;
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: _bgColor,
+        backgroundColor: colorScheme.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: _textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Language',
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -45,7 +47,7 @@ class LanguageSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_accentColor, _accentColor.withOpacity(0.8)],
+                  colors: [_accentColor, _accentColor.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -56,7 +58,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -93,10 +95,10 @@ class LanguageSettingsScreen extends StatelessWidget {
             const SizedBox(height: 28),
 
             // Language Selection
-            const Text(
+            Text(
               'เลือกภาษา',
               style: TextStyle(
-                color: _textSecondary,
+                color: colorScheme.onBackground.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -120,9 +122,9 @@ class LanguageSettingsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: Colors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -149,6 +151,8 @@ class LanguageSettingsScreen extends StatelessWidget {
     String selectedLanguage,
     LocaleProvider localeProvider,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isSelected = selectedLanguage == lang['id'];
 
     return GestureDetector(
@@ -174,17 +178,19 @@ class LanguageSettingsScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? _accentColor : Colors.grey.shade200,
+            color: isSelected
+                ? _accentColor
+                : colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? _accentColor.withOpacity(0.15)
-                  : Colors.black.withOpacity(0.04),
+                  ? _accentColor.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.04),
               blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
@@ -197,7 +203,7 @@ class LanguageSettingsScreen extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: colorScheme.outline.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -214,8 +220,8 @@ class LanguageSettingsScreen extends StatelessWidget {
                 children: [
                   Text(
                     lang['name']!,
-                    style: const TextStyle(
-                      color: _textPrimary,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -223,7 +229,10 @@ class LanguageSettingsScreen extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     lang['nativeName']!,
-                    style: const TextStyle(color: _textSecondary, fontSize: 13),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -234,7 +243,9 @@ class LanguageSettingsScreen extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? _accentColor : Colors.grey.shade200,
+                color: isSelected
+                    ? _accentColor
+                    : colorScheme.outline.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: isSelected

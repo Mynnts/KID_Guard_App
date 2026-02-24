@@ -1,12 +1,14 @@
+<<<<<<< HEAD
+=======
 import 'dart:math' as math;
+import 'dart:async';
+>>>>>>> 9b47d535fa1be78850bf889dc989a93183c0fb7f
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../core/utils/responsive_helper.dart';
-import 'account_profile_screen.dart';
-import 'child_setup_screen.dart';
 import 'time_limit_screen.dart';
 import 'child_location_screen.dart';
 import 'schedule_screen.dart';
@@ -15,8 +17,18 @@ import 'all_children_screen.dart';
 import 'apps/parent_app_control_screen.dart';
 
 import 'package:kidguard/l10n/app_localizations.dart';
-import 'package:kidguard/data/models/notification_model.dart';
 import 'package:kidguard/data/services/notification_service.dart';
+import 'package:kidguard/data/services/local_notification_service.dart';
+
+// Extracted widgets
+import 'home/home_header_widget.dart';
+import 'home/unlock_fab_widget.dart';
+import 'home/children_carousel_widget.dart';
+import 'home/stats_card_widget.dart';
+import 'home/device_status_widget.dart';
+import 'home/quick_actions_widget.dart';
+import 'home/instant_pause_sheet.dart';
+import 'home/shimmer_loading_widget.dart';
 
 /// Parent Home Screen - displays children overview, stats, and quick actions
 class ParentHomeScreen extends StatefulWidget {
@@ -34,6 +46,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   late AnimationController _pulseController;
   late Animation<double> _fadeAnimation;
   final NotificationService _notificationService = NotificationService();
+  StreamSubscription<List<NotificationModel>>? _notificationSubscription;
+  DateTime? _lastNotificationTime;
 
   @override
   void initState() {
@@ -53,12 +67,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
 
     _fadeController.forward();
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    final user = Provider.of<AuthProvider>(context, listen: false).userModel;
+    if (user != null) {
+      _lastNotificationTime = DateTime.now();
+      _notificationSubscription = _notificationService
+          .getNotifications(user.uid)
+          .listen((notifications) {
+            if (notifications.isNotEmpty) {
+              final latest = notifications.first;
+              // Only show local notification if it's newer than app start
+              // and hasn't been processed yet
+              if (latest.timestamp.isAfter(_lastNotificationTime!)) {
+                _lastNotificationTime = latest.timestamp;
+                LocalNotificationService.showNotification(
+                  id: latest.id.hashCode,
+                  title: latest.title,
+                  body: latest.message,
+                );
+              }
+            }
+          });
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _pulseController.dispose();
+    _notificationSubscription?.cancel();
     super.dispose();
   }
 
@@ -87,7 +127,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return _buildShimmerLoading();
+          return const ShimmerLoadingWidget();
         }
 
         final childrenDocs = snapshot.data!.docs;
@@ -100,12 +140,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             )
             .toList();
 
-        // Ensure notifications are seeded for these children if needed
         if (children.isNotEmpty) {
           _checkAndSeedNotifications(user.uid, children);
         }
 
-        // Set default selected child
         if (_selectedChildIndex == null && children.isNotEmpty) {
           _selectedChildIndex = 0;
         }
@@ -114,13 +152,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             ? children[_selectedChildIndex!]
             : null;
 
-        // Calculate total screen time
         int totalSeconds = 0;
         bool anyChildLocked = false;
         ChildModel? lockedChild;
         for (var child in children) {
           totalSeconds += child.screenTime;
-          // Check if any child's device is locked
           if (child.isLocked) {
             anyChildLocked = true;
             lockedChild = child;
@@ -128,10 +164,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         }
 
         return Scaffold(
+<<<<<<< HEAD
           backgroundColor: const Color(0xFFF6FBF4),
+=======
+          backgroundColor: colorScheme.background,
           // Floating unlock button - appears only when child device is locked
+>>>>>>> 9b47d535fa1be78850bf889dc989a93183c0fb7f
           floatingActionButton: anyChildLocked && lockedChild != null
-              ? _buildUnlockFAB(user.uid, lockedChild, colorScheme)
+              ? UnlockFabWidget(
+                  parentUid: user.uid,
+                  lockedChild: lockedChild,
+                  colorScheme: colorScheme,
+                  pulseAnimation: _pulseController,
+                )
               : null,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
@@ -144,19 +189,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: r.hp(16)),
-
-                    // Enhanced Header
-                    _buildEnhancedHeader(
-                      context,
-                      userName,
-                      colorScheme,
-                      children,
-                      user.uid,
+                    HomeHeaderWidget(
+                      userName: userName,
+                      greeting: _getGreeting(context),
+                      colorScheme: colorScheme,
+                      children: children,
+                      userId: user.uid,
                     ),
-
                     SizedBox(height: r.hp(28)),
-
-                    // Children Carousel
                     if (children.isNotEmpty) ...[
                       _buildSectionHeader(
                         AppLocalizations.of(context)!.myChildren,
@@ -170,31 +210,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                         },
                       ),
                       SizedBox(height: r.hp(16)),
-                      _buildChildrenCarousel(children, colorScheme),
+                      ChildrenCarouselWidget(
+                        children: children,
+                        colorScheme: colorScheme,
+                        selectedChildIndex: _selectedChildIndex,
+                        onChildSelected: (index) =>
+                            setState(() => _selectedChildIndex = index),
+                      ),
                       SizedBox(height: r.hp(28)),
                     ],
-
-                    // Stats Overview
-                    _buildEnhancedStatsCard(
-                      selectedChild,
-                      totalSeconds,
-                      colorScheme,
+                    StatsCardWidget(
+                      selectedChild: selectedChild,
+                      totalSeconds: totalSeconds,
+                      colorScheme: colorScheme,
                     ),
-
                     SizedBox(height: r.hp(28)),
-
-                    // Device Status Card
-                    _buildDeviceStatusCard(selectedChild, colorScheme),
-
+                    DeviceStatusWidget(
+                      child: selectedChild,
+                      colorScheme: colorScheme,
+                      pulseAnimation: _pulseController,
+                    ),
                     SizedBox(height: r.hp(28)),
-
-                    // Quick Actions
                     _buildSectionHeader(
                       AppLocalizations.of(context)!.quickActions,
                     ),
                     SizedBox(height: r.hp(16)),
-                    _buildEnhancedQuickActions(context, children, colorScheme),
-
+                    QuickActionsWidget(
+                      actions: _buildQuickActions(
+                        context,
+                        children,
+                        colorScheme,
+                      ),
+                    ),
                     SizedBox(height: r.hp(100)),
                   ],
                 ),
@@ -206,13 +253,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
-  // Trigger initial notification check/seed once per session or on load
   void _checkAndSeedNotifications(String uid, List<ChildModel> children) {
-    // Only verify if we have children and haven't checked recently,
-    // or just let the service handle the "if empty" check efficiently.
     _notificationService.seedInitialNotifications(uid, children);
   }
 
+<<<<<<< HEAD
+=======
   Widget _buildEnhancedHeader(
     BuildContext context,
     String userName,
@@ -243,7 +289,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                   fontSize: r.sp(26),
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
-                  color: const Color(0xFF1F2937),
+                  color: colorScheme.onBackground,
                 ),
               ),
             ],
@@ -260,9 +306,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               child: Container(
                 padding: EdgeInsets.all(r.wp(12)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(r.radius(16)),
-                  border: Border.all(color: Colors.grey.shade100),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.1),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -342,9 +390,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,6 +433,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               child: StreamBuilder<List<NotificationModel>>(
                 stream: _notificationService.getNotifications(userId),
                 builder: (context, snapshot) {
+                  final colorScheme = Theme.of(context).colorScheme;
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -454,13 +503,13 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: !item.isRead
-                                ? const Color(0xFFF0FDF4)
-                                : Colors.white,
+                                ? colorScheme.primary.withValues(alpha: 0.1)
+                                : colorScheme.surface,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: !item.isRead
-                                  ? const Color(0xFF10B981).withOpacity(0.3)
-                                  : Colors.grey.shade200,
+                                  ? colorScheme.primary.withValues(alpha: 0.3)
+                                  : colorScheme.outline.withValues(alpha: 0.1),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -496,10 +545,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                                       children: [
                                         Text(
                                           item.title,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
-                                            color: Color(0xFF1F2937),
+                                            color: colorScheme.onSurface,
                                           ),
                                         ),
                                         Text(
@@ -797,6 +846,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     }
   }
 
+>>>>>>> 9b47d535fa1be78850bf889dc989a93183c0fb7f
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
     final r = ResponsiveHelper.of(context);
     return Row(
@@ -808,7 +858,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
             fontSize: r.sp(20),
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
-            color: const Color(0xFF1F2937),
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         if (onSeeAll != null)
@@ -827,6 +877,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     );
   }
 
+<<<<<<< HEAD
+  List<QuickAction> _buildQuickActions(
+=======
   Widget _buildChildrenCarousel(
     List<ChildModel> children,
     ColorScheme colorScheme,
@@ -847,13 +900,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                 MaterialPageRoute(builder: (_) => const ChildSetupScreen()),
               ),
               child: Container(
-                width: r.wp(120),
+                width: r.wp(160),
+                margin: EdgeInsets.only(right: r.wp(16), bottom: r.hp(8)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(r.radius(20)),
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(r.radius(24)),
                   border: Border.all(
-                    color: colorScheme.primary.withOpacity(0.3),
-                    width: 2,
+                    color: colorScheme.outline.withOpacity(0.1),
+                    width: 1,
                     strokeAlign: BorderSide.strokeAlignInside,
                   ),
                 ),
@@ -1023,7 +1077,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: r.sp(16),
-                      color: isSelected ? Colors.white : Colors.black87,
+                      color: isSelected ? Colors.white : colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1080,8 +1134,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+        gradient: LinearGradient(
+          colors: [colorScheme.primary, colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1089,14 +1143,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         boxShadow: [
           // Primary color-tinted shadow (far, soft)
           BoxShadow(
-            color: const Color(0xFF6B9080).withOpacity(0.15),
+            color: colorScheme.primary.withValues(alpha: 0.15),
             blurRadius: 40,
             offset: const Offset(0, 20),
             spreadRadius: -8,
           ),
           // Secondary shadow (near, crisp)
           BoxShadow(
-            color: const Color(0xFF6B9080).withOpacity(0.10),
+            color: colorScheme.primary.withValues(alpha: 0.10),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -1335,8 +1389,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Colors.white, Color(0xFFFCFDFC)],
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.surface,
+            colorScheme.surface.withValues(alpha: 0.95),
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -1345,14 +1402,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         boxShadow: [
           // Soft outer glow
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: -5,
           ),
           // Subtle inner highlight
           BoxShadow(
-            color: Colors.white.withOpacity(0.8),
+            color: colorScheme.surface.withValues(alpha: 0.8),
             blurRadius: 8,
             offset: const Offset(-2, -2),
           ),
@@ -1467,19 +1524,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   }
 
   Widget _buildEnhancedQuickActions(
+>>>>>>> 9b47d535fa1be78850bf889dc989a93183c0fb7f
     BuildContext context,
     List<ChildModel> children,
     ColorScheme colorScheme,
   ) {
-    final actions = [
-      _QuickAction(
+    return [
+      QuickAction(
         icon: Icons.pause_circle_filled_rounded,
         label: 'Pause',
         subtitle: 'Pause now',
         color: const Color(0xFFEF4444),
-        onTap: () => _showInstantPauseDialog(context, children),
+        onTap: () {
+          if (children.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please add a child first')),
+            );
+            return;
+          }
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
+          final user = authProvider.userModel;
+          if (user == null) return;
+          showInstantPauseSheet(
+            context,
+            parentUid: user.uid,
+            children: children,
+          );
+        },
       ),
-      _QuickAction(
+      QuickAction(
         icon: Icons.apps_rounded,
         label: 'Apps',
         subtitle: 'Manage apps',
@@ -1500,7 +1576,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           );
         },
       ),
-      _QuickAction(
+      QuickAction(
         icon: Icons.timer_rounded,
         label: 'Timer',
         subtitle: 'Set limits',
@@ -1510,14 +1586,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           MaterialPageRoute(builder: (_) => const TimeLimitScreen()),
         ),
       ),
-      _QuickAction(
+      QuickAction(
         icon: Icons.location_on_rounded,
         label: 'Location',
         subtitle: 'Track device',
         color: const Color(0xFF10B981),
         onTap: () => _navigateToLocation(context, children),
       ),
-      _QuickAction(
+      QuickAction(
         icon: Icons.calendar_month_rounded,
         label: 'Schedule',
         subtitle: 'Sleep & Break',
@@ -1527,7 +1603,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           MaterialPageRoute(builder: (_) => const ScheduleScreen()),
         ),
       ),
-      _QuickAction(
+      QuickAction(
         icon: Icons.star_rounded,
         label: 'Rewards',
         subtitle: 'Points & Goals',
@@ -1535,30 +1611,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         onTap: () => _navigateToRewards(context, children),
       ),
     ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: ResponsiveHelper.of(context).wp(12),
-        mainAxisSpacing: ResponsiveHelper.of(context).hp(12),
-        childAspectRatio: 1.0,
-      ),
-      itemCount: actions.length,
-      itemBuilder: (context, index) {
-        final action = actions[index];
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: 1),
-          duration: Duration(milliseconds: 400 + (index * 80)),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            return Transform.scale(scale: value, child: child);
-          },
-          child: _EnhancedActionCard(action: action),
-        );
-      },
-    );
   }
 
   void _navigateToLocation(BuildContext context, List<ChildModel> children) {
@@ -1610,6 +1662,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       ),
     );
   }
+<<<<<<< HEAD
+=======
 
   void _showInstantPauseDialog(
     BuildContext context,
@@ -1630,9 +1684,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -1660,9 +1714,13 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Instant Pause',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1734,7 +1792,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F7),
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withOpacity(0.5),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -1759,8 +1819,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
   }
 
   Widget _buildShimmerLoading() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6FBF4),
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -1908,16 +1969,12 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
         },
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Colors.white, Color(0xFFFAFBFA)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(
               ResponsiveHelper.of(context).radius(22),
             ),
             border: Border.all(
-              color: Colors.grey.shade100.withOpacity(0.8),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
               width: 1,
             ),
             boxShadow: [
@@ -1954,7 +2011,7 @@ class _EnhancedActionCardState extends State<_EnhancedActionCard>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: ResponsiveHelper.of(context).sp(11),
-                    color: const Color(0xFF3F4E4F),
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                   textAlign: TextAlign.center,
@@ -2012,4 +2069,5 @@ class _MiniProgressPainter extends CustomPainter {
   bool shouldRepaint(covariant _MiniProgressPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
+>>>>>>> 9b47d535fa1be78850bf889dc989a93183c0fb7f
 }

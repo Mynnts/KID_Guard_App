@@ -13,11 +13,8 @@ class AboutScreen extends StatefulWidget {
 class _AboutScreenState extends State<AboutScreen> {
   String _version = '1.0.0';
 
-  // Premium Color Palette
+  // Premium Color Palette - Base Primary remains the same for brand identity
   static const _primaryColor = Color(0xFF6B9080);
-  static const _textPrimary = Color(0xFF1E293B);
-  static const _textSecondary = Color(0xFF64748B);
-  static const _bgColor = Color(0xFFF8FAFC);
 
   @override
   void initState() {
@@ -49,10 +46,12 @@ class _AboutScreenState extends State<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final r = ResponsiveHelper.of(context);
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -66,7 +65,7 @@ class _AboutScreenState extends State<AboutScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -95,7 +94,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       right: -50,
                       child: CircleAvatar(
                         radius: 100,
-                        backgroundColor: Colors.white.withOpacity(0.05),
+                        backgroundColor: Colors.white.withValues(alpha: 0.05),
                       ),
                     ),
                     Positioned(
@@ -103,7 +102,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       left: -30,
                       child: CircleAvatar(
                         radius: 60,
-                        backgroundColor: Colors.white.withOpacity(0.05),
+                        backgroundColor: Colors.white.withValues(alpha: 0.05),
                       ),
                     ),
 
@@ -127,7 +126,7 @@ class _AboutScreenState extends State<AboutScreen> {
                               borderRadius: BorderRadius.circular(r.radius(24)),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -160,13 +159,13 @@ class _AboutScreenState extends State<AboutScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             'Version $_version',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: r.sp(12),
                               fontWeight: FontWeight.w500,
                             ),
@@ -192,7 +191,7 @@ class _AboutScreenState extends State<AboutScreen> {
                       'Smart Protection for Your Little Wonders',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _textPrimary,
+                        color: colorScheme.onBackground,
                         fontSize: r.sp(16),
                         fontWeight: FontWeight.w600,
                       ),
@@ -206,7 +205,7 @@ class _AboutScreenState extends State<AboutScreen> {
                           : 'Keep your children safe in the digital world.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _textSecondary,
+                        color: colorScheme.onBackground.withValues(alpha: 0.6),
                         fontSize: r.sp(14),
                       ),
                     ),
@@ -223,18 +222,21 @@ class _AboutScreenState extends State<AboutScreen> {
                   SizedBox(height: r.hp(12)),
                   _buildClassicCard([
                     _buildInfoRow(
+                      context,
                       icon: Icons.school_outlined,
                       title: 'Senior Project',
                       value: 'CPE @ KMUTT',
                     ),
-                    _buildDivider(),
+                    _buildDivider(context),
                     _buildInfoRow(
+                      context,
                       icon: Icons.code_rounded,
                       title: 'Framework',
                       value: 'Flutter 3.x',
                     ),
-                    _buildDivider(),
+                    _buildDivider(context),
                     _buildInfoRow(
+                      context,
                       icon: Icons.cloud_done_outlined,
                       title: 'Backend',
                       value: 'Firebase / Firestore',
@@ -252,20 +254,23 @@ class _AboutScreenState extends State<AboutScreen> {
                   SizedBox(height: r.hp(12)),
                   _buildClassicCard([
                     _buildNavRow(
+                      context,
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacy Policy',
                       onTap: () =>
                           _launchUrl('https://kidguard-app.web.app/privacy'),
                     ),
-                    _buildDivider(),
+                    _buildDivider(context),
                     _buildNavRow(
+                      context,
                       icon: Icons.description_outlined,
                       title: 'Terms of Service',
                       onTap: () =>
                           _launchUrl('https://kidguard-app.web.app/terms'),
                     ),
-                    _buildDivider(),
+                    _buildDivider(context),
                     _buildNavRow(
+                      context,
                       icon: Icons.integration_instructions_outlined,
                       title: 'Open Source Licenses',
                       onTap: () {
@@ -290,7 +295,9 @@ class _AboutScreenState extends State<AboutScreen> {
                             Text(
                               'Made with ',
                               style: TextStyle(
-                                color: _textSecondary,
+                                color: colorScheme.onBackground.withValues(
+                                  alpha: 0.6,
+                                ),
                                 fontSize: r.sp(12),
                               ),
                             ),
@@ -302,7 +309,9 @@ class _AboutScreenState extends State<AboutScreen> {
                             Text(
                               ' in Thailand',
                               style: TextStyle(
-                                color: _textSecondary,
+                                color: colorScheme.onBackground.withValues(
+                                  alpha: 0.6,
+                                ),
                                 fontSize: r.sp(12),
                               ),
                             ),
@@ -312,7 +321,9 @@ class _AboutScreenState extends State<AboutScreen> {
                         Text(
                           '© 2025 Kid Guard Solution. All rights reserved.',
                           style: TextStyle(
-                            color: _textSecondary.withOpacity(0.6),
+                            color: colorScheme.onBackground.withValues(
+                              alpha: 0.4,
+                            ),
                             fontSize: r.sp(10),
                           ),
                         ),
@@ -330,12 +341,13 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          color: _textSecondary,
+        style: TextStyle(
+          color: colorScheme.onBackground.withValues(alpha: 0.6),
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
@@ -345,13 +357,14 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildClassicCard(List<Widget> children) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -361,11 +374,13 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildInfoRow({
+  Widget _buildInfoRow(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String value,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -374,8 +389,8 @@ class _AboutScreenState extends State<AboutScreen> {
           const SizedBox(width: 16),
           Text(
             title,
-            style: const TextStyle(
-              color: _textPrimary,
+            style: TextStyle(
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w500,
               fontSize: 14,
             ),
@@ -383,8 +398,8 @@ class _AboutScreenState extends State<AboutScreen> {
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
-              color: _textSecondary,
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w400,
               fontSize: 14,
             ),
@@ -394,24 +409,26 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildNavRow({
+  Widget _buildNavRow(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Icon(icon, color: _primaryColor, size: 22),
       title: Text(
         title,
-        style: const TextStyle(
-          color: _textPrimary,
+        style: TextStyle(
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w500,
           fontSize: 14,
         ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: _textSecondary,
+        color: colorScheme.onSurface.withValues(alpha: 0.4),
         size: 20,
       ),
       onTap: onTap,
@@ -419,7 +436,12 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(height: 1, indent: 54, color: Colors.grey.shade100);
+  Widget _buildDivider(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Divider(
+      height: 1,
+      indent: 54,
+      color: colorScheme.outline.withValues(alpha: 0.1),
+    );
   }
 }

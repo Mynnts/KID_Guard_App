@@ -26,11 +26,46 @@ class NotificationService {
     String userId,
     NotificationModel notification,
   ) async {
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('notifications')
-        .add(notification.toMap());
+    try {
+      // 1. Check if notification type is enabled in user settings
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        if (data != null && data.containsKey('notificationSettings')) {
+          final settings = data['notificationSettings'] as Map<String, dynamic>;
+
+          bool isEnabled = true;
+          final title = notification.title.toLowerCase();
+
+          if (title.contains('blocked')) {
+            isEnabled = settings['appBlocked'] ?? true;
+          } else if (title.contains('limit') || title.contains('time')) {
+            isEnabled = settings['timeLimit'] ?? true;
+          } else if (title.contains('location')) {
+            isEnabled = settings['location'] ?? true;
+          } else if (notification.type == 'system' &&
+              title.contains('report')) {
+            isEnabled = settings['dailyReports'] ?? false;
+          }
+
+          if (!isEnabled) {
+            debugPrint(
+              'Notification suppressed: ${notification.title} is disabled in settings.',
+            );
+            return;
+          }
+        }
+      }
+
+      // 2. Add to Firestore if enabled
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .add(notification.toMap());
+    } catch (e) {
+      debugPrint('Error adding notification: $e');
+    }
   }
 
   // Delete a notification

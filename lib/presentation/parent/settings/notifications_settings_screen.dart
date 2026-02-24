@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../../logic/providers/auth_provider.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -20,9 +23,6 @@ class _NotificationsSettingsScreenState
 
   // Colors
   static const _accentColor = Color(0xFF6B9080);
-  static const _bgColor = Color(0xFFF8FAFC);
-  static const _textPrimary = Color(0xFF1E293B);
-  static const _textSecondary = Color(0xFF64748B);
 
   @override
   void initState() {
@@ -40,6 +40,37 @@ class _NotificationsSettingsScreenState
       _soundEnabled = prefs.getBool('notif_sound') ?? true;
       _vibrationEnabled = prefs.getBool('notif_vibration') ?? true;
     });
+
+    // Sync from Firestore if available
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.userModel != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.userModel!.uid)
+          .get();
+
+      if (doc.exists &&
+          doc.data()?.containsKey('notificationSettings') == true) {
+        final settings =
+            doc.data()!['notificationSettings'] as Map<String, dynamic>;
+        setState(() {
+          _appBlockedAlerts = settings['appBlocked'] ?? _appBlockedAlerts;
+          _timeLimitAlerts = settings['timeLimit'] ?? _timeLimitAlerts;
+          _locationAlerts = settings['location'] ?? _locationAlerts;
+          _dailyReports = settings['dailyReports'] ?? _dailyReports;
+          _soundEnabled = settings['sound'] ?? _soundEnabled;
+          _vibrationEnabled = settings['vibration'] ?? _vibrationEnabled;
+        });
+
+        // Update local prefs to match Firestore
+        await prefs.setBool('notif_app_blocked', _appBlockedAlerts);
+        await prefs.setBool('notif_time_limit', _timeLimitAlerts);
+        await prefs.setBool('notif_location', _locationAlerts);
+        await prefs.setBool('notif_daily_reports', _dailyReports);
+        await prefs.setBool('notif_sound', _soundEnabled);
+        await prefs.setBool('notif_vibration', _vibrationEnabled);
+      }
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -50,22 +81,46 @@ class _NotificationsSettingsScreenState
     await prefs.setBool('notif_daily_reports', _dailyReports);
     await prefs.setBool('notif_sound', _soundEnabled);
     await prefs.setBool('notif_vibration', _vibrationEnabled);
+
+    // Save to Firestore for cross-device sync
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.userModel != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authProvider.userModel!.uid)
+          .set({
+            'notificationSettings': {
+              'appBlocked': _appBlockedAlerts,
+              'timeLimit': _timeLimitAlerts,
+              'location': _locationAlerts,
+              'dailyReports': _dailyReports,
+              'sound': _soundEnabled,
+              'vibration': _vibrationEnabled,
+            },
+          }, SetOptions(merge: true));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: _bgColor,
+        backgroundColor: colorScheme.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: _textPrimary),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onBackground,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -78,7 +133,7 @@ class _NotificationsSettingsScreenState
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [_accentColor, _accentColor.withOpacity(0.8)],
+                  colors: [_accentColor, _accentColor.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -89,7 +144,7 @@ class _NotificationsSettingsScreenState
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -209,10 +264,11 @@ class _NotificationsSettingsScreenState
   }
 
   Widget _buildSectionTitle(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text(
       title,
-      style: const TextStyle(
-        color: _textSecondary,
+      style: TextStyle(
+        color: colorScheme.onBackground.withValues(alpha: 0.6),
         fontSize: 13,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
@@ -221,13 +277,14 @@ class _NotificationsSettingsScreenState
   }
 
   Widget _buildSettingsCard(List<Widget> children) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -244,6 +301,7 @@ class _NotificationsSettingsScreenState
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -251,7 +309,7 @@ class _NotificationsSettingsScreenState
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _accentColor.withOpacity(0.1),
+              color: _accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: _accentColor, size: 22),
@@ -263,8 +321,8 @@ class _NotificationsSettingsScreenState
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: _textPrimary,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
@@ -272,7 +330,10 @@ class _NotificationsSettingsScreenState
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: _textSecondary, fontSize: 12),
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -288,6 +349,11 @@ class _NotificationsSettingsScreenState
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, indent: 60, color: Colors.grey.shade200);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Divider(
+      height: 1,
+      indent: 60,
+      color: colorScheme.outline.withValues(alpha: 0.1),
+    );
   }
 }
