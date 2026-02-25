@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kidguard/logic/providers/rewards_provider.dart';
+import '../../helpers/firebase_mock.dart';
 
 void main() {
+  setupFirebaseMocks();
+
   group('RewardsProvider - Pure Logic', () {
     late RewardsProvider provider;
 
@@ -75,9 +78,6 @@ void main() {
       });
 
       test('returns events for day that has events', () {
-        // Manually set events through internal state for testing
-        // Since _events is private, we test via the public API behavior
-        // Events are normally populated by fetchHistory (Firestore)
         final events = provider.getEventsForDay(DateTime.now());
         expect(events, isList);
       });
