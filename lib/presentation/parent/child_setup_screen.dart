@@ -20,6 +20,17 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   int _dailyTimeLimit = 0; // in minutes
+  int _selectedAvatarIndex = 0;
+
+  final List<String> _avatars = [
+    'assets/avatars/boy_1.png',
+    'assets/avatars/girl_2.png',
+    'assets/avatars/boy_3.png',
+    'assets/avatars/boy_4.png',
+    'assets/avatars/girl_5.png',
+    'assets/avatars/girl_6.png',
+    'assets/avatars/girl_7.png',
+  ];
 
   @override
   void initState() {
@@ -30,6 +41,11 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
     );
     if (widget.child != null) {
       _dailyTimeLimit = (widget.child!.dailyTimeLimit / 60).round();
+      // Find current avatar index
+      if (widget.child!.avatar != null) {
+        final idx = _avatars.indexOf(widget.child!.avatar!);
+        if (idx >= 0) _selectedAvatarIndex = idx;
+      }
     }
   }
 
@@ -44,6 +60,8 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
   Widget build(BuildContext context) {
     final isEditing = widget.child != null;
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -63,41 +81,68 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
                   ? AppLocalizations.of(context)!.updateProfileDesc
                   : AppLocalizations.of(context)!.createProfileDesc,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: r.sp(14)),
-            ),
-            SizedBox(height: r.hp(32)),
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: r.wp(50),
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    backgroundImage: widget.child?.avatar != null
-                        ? AssetImage(widget.child!.avatar!)
-                        : null,
-                    child: widget.child?.avatar == null
-                        ? Icon(Icons.person, size: r.iconSize(50))
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: CircleAvatar(
-                      radius: r.wp(18),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Icon(
-                        Icons.camera_alt,
-                        size: r.iconSize(18),
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+              style: TextStyle(
+                color: colorScheme.onSurface.withOpacity(0.5),
+                fontSize: r.sp(14),
               ),
             ),
-            SizedBox(height: r.hp(32)),
+            SizedBox(height: r.hp(24)),
+
+            // Avatar picker section
+            Text(
+              'เลือก Avatar',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: r.sp(16),
+                color: colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: r.hp(16)),
+            SizedBox(
+              height: r.hp(100),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _avatars.length,
+                separatorBuilder: (_, __) => SizedBox(width: r.wp(12)),
+                itemBuilder: (context, index) {
+                  final isSelected = _selectedAvatarIndex == index;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedAvatarIndex = index);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.all(r.wp(3)),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : Colors.transparent,
+                          width: 2.5,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: colorScheme.primary.withOpacity(0.25),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: CircleAvatar(
+                        radius: r.wp(36),
+                        backgroundColor: colorScheme.tertiary.withOpacity(0.3),
+                        backgroundImage: AssetImage(_avatars[index]),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            SizedBox(height: r.hp(28)),
             TextFormField(
               controller: _nameController,
               style: TextStyle(fontSize: r.sp(15)),
@@ -231,8 +276,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
         age: age,
         dailyTimeLimit: _dailyTimeLimit * 60, // Convert minutes to seconds
         isLocked: isEditing ? widget.child!.isLocked : false,
-        // Preserve existing values if editing, or defaults
-        avatar: isEditing ? widget.child!.avatar : null,
+        avatar: _avatars[_selectedAvatarIndex],
         screenTime: isEditing ? widget.child!.screenTime : 0,
         limitUsedTime: isEditing ? widget.child!.limitUsedTime : 0,
         isOnline: isEditing ? widget.child!.isOnline : false,
@@ -252,9 +296,7 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           .doc(user.uid)
           .collection('children')
           .doc(childId)
-          .set(
-            childToSave.toMap(),
-          ); // set with merge usually better effectively but toMap returns full object so set is fine
+          .set(childToSave.toMap());
 
       // Send Notification only on create
       if (!isEditing) {
@@ -272,7 +314,6 @@ class _ChildSetupScreenState extends State<ChildSetupScreen> {
           ),
         );
       } else {
-        // Notification for profile update? Maybe effectively
         await NotificationService().addNotification(
           user.uid,
           NotificationModel(

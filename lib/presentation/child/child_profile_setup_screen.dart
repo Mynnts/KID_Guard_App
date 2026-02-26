@@ -24,16 +24,12 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
   final List<String> _avatars = [
     'assets/avatars/boy_1.png',
     'assets/avatars/girl_2.png',
+    'assets/avatars/boy_3.png',
+    'assets/avatars/boy_4.png',
+    'assets/avatars/girl_5.png',
+    'assets/avatars/girl_6.png',
+    'assets/avatars/girl_7.png',
   ];
-
-  // Minimal Premium Colors
-  static const _accentColor = Color(0xFFE67E22);
-  static const _bgColor = Color(0xFFFAFAFC);
-  static const _textPrimary = Color(0xFF1A1A2E);
-  static const _textSecondary = Color(0xFF6B7280);
-  static const _textMuted = Color(0xFF9CA3AF);
-  static const _borderColor = Color(0xFFE5E5EA);
-  static const _inputBg = Color(0xFFF5F5F7);
 
   @override
   void initState() {
@@ -60,8 +56,10 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
   @override
   Widget build(BuildContext context) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -78,7 +76,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                   style: TextStyle(
                     fontSize: r.sp(28),
                     fontWeight: FontWeight.w700,
-                    color: _textPrimary,
+                    color: colorScheme.onBackground,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -87,7 +85,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                   'เลือก avatar และกรอกข้อมูลของน้อง',
                   style: TextStyle(
                     fontSize: r.sp(14),
-                    color: _textSecondary,
+                    color: colorScheme.onBackground.withOpacity(0.5),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -100,7 +98,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                       shrinkWrap: true,
                       itemCount: _avatars.length,
                       separatorBuilder: (context, index) =>
-                          SizedBox(width: r.wp(20)),
+                          SizedBox(width: r.wp(16)),
                       itemBuilder: (context, index) {
                         final isSelected = _selectedAvatar == index;
                         return GestureDetector(
@@ -116,14 +114,16 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
-                                    ? _accentColor
+                                    ? colorScheme.primary
                                     : Colors.transparent,
                                 width: 2.5,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: _accentColor.withOpacity(0.2),
+                                        color: colorScheme.primary.withOpacity(
+                                          0.25,
+                                        ),
                                         blurRadius: 16,
                                         offset: const Offset(0, 6),
                                       ),
@@ -131,8 +131,10 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
                                   : null,
                             ),
                             child: CircleAvatar(
-                              radius: r.wp(46),
-                              backgroundColor: const Color(0xFFF5F5F7),
+                              radius: r.wp(40),
+                              backgroundColor: colorScheme.tertiary.withOpacity(
+                                0.3,
+                              ),
                               backgroundImage: AssetImage(_avatars[index]),
                             ),
                           ),
@@ -167,15 +169,19 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
 
   Widget _buildBackButton() {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Container(
         width: r.wp(44),
         height: r.wp(44),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(r.radius(14)),
-          border: Border.all(color: _borderColor, width: 1),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.12),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -186,7 +192,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
         ),
         child: Icon(
           Icons.arrow_back_ios_rounded,
-          color: _textPrimary,
+          color: colorScheme.onBackground,
           size: r.iconSize(16),
         ),
       ),
@@ -200,43 +206,51 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
     TextInputType keyboardType = TextInputType.text,
   }) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       style: TextStyle(
         fontSize: r.sp(15),
         fontWeight: FontWeight.w500,
-        color: _textPrimary,
+        color: colorScheme.onBackground,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color: _textSecondary,
+          color: colorScheme.onBackground.withOpacity(0.5),
           fontWeight: FontWeight.w400,
           fontSize: r.sp(14),
         ),
-        floatingLabelStyle: const TextStyle(
-          color: _accentColor,
+        floatingLabelStyle: TextStyle(
+          color: colorScheme.primary,
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: r.wp(16), right: r.wp(12)),
-          child: Icon(icon, color: _textMuted, size: r.iconSize(20)),
+          child: Icon(
+            icon,
+            color: colorScheme.onBackground.withOpacity(0.35),
+            size: r.iconSize(20),
+          ),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0),
         filled: true,
-        fillColor: _inputBg,
+        fillColor: colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(r.radius(16)),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(r.radius(16)),
-          borderSide: const BorderSide(color: _borderColor, width: 1),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withOpacity(0.12),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(r.radius(16)),
-          borderSide: const BorderSide(color: _accentColor, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: r.wp(16),
@@ -248,6 +262,7 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
 
   Widget _buildSubmitButton() {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () async {
         final name = _nameController.text.trim();
@@ -266,11 +281,13 @@ class _ChildProfileSetupScreenState extends State<ChildProfileSetupScreen>
         width: double.infinity,
         height: r.hp(56),
         decoration: BoxDecoration(
-          color: _accentColor,
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, colorScheme.secondary],
+          ),
           borderRadius: BorderRadius.circular(r.radius(16)),
           boxShadow: [
             BoxShadow(
-              color: _accentColor.withOpacity(0.25),
+              color: colorScheme.primary.withOpacity(0.3),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),

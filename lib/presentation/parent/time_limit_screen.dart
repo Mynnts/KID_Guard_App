@@ -16,31 +16,39 @@ class TimeLimitScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userModel;
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: colorScheme.background,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.primary),
+        ),
+      );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: colorScheme.background,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: r.hp(100),
             floating: true,
             pinned: true,
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: colorScheme.background,
             leading: IconButton(
               icon: Container(
                 padding: EdgeInsets.all(r.wp(8)),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(r.radius(12)),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.12),
+                  ),
                 ),
                 child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: Colors.grey.shade700,
+                  color: colorScheme.onBackground,
                   size: r.iconSize(18),
                 ),
               ),
@@ -51,7 +59,7 @@ class TimeLimitScreen extends StatelessWidget {
               title: Text(
                 'Time Limits',
                 style: TextStyle(
-                  color: const Color(0xFF1F2937),
+                  color: colorScheme.onBackground,
                   fontWeight: FontWeight.w700,
                   fontSize: r.sp(22),
                   letterSpacing: -0.5,
@@ -59,6 +67,8 @@ class TimeLimitScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          // Header info card
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -68,34 +78,37 @@ class TimeLimitScreen extends StatelessWidget {
                 r.hp(24),
               ),
               child: Container(
-                padding: EdgeInsets.all(r.wp(16)),
+                padding: EdgeInsets.all(r.wp(18)),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF6B9080).withOpacity(0.1),
-                      const Color(0xFF84A98C).withOpacity(0.05),
-                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [colorScheme.primary, colorScheme.secondary],
                   ),
-                  borderRadius: BorderRadius.circular(r.radius(16)),
-                  border: Border.all(
-                    color: const Color(0xFF6B9080).withOpacity(0.2),
-                  ),
+                  borderRadius: BorderRadius.circular(r.radius(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(r.wp(10)),
+                      padding: EdgeInsets.all(r.wp(12)),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6B9080).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(r.radius(12)),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(r.radius(14)),
                       ),
                       child: Icon(
                         Icons.timer_outlined,
-                        color: const Color(0xFF6B9080),
-                        size: r.iconSize(22),
+                        color: Colors.white,
+                        size: r.iconSize(24),
                       ),
                     ),
-                    SizedBox(width: r.wp(14)),
+                    SizedBox(width: r.wp(16)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,17 +116,17 @@ class TimeLimitScreen extends StatelessWidget {
                           Text(
                             'Daily Screen Time',
                             style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: r.sp(15),
-                              color: const Color(0xFF1F2937),
+                              fontWeight: FontWeight.w700,
+                              fontSize: r.sp(16),
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: r.hp(2)),
+                          SizedBox(height: r.hp(4)),
                           Text(
-                            'Tap on a child to set their daily limit',
+                            'แตะที่เด็กเพื่อตั้งค่าเวลาจำกัดรายวัน',
                             style: TextStyle(
                               fontSize: r.sp(13),
-                              color: Colors.grey.shade600,
+                              color: Colors.white.withOpacity(0.85),
                             ),
                           ),
                         ],
@@ -134,8 +147,12 @@ class TimeLimitScreen extends StatelessWidget {
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                return SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
+                    ),
+                  ),
                 );
               }
 
@@ -149,20 +166,20 @@ class TimeLimitScreen extends StatelessWidget {
                         Container(
                           padding: EdgeInsets.all(r.wp(24)),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: colorScheme.tertiary.withOpacity(0.3),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.child_care_rounded,
                             size: r.iconSize(48),
-                            color: Colors.grey.shade400,
+                            color: colorScheme.primary,
                           ),
                         ),
                         SizedBox(height: r.hp(20)),
                         Text(
-                          'No children added yet',
+                          'ยังไม่ได้เพิ่มเด็ก',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onBackground.withOpacity(0.5),
                             fontSize: r.sp(16),
                             fontWeight: FontWeight.w500,
                           ),
@@ -258,173 +275,141 @@ class _ChildListItemState extends State<_ChildListItem> {
   @override
   Widget build(BuildContext context) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final totalUsage = widget.child.screenTime;
     final limitUsed = widget.child.limitUsedTime;
     final limit = widget.child.dailyTimeLimit;
     final progress = limit > 0 ? (limitUsed / limit).clamp(0.0, 1.0) : 0.0;
     final progressColor = limit > 0
         ? _getProgressColor(limitUsed / limit)
-        : const Color(0xFF3B82F6);
+        : colorScheme.primary;
 
     return Container(
       margin: EdgeInsets.only(bottom: r.hp(14)),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(r.radius(20)),
-        border: Border.all(color: Colors.grey.shade100),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(r.radius(22)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: () => _showTimePicker(context),
-            child: Padding(
-              padding: EdgeInsets.all(r.wp(16)),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(r.wp(2)),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+          // Main content - tappable area
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(r.radius(22)),
+                bottom: limit > 0 ? Radius.zero : Radius.circular(r.radius(22)),
+              ),
+              onTap: () => _showTimePicker(context),
+              child: Padding(
+                padding: EdgeInsets.all(r.wp(18)),
+                child: Row(
+                  children: [
+                    // Avatar with progress ring
+                    _buildAvatarWithProgress(
+                      r,
+                      colorScheme,
+                      progress,
+                      progressColor,
+                      limit,
+                    ),
+                    SizedBox(width: r.wp(16)),
+
+                    // Child info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.child.name,
+                            style: TextStyle(
+                              fontSize: r.sp(17),
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: r.hp(8)),
+
+                          // Usage stat
+                          _buildStatRow(
+                            r,
+                            icon: Icons.bar_chart_rounded,
+                            label: 'ใช้งานวันนี้',
+                            value: _formatDuration(totalUsage),
+                            valueColor: colorScheme.primary,
+                            iconColor: colorScheme.primary.withOpacity(0.6),
+                          ),
+                          SizedBox(height: r.hp(4)),
+
+                          // Limit stat
+                          if (limit > 0)
+                            _buildStatRow(
+                              r,
+                              icon: Icons.timer_outlined,
+                              label: 'Limit',
+                              value:
+                                  '${_formatDuration(limitUsed)} / ${_formatLimit(limit)}',
+                              valueColor: progressColor,
+                              iconColor: progressColor.withOpacity(0.7),
+                            )
+                          else
+                            _buildStatRow(
+                              r,
+                              icon: Icons.all_inclusive_rounded,
+                              label: 'ไม่ได้จำกัดเวลา',
+                              value: '',
+                              valueColor: colorScheme.onSurface.withOpacity(
+                                0.3,
+                              ),
+                              iconColor: colorScheme.onSurface.withOpacity(0.3),
+                            ),
+                        ],
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: r.wp(24),
-                      backgroundColor: Colors.white,
-                      backgroundImage: widget.child.avatar != null
-                          ? AssetImage(widget.child.avatar!)
-                          : null,
-                      child: widget.child.avatar == null
-                          ? Text(
-                              widget.child.name[0].toUpperCase(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: r.sp(18),
-                                color: const Color(0xFF6B9080),
-                              ),
-                            )
-                          : null,
+
+                    // Edit icon
+                    Container(
+                      padding: EdgeInsets.all(r.wp(10)),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(r.radius(12)),
+                      ),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: colorScheme.primary,
+                        size: r.iconSize(18),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: r.wp(14)),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.child.name,
-                          style: TextStyle(
-                            fontSize: r.sp(16),
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1F2937),
-                          ),
-                        ),
-                        SizedBox(height: r.hp(8)),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.bar_chart_rounded,
-                              size: r.iconSize(14),
-                              color: Colors.grey.shade500,
-                            ),
-                            SizedBox(width: r.wp(4)),
-                            Text(
-                              'ใช้งานวันนี้: ',
-                              style: TextStyle(
-                                fontSize: r.sp(12),
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                            Text(
-                              _formatDuration(totalUsage),
-                              style: TextStyle(
-                                fontSize: r.sp(12),
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF3B82F6),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: r.hp(4)),
-                        if (limit > 0)
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.timer_outlined,
-                                size: r.iconSize(14),
-                                color: progressColor,
-                              ),
-                              SizedBox(width: r.wp(4)),
-                              Text(
-                                'Limit: ',
-                                style: TextStyle(
-                                  fontSize: r.sp(12),
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                              Text(
-                                '${_formatDuration(limitUsed)} / ${_formatLimit(limit)}',
-                                style: TextStyle(
-                                  fontSize: r.sp(12),
-                                  fontWeight: FontWeight.w600,
-                                  color: progressColor,
-                                ),
-                              ),
-                            ],
-                          )
-                        else
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.all_inclusive_rounded,
-                                size: r.iconSize(14),
-                                color: Colors.grey.shade400,
-                              ),
-                              SizedBox(width: r.wp(4)),
-                              Text(
-                                'ไม่ได้จำกัดเวลา',
-                                style: TextStyle(
-                                  fontSize: r.sp(12),
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(r.wp(10)),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(r.radius(12)),
-                    ),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      color: Colors.grey.shade500,
-                      size: r.iconSize(18),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+
+          // Progress bar (only when limit is set)
           if (limit > 0)
             Padding(
-              padding: EdgeInsets.fromLTRB(r.wp(16), 0, r.wp(16), r.hp(12)),
+              padding: EdgeInsets.fromLTRB(r.wp(18), 0, r.wp(18), r.hp(12)),
               child: Column(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(r.radius(4)),
+                    borderRadius: BorderRadius.circular(r.radius(6)),
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: r.hp(6),
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: colorScheme.outline.withOpacity(0.1),
                       valueColor: AlwaysStoppedAnimation(progressColor),
                     ),
                   ),
-                  SizedBox(height: r.hp(6)),
+                  SizedBox(height: r.hp(8)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -432,15 +417,25 @@ class _ChildListItemState extends State<_ChildListItem> {
                         '${(progress * 100).toInt()}% ใช้ไปแล้ว',
                         style: TextStyle(
                           fontSize: r.sp(11),
-                          color: Colors.grey.shade500,
+                          color: colorScheme.onSurface.withOpacity(0.45),
                         ),
                       ),
-                      Text(
-                        'เหลือ ${_formatDuration(limit - limitUsed > 0 ? limit - limitUsed : 0)}',
-                        style: TextStyle(
-                          fontSize: r.sp(11),
-                          fontWeight: FontWeight.w500,
-                          color: progressColor,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: r.wp(8),
+                          vertical: r.hp(2),
+                        ),
+                        decoration: BoxDecoration(
+                          color: progressColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(r.radius(6)),
+                        ),
+                        child: Text(
+                          'เหลือ ${_formatDuration(limit - limitUsed > 0 ? limit - limitUsed : 0)}',
+                          style: TextStyle(
+                            fontSize: r.sp(11),
+                            fontWeight: FontWeight.w600,
+                            color: progressColor,
+                          ),
                         ),
                       ),
                     ],
@@ -448,49 +443,165 @@ class _ChildListItemState extends State<_ChildListItem> {
                 ],
               ),
             ),
-          Container(height: 1, color: Colors.grey.shade100),
+
+          // Divider
+          Container(height: 1, color: colorScheme.outline.withOpacity(0.08)),
+
+          // Reset button
           Padding(
             padding: EdgeInsets.symmetric(
               horizontal: r.wp(8),
-              vertical: r.hp(6),
+              vertical: r.hp(4),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showResetConfirmation(context),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: r.hp(10)),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(r.radius(10)),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(r.radius(10)),
+                onTap: () => _showResetConfirmation(context),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: r.hp(10)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.refresh_rounded,
+                        size: r.iconSize(16),
+                        color: colorScheme.primary,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.refresh_rounded,
-                            size: r.iconSize(16),
-                            color: Colors.blue.shade600,
-                          ),
-                          SizedBox(width: r.wp(6)),
-                          Text(
-                            'Reset เวลา Limit',
-                            style: TextStyle(
-                              fontSize: r.sp(13),
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue.shade600,
-                            ),
-                          ),
-                        ],
+                      SizedBox(width: r.wp(6)),
+                      Text(
+                        'Reset เวลา Limit',
+                        style: TextStyle(
+                          fontSize: r.sp(13),
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.primary,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarWithProgress(
+    ResponsiveHelper r,
+    ColorScheme colorScheme,
+    double progress,
+    Color progressColor,
+    int limit,
+  ) {
+    return SizedBox(
+      width: r.wp(56),
+      height: r.wp(56),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Progress ring background
+          if (limit > 0)
+            SizedBox(
+              width: r.wp(56),
+              height: r.wp(56),
+              child: CircularProgressIndicator(
+                value: 1.0,
+                strokeWidth: 3,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation(
+                  colorScheme.outline.withOpacity(0.1),
+                ),
+              ),
+            ),
+          // Progress ring
+          if (limit > 0)
+            SizedBox(
+              width: r.wp(56),
+              height: r.wp(56),
+              child: CircularProgressIndicator(
+                value: progress,
+                strokeWidth: 3,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation(progressColor),
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+          // Avatar
+          Container(
+            padding: EdgeInsets.all(r.wp(2)),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: limit > 0
+                  ? null
+                  : LinearGradient(
+                      colors: [colorScheme.primary, colorScheme.secondary],
+                    ),
+            ),
+            child: CircleAvatar(
+              radius: limit > 0 ? r.wp(22) : r.wp(24),
+              backgroundColor: Colors.white,
+              backgroundImage: widget.child.avatar != null
+                  ? AssetImage(widget.child.avatar!)
+                  : null,
+              child: widget.child.avatar == null
+                  ? Text(
+                      widget.child.name[0].toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: r.sp(18),
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(
+    ResponsiveHelper r, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color valueColor,
+    required Color iconColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: r.iconSize(14), color: iconColor),
+        SizedBox(width: r.wp(5)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: r.sp(12),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
+        if (value.isNotEmpty) ...[
+          Text(
+            ': ',
+            style: TextStyle(
+              fontSize: r.sp(12),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: r.sp(12),
+                fontWeight: FontWeight.w600,
+                color: valueColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -505,28 +616,35 @@ class _ChildListItemState extends State<_ChildListItem> {
   }
 
   void _showResetConfirmation(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 Icons.refresh_rounded,
-                color: Colors.blue.shade600,
+                color: colorScheme.primary,
                 size: 20,
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'Reset เวลา?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
             ),
           ],
         ),
@@ -534,7 +652,7 @@ class _ChildListItemState extends State<_ChildListItem> {
           'Reset เวลา Limit ของ ${widget.child.name} เป็น 0 ใช่หรือไม่?\n\nเวลาใช้งานทั้งหมด (สถิติ) จะยังคงเดิม',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade600,
+            color: colorScheme.onSurface.withOpacity(0.6),
             height: 1.5,
           ),
         ),
@@ -543,7 +661,7 @@ class _ChildListItemState extends State<_ChildListItem> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'ยกเลิก',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
             ),
           ),
           ElevatedButton(
@@ -552,10 +670,10 @@ class _ChildListItemState extends State<_ChildListItem> {
               _resetScreenTime();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade600,
+              backgroundColor: colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text('Reset'),
@@ -646,9 +764,11 @@ class _TimePickerModalState extends State<_TimePickerModal> {
   @override
   Widget build(BuildContext context) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(r.radius(28))),
       ),
       child: Column(
@@ -659,7 +779,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
             width: r.wp(40),
             height: r.hp(4),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: colorScheme.outline.withOpacity(0.2),
               borderRadius: BorderRadius.circular(r.radius(2)),
             ),
           ),
@@ -669,23 +789,28 @@ class _TimePickerModalState extends State<_TimePickerModal> {
               children: [
                 Container(
                   padding: EdgeInsets.all(r.wp(2)),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+                      colors: [colorScheme.primary, colorScheme.secondary],
                     ),
                   ),
                   child: CircleAvatar(
                     radius: r.wp(22),
                     backgroundColor: Colors.white,
-                    child: Text(
-                      widget.child.name[0].toUpperCase(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: r.sp(18),
-                        color: const Color(0xFF6B9080),
-                      ),
-                    ),
+                    backgroundImage: widget.child.avatar != null
+                        ? AssetImage(widget.child.avatar!)
+                        : null,
+                    child: widget.child.avatar == null
+                        ? Text(
+                            widget.child.name[0].toUpperCase(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: r.sp(18),
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
                 SizedBox(width: r.wp(14)),
@@ -697,15 +822,15 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       style: TextStyle(
                         fontSize: r.sp(18),
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1F2937),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(height: r.hp(2)),
                     Text(
-                      'Set daily time limit',
+                      'ตั้งค่าเวลาจำกัดรายวัน',
                       style: TextStyle(
                         fontSize: r.sp(14),
-                        color: Colors.grey.shade500,
+                        color: colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -715,11 +840,13 @@ class _TimePickerModalState extends State<_TimePickerModal> {
           ),
           _buildWHOGuidelinesCard(),
           SizedBox(height: r.hp(16)),
+
+          // Time Picker
           Container(
             height: r.hp(200),
             margin: EdgeInsets.symmetric(horizontal: r.wp(24)),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: colorScheme.background,
               borderRadius: BorderRadius.circular(r.radius(20)),
             ),
             child: Stack(
@@ -729,14 +856,14 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     height: r.hp(48),
                     margin: EdgeInsets.symmetric(horizontal: r.wp(20)),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(r.radius(14)),
                       border: Border.all(
-                        color: const Color(0xFF6B9080).withOpacity(0.2),
+                        color: colorScheme.primary.withOpacity(0.2),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6B9080).withOpacity(0.08),
+                          color: colorScheme.primary.withOpacity(0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -764,7 +891,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                               style: TextStyle(
                                 fontSize: r.sp(32),
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1F2937),
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           );
@@ -774,7 +901,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     Text(
                       'hr',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: colorScheme.onSurface.withOpacity(0.4),
                         fontSize: r.sp(18),
                         fontWeight: FontWeight.w500,
                       ),
@@ -796,7 +923,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                               style: TextStyle(
                                 fontSize: r.sp(32),
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1F2937),
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           );
@@ -806,7 +933,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     Text(
                       'min',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: colorScheme.onSurface.withOpacity(0.4),
                         fontSize: r.sp(18),
                         fontWeight: FontWeight.w500,
                       ),
@@ -818,6 +945,8 @@ class _TimePickerModalState extends State<_TimePickerModal> {
             ),
           ),
           SizedBox(height: r.hp(20)),
+
+          // Preset chips
           Padding(
             padding: EdgeInsets.symmetric(horizontal: r.wp(24)),
             child: Row(
@@ -833,6 +962,8 @@ class _TimePickerModalState extends State<_TimePickerModal> {
             ),
           ),
           SizedBox(height: r.hp(24)),
+
+          // Action buttons
           Padding(
             padding: EdgeInsets.fromLTRB(r.wp(24), 0, r.wp(24), r.hp(24)),
             child: Row(
@@ -843,17 +974,19 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: r.hp(16)),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: colorScheme.background,
                         borderRadius: BorderRadius.circular(r.radius(14)),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.15),
+                        ),
                       ),
                       child: Center(
                         child: Text(
-                          'Cancel',
+                          'ยกเลิก',
                           style: TextStyle(
                             fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ),
@@ -868,13 +1001,13 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: r.hp(16)),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+                        gradient: LinearGradient(
+                          colors: [colorScheme.primary, colorScheme.secondary],
                         ),
                         borderRadius: BorderRadius.circular(r.radius(14)),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6B9080).withOpacity(0.3),
+                            color: colorScheme.primary.withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -882,7 +1015,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       ),
                       child: Center(
                         child: Text(
-                          'Save Limit',
+                          'บันทึก',
                           style: TextStyle(
                             fontSize: r.sp(16),
                             fontWeight: FontWeight.w600,
@@ -905,6 +1038,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
   Widget _buildPresetChip(String label, int hours, int minutes) {
     final isSelected = _selectedHours == hours && _selectedMinutes == minutes;
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Expanded(
       child: GestureDetector(
@@ -929,15 +1063,26 @@ class _TimePickerModalState extends State<_TimePickerModal> {
           padding: EdgeInsets.symmetric(vertical: r.hp(12)),
           decoration: BoxDecoration(
             gradient: isSelected
-                ? const LinearGradient(
-                    colors: [Color(0xFF6B9080), Color(0xFF84A98C)],
+                ? LinearGradient(
+                    colors: [colorScheme.primary, colorScheme.secondary],
                   )
                 : null,
-            color: isSelected ? null : const Color(0xFFF8FAFC),
+            color: isSelected ? null : colorScheme.background,
             borderRadius: BorderRadius.circular(r.radius(12)),
             border: Border.all(
-              color: isSelected ? Colors.transparent : Colors.grey.shade200,
+              color: isSelected
+                  ? Colors.transparent
+                  : colorScheme.outline.withOpacity(0.12),
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           child: Center(
             child: Text(
@@ -945,7 +1090,9 @@ class _TimePickerModalState extends State<_TimePickerModal> {
               style: TextStyle(
                 fontSize: r.sp(14),
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey.shade700,
+                color: isSelected
+                    ? Colors.white
+                    : colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
@@ -963,6 +1110,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
     final isExceeding =
         currentMinutes > 0 &&
         WHOGuidelines.isExceedingRecommendation(age, currentMinutes);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1020,13 +1168,12 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                         'สำหรับเด็กอายุ ${recommendation.ageGroup}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey.shade600,
+                          color: colorScheme.onSurface.withOpacity(0.5),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // WHO Badge
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -1071,10 +1218,10 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                       children: [
                         Text(
                           recommendation.recommendation,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1F2937),
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -1082,7 +1229,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                           recommendation.details,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                       ],
@@ -1155,7 +1302,7 @@ class _TimePickerModalState extends State<_TimePickerModal> {
                 Text(
                   _totalSeconds == 0
                       ? '${widget.child.name} set to unlimited'
-                      : '${widget.child.name}\'s limit saved',
+                      : 'บันทึกเวลาของ ${widget.child.name} แล้ว',
                 ),
               ],
             ),

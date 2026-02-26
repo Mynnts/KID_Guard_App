@@ -57,6 +57,11 @@ flutter:
   assets:
     - assets/avatars/boy_1.png
     - assets/avatars/girl_2.png
+    - assets/avatars/boy_3.png
+    - assets/avatars/boy_4.png
+    - assets/avatars/girl_5.png
+    - assets/avatars/girl_6.png
+    - assets/avatars/girl_7.png
 
   fonts:
     - family: Itim-Regular
