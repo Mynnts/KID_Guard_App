@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kidguard/data/models/child_model.dart';
 
-/// Shows the instant pause bottom sheet with duration options
+/// Shows the instant pause bottom sheet for a single selected child
 void showInstantPauseSheet(
   BuildContext context, {
   required String parentUid,
-  required List<ChildModel> children,
+  required ChildModel child,
 }) {
   showModalBottomSheet(
     context: context,
@@ -48,7 +48,7 @@ void showInstantPauseSheet(
           ),
           const SizedBox(height: 8),
           Text(
-            'หยุดอุปกรณ์ทั้งหมดทันที',
+            'หยุดอุปกรณ์ของ ${child.name}',
             style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
           const SizedBox(height: 24),
@@ -58,7 +58,7 @@ void showInstantPauseSheet(
                 ctx: ctx,
                 parentContext: context,
                 parentUid: parentUid,
-                children: children,
+                child: child,
                 minutes: 5,
               ),
               const SizedBox(width: 12),
@@ -66,7 +66,7 @@ void showInstantPauseSheet(
                 ctx: ctx,
                 parentContext: context,
                 parentUid: parentUid,
-                children: children,
+                child: child,
                 minutes: 10,
               ),
             ],
@@ -78,7 +78,7 @@ void showInstantPauseSheet(
                 ctx: ctx,
                 parentContext: context,
                 parentUid: parentUid,
-                children: children,
+                child: child,
                 minutes: 15,
               ),
               const SizedBox(width: 12),
@@ -86,7 +86,7 @@ void showInstantPauseSheet(
                 ctx: ctx,
                 parentContext: context,
                 parentUid: parentUid,
-                children: children,
+                child: child,
                 minutes: 30,
               ),
             ],
@@ -102,14 +102,14 @@ class _PauseOption extends StatelessWidget {
   final BuildContext ctx;
   final BuildContext parentContext;
   final String parentUid;
-  final List<ChildModel> children;
+  final ChildModel child;
   final int minutes;
 
   const _PauseOption({
     required this.ctx,
     required this.parentContext,
     required this.parentUid,
-    required this.children,
+    required this.child,
     required this.minutes,
   });
 
@@ -119,17 +119,15 @@ class _PauseOption extends StatelessWidget {
       child: GestureDetector(
         onTap: () async {
           final pauseUntil = DateTime.now().add(Duration(minutes: minutes));
-          for (var child in children) {
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(parentUid)
-                .collection('children')
-                .doc(child.id)
-                .update({
-                  'pauseUntil': pauseUntil.toIso8601String(),
-                  'isLocked': true,
-                });
-          }
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(parentUid)
+              .collection('children')
+              .doc(child.id)
+              .update({
+                'pauseUntil': pauseUntil.toIso8601String(),
+                'isLocked': true,
+              });
           Navigator.pop(ctx);
           ScaffoldMessenger.of(parentContext).showSnackBar(
             SnackBar(
@@ -137,7 +135,11 @@ class _PauseOption extends StatelessWidget {
                 children: [
                   const Icon(Icons.pause_circle_filled, color: Colors.white),
                   const SizedBox(width: 12),
-                  Text('หยุดอุปกรณ์แล้ว $minutes นาที'),
+                  Expanded(
+                    child: Text(
+                      'หยุดอุปกรณ์ของ ${child.name} แล้ว $minutes นาที',
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: const Color(0xFFEF4444),

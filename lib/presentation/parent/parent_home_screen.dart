@@ -369,17 +369,18 @@ class _ParentHomeScreenState extends State<ParentHomeScreen>
           MaterialPageRoute(builder: (_) => const ScheduleScreen()),
         ),
       ),
-      QuickAction(
-        icon: Icons.pause_circle_rounded,
-        label: 'Instant Pause',
-        subtitle: 'Now',
-        color: const Color(0xFFEF4444),
-        onTap: () => showInstantPauseSheet(
-          context,
-          parentUid: parentUid,
-          children: children,
+      if (selectedChild != null)
+        QuickAction(
+          icon: Icons.pause_circle_rounded,
+          label: 'Instant Pause',
+          subtitle: selectedChild.name,
+          color: const Color(0xFFEF4444),
+          onTap: () => showInstantPauseSheet(
+            context,
+            parentUid: parentUid,
+            child: selectedChild,
+          ),
         ),
-      ),
       if (selectedChild != null)
         QuickAction(
           icon: Icons.emoji_events_rounded,

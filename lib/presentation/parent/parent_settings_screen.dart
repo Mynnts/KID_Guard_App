@@ -97,17 +97,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                         AppRoutes.settingsNotifications,
                       ),
                     ),
-                    _SettingItem(
-                      icon: Icons.palette_outlined,
-                      title: AppLocalizations.of(context)!.appearance,
-                      subtitle: AppLocalizations.of(
-                        context,
-                      )!.appearanceSubtitle,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.settingsAppearance,
-                      ),
-                    ),
+
                     _SettingItem(
                       icon: Icons.language_outlined,
                       title: AppLocalizations.of(context)!.language,

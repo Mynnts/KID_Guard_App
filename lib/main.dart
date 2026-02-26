@@ -5,13 +5,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:kidguard/l10n/app_localizations.dart' show AppLocalizations;
 import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
+
 import 'config/routes.dart';
 import 'logic/providers/auth_provider.dart';
 import 'logic/providers/rewards_provider.dart';
 import 'logic/providers/schedule_provider.dart';
 import 'logic/providers/time_limit_provider.dart';
 import 'logic/providers/onboarding_provider.dart';
-import 'logic/providers/theme_provider.dart';
+
 import 'logic/providers/locale_provider.dart';
 import 'data/services/security_service.dart';
 import 'core/utils/security_logger.dart';
@@ -41,7 +42,7 @@ void main() async {
 // ==================== Widget หลัก ====================
 /// MyApp - Widget หลักที่ครอบทั้งแอพ
 /// - ตรวจสอบความปลอดภัยของเครื่องเมื่อเริ่มแอพ
-/// - ตั้งค่า Providers (Auth, Theme, Locale)
+/// - ตั้งค่า Providers (Auth, Locale)
 /// - ตั้งค่า routes และ themes
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -105,7 +106,6 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       // ==================== Providers ====================
       // AuthProvider - จัดการ login, user data, children data
-      // ThemeProvider - จัดการ light/dark mode
       // LocaleProvider - จัดการภาษา (ไทย/อังกฤษ)
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
@@ -113,16 +113,14 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => TimeLimitProvider()),
         ChangeNotifierProvider(create: (_) => OnboardingProvider()..init()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
-      child: Consumer2<ThemeProvider, LocaleProvider>(
-        builder: (context, themeProvider, localeProvider, child) {
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, child) {
           return MaterialApp(
             title: 'Kid Guard (BETA)',
             theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
             locale: localeProvider.locale,
             supportedLocales: const [Locale('th'), Locale('en')],
             localizationsDelegates: const [

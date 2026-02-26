@@ -14,7 +14,6 @@ import '../presentation/parent/apps/parent_app_control_screen.dart';
 import '../presentation/parent/account_profile_screen.dart';
 // Settings Screens
 import '../presentation/parent/settings/notifications_settings_screen.dart';
-import '../presentation/parent/settings/appearance_settings_screen.dart';
 import '../presentation/parent/settings/language_settings_screen.dart';
 import '../presentation/parent/settings/help_center_screen.dart';
 import '../presentation/parent/settings/feedback_screen.dart';
@@ -36,7 +35,6 @@ class AppRoutes {
   static const String parentAccountProfile = '/parent/account-profile';
   // Settings Routes
   static const String settingsNotifications = '/settings/notifications';
-  static const String settingsAppearance = '/settings/appearance';
   static const String settingsLanguage = '/settings/language';
   static const String settingsHelpCenter = '/settings/help-center';
   static const String settingsFeedback = '/settings/feedback';
@@ -60,7 +58,7 @@ class AppRoutes {
       parentAccountProfile: (context) => const AccountProfileScreen(),
       // Settings Routes
       settingsNotifications: (context) => const NotificationsSettingsScreen(),
-      settingsAppearance: (context) => const AppearanceSettingsScreen(),
+
       settingsLanguage: (context) => const LanguageSettingsScreen(),
       settingsHelpCenter: (context) => const HelpCenterScreen(),
       settingsFeedback: (context) => const FeedbackScreen(),
