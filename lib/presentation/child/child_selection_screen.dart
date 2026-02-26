@@ -19,19 +19,6 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
   late Animation<double> _fadeAnimation;
   int? _selectedIndex;
 
-  // Minimal Premium Colors
-  static const _accentColor = Color(0xFFE67E22);
-  static const _accentGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-  );
-  static const _bgColor = Color(0xFFFAFAFC);
-  static const _cardBg = Colors.white;
-  static const _textPrimary = Color(0xFF1A1A2E);
-  static const _textSecondary = Color(0xFF6B7280);
-  static const _borderColor = Color(0xFFE5E5EA);
-
   @override
   void initState() {
     super.initState();
@@ -56,9 +43,10 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
     final authProvider = Provider.of<AuthProvider>(context);
     final children = authProvider.children;
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -76,15 +64,23 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // App icon with gradient
                       Container(
                         width: r.wp(56),
                         height: r.wp(56),
                         decoration: BoxDecoration(
-                          gradient: _accentGradient,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colorScheme.primary,
+                              colorScheme.secondary,
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(r.radius(16)),
                           boxShadow: [
                             BoxShadow(
-                              color: _accentColor.withOpacity(0.3),
+                              color: colorScheme.primary.withOpacity(0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -97,19 +93,24 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                         ),
                       ),
                       SizedBox(height: r.hp(24)),
+
+                      // Title section
                       Text(
                         'ใครกำลังใช้งาน',
                         style: TextStyle(
                           fontSize: r.sp(15),
                           fontWeight: FontWeight.w500,
-                          color: _textSecondary,
+                          color: colorScheme.onBackground.withOpacity(0.5),
                           letterSpacing: 0.3,
                         ),
                       ),
                       SizedBox(height: r.hp(6)),
                       ShaderMask(
-                        shaderCallback: (bounds) =>
-                            _accentGradient.createShader(bounds),
+                        shaderCallback: (bounds) => LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [colorScheme.primary, colorScheme.secondary],
+                        ).createShader(bounds),
                         child: Text(
                           'เครื่องนี้?',
                           style: TextStyle(
@@ -126,7 +127,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                         'เลือกโปรไฟล์เพื่อเริ่มใช้งาน',
                         style: TextStyle(
                           fontSize: r.sp(14),
-                          color: _textSecondary.withOpacity(0.8),
+                          color: colorScheme.onBackground.withOpacity(0.45),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -134,6 +135,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   ),
                 ),
               ),
+
+              // Children grid
               SliverPadding(
                 padding: EdgeInsets.symmetric(
                   horizontal: r.wp(24),
@@ -165,6 +168,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
   Widget _buildChildCard(BuildContext context, ChildModel child, int index) {
     final isSelected = _selectedIndex == index;
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -185,18 +189,18 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
           transform: Matrix4.identity()..scale(isSelected ? 0.95 : 1.0),
           child: Container(
             decoration: BoxDecoration(
-              color: _cardBg,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(r.radius(28)),
               border: Border.all(
                 color: isSelected
-                    ? _accentColor.withOpacity(0.3)
-                    : const Color(0xFFF0F0F5),
+                    ? colorScheme.primary.withOpacity(0.4)
+                    : colorScheme.outline.withOpacity(0.12),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? _accentColor.withOpacity(0.15)
+                      ? colorScheme.primary.withOpacity(0.15)
                       : Colors.black.withOpacity(0.04),
                   blurRadius: isSelected ? 24 : 16,
                   offset: const Offset(0, 6),
@@ -222,6 +226,28 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                 },
                 child: Stack(
                   children: [
+                    // Subtle gradient overlay at top
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: r.hp(60),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(r.radius(27)),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              colorScheme.primary.withOpacity(0.04),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: EdgeInsets.all(r.wp(12)),
                       child: Center(
@@ -231,6 +257,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              // Avatar with theme-colored ring
                               Hero(
                                 tag: 'avatar_${child.id}',
                                 child: Container(
@@ -241,8 +268,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        _accentColor.withOpacity(0.4),
-                                        _accentColor.withOpacity(0.1),
+                                        colorScheme.primary.withOpacity(0.5),
+                                        colorScheme.tertiary.withOpacity(0.6),
                                       ],
                                     ),
                                   ),
@@ -254,7 +281,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                     ),
                                     child: CircleAvatar(
                                       radius: r.wp(32),
-                                      backgroundColor: const Color(0xFFF8F8FA),
+                                      backgroundColor: colorScheme.tertiary
+                                          .withOpacity(0.3),
                                       backgroundImage: child.avatar != null
                                           ? AssetImage(child.avatar!)
                                           : null,
@@ -262,7 +290,14 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                           ? Container(
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                gradient: _accentGradient,
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    colorScheme.primary,
+                                                    colorScheme.secondary,
+                                                  ],
+                                                ),
                                               ),
                                               child: Center(
                                                 child: Text(
@@ -284,12 +319,14 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                 ),
                               ),
                               SizedBox(height: r.hp(12)),
+
+                              // Name
                               Text(
                                 child.name,
                                 style: TextStyle(
                                   fontSize: r.sp(15),
                                   fontWeight: FontWeight.w600,
-                                  color: _textPrimary,
+                                  color: colorScheme.onSurface,
                                   letterSpacing: 0.2,
                                 ),
                                 textAlign: TextAlign.center,
@@ -297,13 +334,15 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                 overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(height: r.hp(6)),
+
+                              // Age badge with theme color
                               Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: r.wp(10),
+                                  horizontal: r.wp(12),
                                   vertical: r.hp(4),
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _accentColor.withOpacity(0.1),
+                                  color: colorScheme.primary.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(
                                     r.radius(10),
                                   ),
@@ -312,7 +351,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                                   '${child.age} ปี',
                                   style: TextStyle(
                                     fontSize: r.sp(11),
-                                    color: _accentColor,
+                                    color: colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -322,6 +361,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                         ),
                       ),
                     ),
+
+                    // Delete button
                     Positioned(
                       top: r.hp(8),
                       right: r.wp(8),
@@ -347,7 +388,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                               padding: EdgeInsets.all(r.wp(6)),
                               child: Icon(
                                 Icons.close_rounded,
-                                color: Colors.grey[400],
+                                color: colorScheme.onSurface.withOpacity(0.35),
                                 size: r.iconSize(14),
                               ),
                             ),
@@ -367,6 +408,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
 
   void _confirmDelete(BuildContext context, ChildModel child) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -395,7 +437,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                 'ลบโปรไฟล์?',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: _textPrimary,
+                  color: colorScheme.onSurface,
                   fontSize: r.sp(18),
                 ),
               ),
@@ -405,7 +447,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
         content: Text(
           'คุณแน่ใจหรือไม่ที่จะลบโปรไฟล์ของ ${child.name}? การกระทำนี้จะไม่สามารถย้อนกลับได้',
           style: TextStyle(
-            color: _textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.6),
             fontSize: r.sp(14),
             height: 1.5,
           ),
@@ -421,13 +463,15 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                     padding: EdgeInsets.symmetric(vertical: r.hp(14)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(r.radius(14)),
-                      side: BorderSide(color: _borderColor),
+                      side: BorderSide(
+                        color: colorScheme.outline.withOpacity(0.2),
+                      ),
                     ),
                   ),
                   child: Text(
                     'ยกเลิก',
                     style: TextStyle(
-                      color: _textSecondary,
+                      color: colorScheme.onSurface.withOpacity(0.6),
                       fontWeight: FontWeight.w600,
                       fontSize: r.sp(14),
                     ),
@@ -484,6 +528,8 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
 
   Widget _buildAddChildCard(BuildContext context, int index) {
     final r = ResponsiveHelper.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 400 + (index * 100)),
@@ -497,8 +543,11 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(r.radius(28)),
-          border: Border.all(color: _borderColor, width: 1.5),
-          color: Colors.white.withOpacity(0.5),
+          border: Border.all(
+            color: colorScheme.primary.withOpacity(0.15),
+            width: 1.5,
+          ),
+          color: colorScheme.primary.withOpacity(0.02),
         ),
         child: Material(
           color: Colors.transparent,
@@ -519,15 +568,15 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _accentColor.withOpacity(0.3),
+                      color: colorScheme.primary.withOpacity(0.25),
                       width: 2,
                     ),
-                    color: _accentColor.withOpacity(0.06),
+                    color: colorScheme.primary.withOpacity(0.06),
                   ),
                   child: Icon(
                     Icons.add_rounded,
                     size: r.iconSize(30),
-                    color: _accentColor,
+                    color: colorScheme.primary,
                   ),
                 ),
                 SizedBox(height: r.hp(14)),
@@ -535,7 +584,7 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                   'เพิ่มโปรไฟล์',
                   style: TextStyle(
                     fontSize: r.sp(14),
-                    color: _accentColor,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
