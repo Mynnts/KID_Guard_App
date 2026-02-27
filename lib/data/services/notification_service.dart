@@ -130,6 +130,16 @@ class NotificationService {
     await batch.commit();
   }
 
+  // Mark single notification as read
+  Future<void> markAsRead(String userId, String notificationId) async {
+    await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+  }
+
   // Cleanup: delete notifications older than 30 days
   Future<void> _cleanupOldNotifications(String userId) async {
     try {
