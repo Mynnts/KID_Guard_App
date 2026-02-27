@@ -12,9 +12,11 @@ class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   UserModel? _userModel;
   bool _isLoading = false;
+  String? _errorMessage;
 
   UserModel? get userModel => _userModel;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   // Initialize auth state
   List<ChildModel> _children = [];
@@ -88,14 +90,18 @@ class AuthProvider with ChangeNotifier {
   Future<bool> signIn(String email, String password) async {
     try {
       _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
       _userModel = await _authService.signIn(email, password);
       if (_userModel != null) {
         await fetchChildren();
       }
       return true;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = _mapAuthError(e.code);
+      return false;
     } catch (e) {
-      // Error signing in
+      _errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
       return false;
     } finally {
       _isLoading = false;
@@ -106,11 +112,15 @@ class AuthProvider with ChangeNotifier {
   Future<bool> register(String email, String password, String name) async {
     try {
       _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
       _userModel = await _authService.register(email, password, name);
       return true;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = _mapAuthError(e.code);
+      return false;
     } catch (e) {
-      // Error registering
+      _errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
       return false;
     } finally {
       _isLoading = false;
@@ -309,6 +319,32 @@ class AuthProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// แปลง Firebase error code เป็นข้อความภาษาไทยที่เข้าใจง่าย
+  String _mapAuthError(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'ไม่พบบัญชีที่ใช้อีเมลนี้';
+      case 'wrong-password':
+        return 'รหัสผ่านไม่ถูกต้อง';
+      case 'invalid-email':
+        return 'รูปแบบอีเมลไม่ถูกต้อง';
+      case 'user-disabled':
+        return 'บัญชีนี้ถูกระงับการใช้งาน';
+      case 'email-already-in-use':
+        return 'อีเมลนี้ถูกใช้งานแล้ว';
+      case 'weak-password':
+        return 'รหัสผ่านไม่แข็งแรงพอ กรุณาตั้งรหัสที่ซับซ้อนกว่านี้';
+      case 'too-many-requests':
+        return 'ลองผิดหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่';
+      case 'invalid-credential':
+        return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      case 'network-request-failed':
+        return 'ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้';
+      default:
+        return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
     }
   }
 }

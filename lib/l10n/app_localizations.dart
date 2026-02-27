@@ -787,6 +787,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thank you for your feedback!'**
   String get feedbackSentMessage;
+
+  /// No description provided for @customRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Rewards'**
+  String get customRewards;
+
+  /// No description provided for @addReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Reward'**
+  String get addReward;
+
+  /// No description provided for @editReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Reward'**
+  String get editReward;
+
+  /// No description provided for @deleteReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Reward'**
+  String get deleteReward;
+
+  /// No description provided for @rewardName.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward Name'**
+  String get rewardName;
+
+  /// No description provided for @rewardCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Points Required'**
+  String get rewardCost;
+
+  /// No description provided for @selectIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Icon'**
+  String get selectIcon;
+
+  /// No description provided for @rewardAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward added!'**
+  String get rewardAdded;
+
+  /// No description provided for @rewardUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward updated!'**
+  String get rewardUpdated;
+
+  /// No description provided for @rewardDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward deleted'**
+  String get rewardDeleted;
+
+  /// No description provided for @deleteRewardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this reward?'**
+  String get deleteRewardConfirm;
+
+  /// No description provided for @noRewardsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom rewards yet. Tap + to add one!'**
+  String get noRewardsYet;
+
+  /// No description provided for @enterRewardName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter reward name'**
+  String get enterRewardName;
+
+  /// No description provided for @enterValidCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter valid points'**
+  String get enterValidCost;
+
+  /// No description provided for @defaultRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Rewards'**
+  String get defaultRewards;
+
+  /// No description provided for @myRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'My Rewards'**
+  String get myRewards;
 }
 
 class _AppLocalizationsDelegate

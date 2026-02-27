@@ -381,4 +381,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackSentMessage => 'Thank you for your feedback!';
+
+  @override
+  String get customRewards => 'Custom Rewards';
+
+  @override
+  String get addReward => 'Add Reward';
+
+  @override
+  String get editReward => 'Edit Reward';
+
+  @override
+  String get deleteReward => 'Delete Reward';
+
+  @override
+  String get rewardName => 'Reward Name';
+
+  @override
+  String get rewardCost => 'Points Required';
+
+  @override
+  String get selectIcon => 'Select Icon';
+
+  @override
+  String get rewardAdded => 'Reward added!';
+
+  @override
+  String get rewardUpdated => 'Reward updated!';
+
+  @override
+  String get rewardDeleted => 'Reward deleted';
+
+  @override
+  String get deleteRewardConfirm => 'Delete this reward?';
+
+  @override
+  String get noRewardsYet => 'No custom rewards yet. Tap + to add one!';
+
+  @override
+  String get enterRewardName => 'Please enter reward name';
+
+  @override
+  String get enterValidCost => 'Please enter valid points';
+
+  @override
+  String get defaultRewards => 'Default Rewards';
+
+  @override
+  String get myRewards => 'My Rewards';
 }

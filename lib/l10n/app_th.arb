@@ -134,5 +134,21 @@
   "settingsUpdatedTitle": "อัปเดตการตั้งค่าแล้ว",
   "settingsUpdatedMessage": "บันทึกการตั้งค่าของคุณเรียบร้อยแล้ว",
   "feedbackSentTitle": "ส่งความคิดเห็นแล้ว",
-  "feedbackSentMessage": "ขอบคุณสำหรับความคิดเห็นของคุณ!"
+  "feedbackSentMessage": "ขอบคุณสำหรับความคิดเห็นของคุณ!",
+  "customRewards": "รางวัลส่วนตัว",
+  "addReward": "เพิ่มรางวัล",
+  "editReward": "แก้ไขรางวัล",
+  "deleteReward": "ลบรางวัล",
+  "rewardName": "ชื่อรางวัล",
+  "rewardCost": "คะแนนที่ต้องใช้",
+  "selectIcon": "เลือกไอคอน",
+  "rewardAdded": "เพิ่มรางวัลแล้ว!",
+  "rewardUpdated": "อัปเดตรางวัลแล้ว!",
+  "rewardDeleted": "ลบรางวัลแล้ว",
+  "deleteRewardConfirm": "ลบรางวัลนี้?",
+  "noRewardsYet": "ยังไม่มีรางวัล กด + เพื่อเพิ่ม!",
+  "enterRewardName": "กรุณากรอกชื่อรางวัล",
+  "enterValidCost": "กรุณากรอกคะแนนที่ถูกต้อง",
+  "defaultRewards": "รางวัลแนะนำ",
+  "myRewards": "รางวัลของฉัน"
 }

@@ -181,5 +181,21 @@
   "settingsUpdatedTitle": "Settings Updated",
   "settingsUpdatedMessage": "Your preferences have been saved.",
   "feedbackSentTitle": "Feedback Sent",
-  "feedbackSentMessage": "Thank you for your feedback!"
+  "feedbackSentMessage": "Thank you for your feedback!",
+  "customRewards": "Custom Rewards",
+  "addReward": "Add Reward",
+  "editReward": "Edit Reward",
+  "deleteReward": "Delete Reward",
+  "rewardName": "Reward Name",
+  "rewardCost": "Points Required",
+  "selectIcon": "Select Icon",
+  "rewardAdded": "Reward added!",
+  "rewardUpdated": "Reward updated!",
+  "rewardDeleted": "Reward deleted",
+  "deleteRewardConfirm": "Delete this reward?",
+  "noRewardsYet": "No custom rewards yet. Tap + to add one!",
+  "enterRewardName": "Please enter reward name",
+  "enterValidCost": "Please enter valid points",
+  "defaultRewards": "Default Rewards",
+  "myRewards": "My Rewards"
 }

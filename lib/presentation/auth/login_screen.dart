@@ -78,15 +78,19 @@ class _LoginScreenState extends State<LoginScreen>
       }
     } else {
       if (mounted) {
+        final errorMsg =
+            authProvider.errorMessage ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.white, size: 18),
-                SizedBox(width: 12),
-                Text(
-                  'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+                const Icon(Icons.info_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    errorMsg,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),

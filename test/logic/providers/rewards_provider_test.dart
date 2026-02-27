@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kidguard/logic/providers/rewards_provider.dart';
+import 'package:kidguard/data/models/reward_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../helpers/firebase_mock.dart';
 
 void main() {
@@ -110,6 +112,92 @@ void main() {
       test('errorMessage starts as null', () {
         expect(provider.errorMessage, isNull);
       });
+
+      test('customRewards starts empty', () {
+        expect(provider.customRewards, isEmpty);
+      });
+    });
+  });
+
+  group('RewardModel', () {
+    test('fromMap creates model correctly', () {
+      final now = DateTime.now();
+      final map = {
+        'name': 'Ice Cream',
+        'emoji': '🍦',
+        'cost': 50,
+        'createdAt': Timestamp.fromDate(now),
+      };
+
+      final model = RewardModel.fromMap(map, 'test-id');
+
+      expect(model.id, 'test-id');
+      expect(model.name, 'Ice Cream');
+      expect(model.emoji, '🍦');
+      expect(model.cost, 50);
+      expect(model.createdAt.year, now.year);
+    });
+
+    test('fromMap handles missing fields with defaults', () {
+      final model = RewardModel.fromMap({}, 'empty-id');
+
+      expect(model.id, 'empty-id');
+      expect(model.name, '');
+      expect(model.emoji, '⭐');
+      expect(model.cost, 0);
+    });
+
+    test('toMap returns correct map', () {
+      final model = RewardModel(
+        id: 'test',
+        name: 'Game Time',
+        emoji: '🎮',
+        cost: 100,
+        createdAt: DateTime(2026, 1, 1),
+      );
+
+      final map = model.toMap();
+
+      expect(map['name'], 'Game Time');
+      expect(map['emoji'], '🎮');
+      expect(map['cost'], 100);
+      expect(map['createdAt'], isA<Timestamp>());
+    });
+
+    test('copyWith creates copy with updated fields', () {
+      final original = RewardModel(
+        id: 'test',
+        name: 'Old Name',
+        emoji: '⭐',
+        cost: 50,
+        createdAt: DateTime(2026, 1, 1),
+      );
+
+      final updated = original.copyWith(name: 'New Name', cost: 100);
+
+      expect(updated.id, 'test');
+      expect(updated.name, 'New Name');
+      expect(updated.emoji, '⭐');
+      expect(updated.cost, 100);
+      expect(updated.createdAt, original.createdAt);
+    });
+
+    test('copyWith preserves all fields when nothing specified', () {
+      final original = RewardModel(
+        id: 'test',
+        name: 'Original',
+        emoji: '🎁',
+        cost: 75,
+        createdAt: DateTime(2026, 2, 15),
+      );
+
+      final copy = original.copyWith();
+
+      expect(copy.id, original.id);
+      expect(copy.name, original.name);
+      expect(copy.emoji, original.emoji);
+      expect(copy.cost, original.cost);
+      expect(copy.createdAt, original.createdAt);
     });
   });
 }

@@ -378,4 +378,52 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get feedbackSentMessage => 'ขอบคุณสำหรับความคิดเห็นของคุณ!';
+
+  @override
+  String get customRewards => 'รางวัลส่วนตัว';
+
+  @override
+  String get addReward => 'เพิ่มรางวัล';
+
+  @override
+  String get editReward => 'แก้ไขรางวัล';
+
+  @override
+  String get deleteReward => 'ลบรางวัล';
+
+  @override
+  String get rewardName => 'ชื่อรางวัล';
+
+  @override
+  String get rewardCost => 'คะแนนที่ต้องใช้';
+
+  @override
+  String get selectIcon => 'เลือกไอคอน';
+
+  @override
+  String get rewardAdded => 'เพิ่มรางวัลแล้ว!';
+
+  @override
+  String get rewardUpdated => 'อัปเดตรางวัลแล้ว!';
+
+  @override
+  String get rewardDeleted => 'ลบรางวัลแล้ว';
+
+  @override
+  String get deleteRewardConfirm => 'ลบรางวัลนี้?';
+
+  @override
+  String get noRewardsYet => 'ยังไม่มีรางวัล กด + เพื่อเพิ่ม!';
+
+  @override
+  String get enterRewardName => 'กรุณากรอกชื่อรางวัล';
+
+  @override
+  String get enterValidCost => 'กรุณากรอกคะแนนที่ถูกต้อง';
+
+  @override
+  String get defaultRewards => 'รางวัลแนะนำ';
+
+  @override
+  String get myRewards => 'รางวัลของฉัน';
 }

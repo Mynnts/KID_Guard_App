@@ -1,7 +1,8 @@
 // ==================== Rewards Provider ====================
-/// จัดการ logic ของระบบ Rewards: เพิ่มคะแนน, แลกรางวัล, ดึงประวัติ
+/// จัดการ logic ของระบบ Rewards: เพิ่มคะแนน, แลกรางวัล, ดึงประวัติ, จัดการรางวัล custom
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../data/models/reward_model.dart';
 
 class RewardsProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,6 +13,7 @@ class RewardsProvider extends ChangeNotifier {
   Map<DateTime, List<dynamic>> _events = {};
   bool _isLoading = false;
   String? _errorMessage;
+  List<RewardModel> _customRewards = [];
 
   // Getters
   int get currentPoints => _currentPoints;
@@ -20,6 +22,7 @@ class RewardsProvider extends ChangeNotifier {
   Map<DateTime, List<dynamic>> get events => _events;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  List<RewardModel> get customRewards => List.unmodifiable(_customRewards);
 
   /// เริ่มต้นค่า points จากข้อมูล child
   void initializePoints(int points) {
@@ -159,6 +162,145 @@ class RewardsProvider extends ChangeNotifier {
       notifyListeners();
 
       await fetchHistory(userId, childId);
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ==================== Custom Rewards CRUD ====================
+
+  /// ดึงรางวัล custom ทั้งหมดของ user
+  Future<void> fetchCustomRewards(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('custom_rewards')
+          .orderBy('createdAt', descending: false)
+          .get();
+
+      _customRewards = snapshot.docs
+          .map((doc) => RewardModel.fromMap(doc.data(), doc.id))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
+  /// เพิ่มรางวัล custom ใหม่
+  Future<bool> addCustomReward({
+    required String userId,
+    required String name,
+    required String emoji,
+    required int cost,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final reward = RewardModel(
+        id: '',
+        name: name,
+        emoji: emoji,
+        cost: cost,
+        createdAt: DateTime.now(),
+      );
+
+      final docRef = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('custom_rewards')
+          .add(reward.toMap());
+
+      _customRewards.add(
+        RewardModel(
+          id: docRef.id,
+          name: name,
+          emoji: emoji,
+          cost: cost,
+          createdAt: reward.createdAt,
+        ),
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// แก้ไขรางวัล custom
+  Future<bool> updateCustomReward({
+    required String userId,
+    required String rewardId,
+    required String name,
+    required String emoji,
+    required int cost,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('custom_rewards')
+          .doc(rewardId)
+          .update({'name': name, 'emoji': emoji, 'cost': cost});
+
+      final index = _customRewards.indexWhere((r) => r.id == rewardId);
+      if (index != -1) {
+        _customRewards[index] = _customRewards[index].copyWith(
+          name: name,
+          emoji: emoji,
+          cost: cost,
+        );
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// ลบรางวัล custom
+  Future<bool> deleteCustomReward({
+    required String userId,
+    required String rewardId,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('custom_rewards')
+          .doc(rewardId)
+          .delete();
+
+      _customRewards.removeWhere((r) => r.id == rewardId);
+
+      _isLoading = false;
+      notifyListeners();
       return true;
     } catch (e) {
       _isLoading = false;
