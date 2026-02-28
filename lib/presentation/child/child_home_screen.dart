@@ -233,6 +233,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
         await prefs.setBool('isChildModeActive', true);
         await prefs.setString('activeChildId', child.id);
         await prefs.setString('activeParentUid', user.uid);
+        await prefs.setString('activeParentPin', user.pin ?? '');
 
         await _backgroundService.startMonitoring(child.id, user.uid);
         await _locationService.startTracking(user.uid, child.id);
@@ -461,6 +462,7 @@ class _ChildHomeScreenState extends State<ChildHomeScreen>
     await prefs.setBool('isChildModeActive', false);
     await prefs.remove('activeChildId');
     await prefs.remove('activeParentUid');
+    await prefs.remove('activeParentPin');
 
     await _backgroundService.stopMonitoring();
     _locationService.stopTracking();
