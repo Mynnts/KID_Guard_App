@@ -292,6 +292,12 @@ class AuthProvider with ChangeNotifier {
       await FirebaseFirestore.instance
           .collection('child_sessions')
           .doc(currentUser.uid)
+          .delete()
+          .catchError((_) {}); // Doc may not exist yet — that's fine
+
+      await FirebaseFirestore.instance
+          .collection('child_sessions')
+          .doc(currentUser.uid)
           .set({
             'parentUid': parentUid,
             'createdAt': FieldValue.serverTimestamp(),

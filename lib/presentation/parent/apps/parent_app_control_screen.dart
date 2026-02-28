@@ -20,7 +20,7 @@ class ParentAppControlScreen extends StatefulWidget {
 
 class _ParentAppControlScreenState extends State<ParentAppControlScreen> {
   String _searchQuery = '';
-  bool _showSystemApps = true;
+  bool _showSystemApps = false;
   String? _selectedChildId;
   final Map<String, bool> _optimisticLocks =
       {}; // Local state for instant feedback

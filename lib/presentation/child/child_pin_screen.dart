@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../logic/providers/auth_provider.dart';
 import '../../config/routes.dart';
 import '../../core/utils/responsive_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
 class ChildPinScreen extends StatefulWidget {
@@ -93,6 +94,13 @@ class _ChildPinScreenState extends State<ChildPinScreen>
     final success = await auth.childLogin(_pin);
 
     if (success && mounted) {
+      // Save PIN immediately for session restore on app restart
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('activeParentPin', _pin);
+      if (auth.userModel != null) {
+        await prefs.setString('activeParentUid', auth.userModel!.uid);
+      }
+
       if (auth.children.isNotEmpty) {
         Navigator.pushReplacementNamed(context, AppRoutes.childSelection);
       } else {

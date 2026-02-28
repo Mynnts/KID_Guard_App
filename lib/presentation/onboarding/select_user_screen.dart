@@ -87,7 +87,7 @@ class _SelectUserScreenState extends State<SelectUserScreen>
 
       // ดึง PIN จาก SharedPreferences แล้วใช้ childLogin
       final savedPin = prefs.getString('activeParentPin');
-      if (savedPin != null) {
+      if (savedPin != null && savedPin.isNotEmpty) {
         final success = await authProvider.childLogin(savedPin);
         if (success && authProvider.children.isNotEmpty) {
           try {

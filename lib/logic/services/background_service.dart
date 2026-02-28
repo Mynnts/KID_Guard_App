@@ -12,6 +12,7 @@ class BackgroundService {
   String? _currentChildId;
   String? _currentParentId;
   int _sessionSeconds = 0;
+  bool _initialLimitLoaded = false;
 
   // Dynamic blocklist
   Set<String> _blockedPackages = {};
@@ -146,6 +147,7 @@ class BackgroundService {
     _childSubscription?.cancel();
     _isMonitoring = false;
     _sessionSeconds = 0;
+    _initialLimitLoaded = false;
     _blockedPackages.clear();
     _lastBlockedPackage = null;
     _isInRestrictedTime = false;
@@ -193,9 +195,19 @@ class BackgroundService {
               if (data != null) {
                 // Time Limit
                 _dailyTimeLimit = data['dailyTimeLimit'] ?? 0;
-                // Use limitUsedTime for limit checking, fallback to screenTime for older data
-                _currentLimitUsedTime =
+                // Only sync limitUsedTime from Firestore on initial load
+                // or when the Firestore value is LOWER (parent reset)
+                // During active monitoring, local counter is authoritative
+                final firestoreLimitUsed =
                     data['limitUsedTime'] ?? data['screenTime'] ?? 0;
+                if (!_initialLimitLoaded) {
+                  // First load — use Firestore value
+                  _currentLimitUsedTime = firestoreLimitUsed;
+                  _initialLimitLoaded = true;
+                } else if (firestoreLimitUsed < _currentLimitUsedTime) {
+                  // Parent reset the timer — use lower value
+                  _currentLimitUsedTime = firestoreLimitUsed;
+                }
 
                 // Time Limit Disabled Until (set by parent unlock)
                 if (data['timeLimitDisabledUntil'] != null) {

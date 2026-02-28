@@ -5,6 +5,7 @@ import '../../logic/providers/auth_provider.dart';
 import '../../data/models/child_model.dart';
 import '../../config/routes.dart';
 import '../../core/utils/responsive_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChildSelectionScreen extends StatefulWidget {
   const ChildSelectionScreen({super.key});
@@ -217,6 +218,11 @@ class _ChildSelectionScreenState extends State<ChildSelectionScreen>
                     listen: false,
                   );
                   await authProvider.selectChild(child);
+
+                  // Save selected child for session restore
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('activeChildId', child.id);
+
                   if (context.mounted) {
                     Navigator.pushReplacementNamed(
                       context,
