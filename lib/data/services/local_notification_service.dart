@@ -8,7 +8,7 @@ class LocalNotificationService {
 
   static Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_stat_name');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
@@ -70,6 +70,7 @@ class LocalNotificationService {
           playSound: soundEnabled,
           enableVibration: vibrationEnabled,
           color: const Color(0xFF6B9080),
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
         );
 
     final NotificationDetails notificationDetails = NotificationDetails(

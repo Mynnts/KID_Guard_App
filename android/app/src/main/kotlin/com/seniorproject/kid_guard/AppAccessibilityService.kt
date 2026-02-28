@@ -63,6 +63,7 @@ class AppAccessibilityService : AccessibilityService() {
     private var isOverlayShowing = false
     private var lastBlockedPackage: String? = null
     private var currentRestrictionType: RestrictionType = RestrictionType.NONE
+    private var lastBlockedNotificationTime: Long = 0
     
     // Screen Timeout Feature
     private var screenTimeoutMinutes = 5 // Default 5 minutes, configurable by parent
@@ -583,6 +584,13 @@ class AppAccessibilityService : AccessibilityService() {
             if (isAppBlocked(packageName)) {
                 currentRestrictionType = RestrictionType.BLOCKED_APP
                 lastBlockedPackage = packageName
+                
+                val now = System.currentTimeMillis()
+                if (now - lastBlockedNotificationTime > 30000) { // 30 seconds cooldown
+                    sendNotificationToParent("blocked_app")
+                    lastBlockedNotificationTime = now
+                }
+                
                 // เด้งกลับ Home screen ทันที
                 performGlobalAction(GLOBAL_ACTION_HOME)
             } else {
@@ -743,8 +751,18 @@ class AppAccessibilityService : AccessibilityService() {
             },
             "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
             "type" to "alert",
+            "category" to when (reason) {
+                "blocked_app" -> "app_blocked"
+                "sleep", "quiet", "time_limit" -> "time_limit"
+                else -> "system"
+            },
             "isRead" to false,
-            "iconName" to "warning_rounded",
+            "iconName" to when (reason) {
+                "blocked_app" -> "block_rounded"
+                "sleep", "quiet" -> "schedule_rounded"
+                "time_limit" -> "warning_rounded"
+                else -> "warning_rounded"
+            },
             "colorValue" to -0x10000 // Red
         )
 
