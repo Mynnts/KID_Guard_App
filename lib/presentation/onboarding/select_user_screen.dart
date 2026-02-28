@@ -189,13 +189,15 @@ class _SelectUserScreenState extends State<SelectUserScreen>
                 width: r.wp(80),
                 height: r.wp(80),
                 decoration: BoxDecoration(
-                  color: _accentColor,
+                  color: const Color(0xFF779C85),
                   borderRadius: BorderRadius.circular(r.radius(24)),
                 ),
-                child: Icon(
-                  Icons.shield_outlined,
-                  size: r.iconSize(40),
-                  color: Colors.white,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(r.radius(24)),
+                  child: Image.asset(
+                    'assets/icons/Kid_Guard.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               SizedBox(height: r.hp(24)),
@@ -316,20 +318,19 @@ class _SelectUserScreenState extends State<SelectUserScreen>
       width: r.wp(80),
       height: r.wp(80),
       decoration: BoxDecoration(
-        color: _accentColor,
+        color: const Color(0xFF779C85),
         borderRadius: BorderRadius.circular(r.radius(24)),
         boxShadow: [
           BoxShadow(
-            color: _accentColor.withOpacity(0.25),
+            color: const Color(0xFF779C85).withOpacity(0.25),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Icon(
-        Icons.shield_outlined,
-        size: r.iconSize(40),
-        color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(r.radius(24)),
+        child: Image.asset('assets/icons/Kid_Guard.png', fit: BoxFit.cover),
       ),
     );
   }

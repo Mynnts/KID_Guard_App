@@ -34,8 +34,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   final List<_OnboardingPage> _pages = const [
     _OnboardingPage(
-      icon: Icons.shield_outlined,
-      iconBgGradient: [Color(0xFF6B9080), Color(0xFF84A98C)],
+      imageAsset: 'assets/icons/Kid_Guard_Foreground.png',
+      iconBgGradient: [Color(0xFF779C85), Color(0xFF779C85)],
       title: 'ยินดีต้อนรับสู่ Kid Guard',
       subtitle: 'ปกป้อง ดูแล เข้าใจ',
       description:
@@ -226,11 +226,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ],
               ),
               child: Center(
-                child: Icon(
-                  page.icon,
-                  size: r.iconSize(52),
-                  color: Colors.white,
-                ),
+                child: page.imageAsset != null
+                    ? Image.asset(
+                        page.imageAsset!,
+                        width: r.iconSize(64),
+                        height: r.iconSize(64),
+                        fit: BoxFit.contain,
+                      )
+                    : Icon(
+                        page.icon,
+                        size: r.iconSize(52),
+                        color: Colors.white,
+                      ),
               ),
             ),
           ),
@@ -352,14 +359,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
 // ==================== Data Model ====================
 class _OnboardingPage {
-  final IconData icon;
+  final IconData? icon;
+  final String? imageAsset;
   final List<Color> iconBgGradient;
   final String title;
   final String subtitle;
   final String description;
 
   const _OnboardingPage({
-    required this.icon,
+    this.icon,
+    this.imageAsset,
     required this.iconBgGradient,
     required this.title,
     required this.subtitle,
