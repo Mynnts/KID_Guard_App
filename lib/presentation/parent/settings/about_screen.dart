@@ -122,7 +122,6 @@ class _AboutScreenState extends State<AboutScreen> {
                             width: r.wp(90),
                             height: r.wp(90),
                             decoration: BoxDecoration(
-                              color: Colors.white,
                               borderRadius: BorderRadius.circular(r.radius(24)),
                               boxShadow: [
                                 BoxShadow(
@@ -132,12 +131,16 @@ class _AboutScreenState extends State<AboutScreen> {
                                 ),
                               ],
                             ),
-                            child: const Hero(
+                            child: Hero(
                               tag: 'app_logo',
-                              child: Icon(
-                                Icons.shield_rounded,
-                                color: _primaryColor,
-                                size: 50,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  r.radius(24),
+                                ),
+                                child: Image.asset(
+                                  'assets/icons/Kid_Guard.png',
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
