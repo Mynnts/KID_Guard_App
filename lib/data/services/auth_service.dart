@@ -174,8 +174,8 @@ class AuthService {
   // ==================== สร้าง PIN ====================
   /// สร้าง PIN 6 หลักสำหรับผู้ปกครอง
   /// - ถ้ามี PIN อยู่แล้วจะคืนค่าเดิม
-  /// - ตรวจสอบความไม่ซ้ำกับผู้ใช้อื่น
-  /// - บันทึกลง Firestore
+  /// - ตรวจสอบความไม่ซ้ำผ่าน /pins/{pin} collection
+  /// - บันทึกลง Firestore ทั้ง users/{uid} และ pins/{pin}
   Future<String?> generatePin(String uid) async {
     try {
       // ตรวจสอบว่ามี PIN อยู่แล้วหรือไม่
@@ -186,7 +186,19 @@ class AuthService {
       if (userDoc.exists) {
         final data = userDoc.data() as Map<String, dynamic>;
         if (data['pin'] != null && data['pin'].toString().isNotEmpty) {
-          return data['pin'].toString(); // Ensure it's returned as a String
+          // ตรวจว่า pins collection มีข้อมูลด้วย (migration safety)
+          final existingPin = data['pin'].toString();
+          final pinDoc = await _firestore
+              .collection('pins')
+              .doc(existingPin)
+              .get();
+          if (!pinDoc.exists) {
+            await _firestore.collection('pins').doc(existingPin).set({
+              'parentUid': uid,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          }
+          return existingPin;
         }
       }
 
@@ -199,20 +211,24 @@ class AuthService {
         pin = (100000 + DateTime.now().microsecondsSinceEpoch % 900000)
             .toString();
 
-        // Check uniqueness
-        final query = await _firestore
-            .collection('users')
-            .where('pin', isEqualTo: pin)
-            .get();
+        // Check uniqueness ผ่าน pins collection (doc read แทน query)
+        final pinDoc = await _firestore.collection('pins').doc(pin).get();
 
-        if (query.docs.isEmpty) {
+        if (!pinDoc.exists) {
           isUnique = true;
         }
         attempts++;
       }
 
       if (isUnique) {
-        await _firestore.collection('users').doc(uid).update({'pin': pin});
+        // เขียนทั้ง 2 ที่พร้อมกัน (batch)
+        final batch = _firestore.batch();
+        batch.update(_firestore.collection('users').doc(uid), {'pin': pin});
+        batch.set(_firestore.collection('pins').doc(pin), {
+          'parentUid': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        await batch.commit();
         return pin;
       } else {
         throw Exception('Failed to generate unique PIN');
@@ -272,19 +288,41 @@ class AuthService {
   }
 
   // ==================== ตรวจสอบ PIN ====================
+  /// ดึง parentUid จาก PIN (อ่านเฉพาะ pins/{pin} — ไม่ต้อง auth)
+  Future<String?> getParentUidFromPin(String pin) async {
+    try {
+      final pinDoc = await _firestore.collection('pins').doc(pin).get();
+      if (pinDoc.exists) {
+        return pinDoc.data()?['parentUid'] as String?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// ตรวจสอบ PIN สำหรับการล็อกอินของเด็ก
+  /// อ่านจาก /pins/{pin} แทน query users ทั้งหมด
   /// @return UserModel ของผู้ปกครองถ้า PIN ถูกต้อง
   Future<UserModel?> verifyPin(String pin) async {
     try {
-      final query = await _firestore
-          .collection('users')
-          .where('pin', isEqualTo: pin)
-          .limit(1)
-          .get();
+      // อ่านจาก pins collection โดยตรง (single doc read)
+      final pinDoc = await _firestore.collection('pins').doc(pin).get();
 
-      if (query.docs.isNotEmpty) {
-        final doc = query.docs.first;
-        return UserModel.fromMap(doc.data(), doc.id);
+      if (pinDoc.exists) {
+        final parentUid = pinDoc.data()?['parentUid'] as String?;
+        if (parentUid != null) {
+          final userDoc = await _firestore
+              .collection('users')
+              .doc(parentUid)
+              .get();
+          if (userDoc.exists) {
+            return UserModel.fromMap(
+              userDoc.data() as Map<String, dynamic>,
+              userDoc.id,
+            );
+          }
+        }
       }
       return null;
     } catch (e) {

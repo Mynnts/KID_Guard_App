@@ -24,8 +24,11 @@ class AuthProvider with ChangeNotifier {
   StreamSubscription<User?>? _authStateSubscription;
   StreamSubscription<DocumentSnapshot>? _currentChildSubscription;
 
+  bool _isChildMode = false;
+
   List<ChildModel> get children => _children;
   ChildModel? get currentChild => _currentChild;
+  bool get isChildMode => _isChildMode;
 
   Future<void> init() async {
     // Cancel existing subscription if init is called again
@@ -34,12 +37,15 @@ class AuthProvider with ChangeNotifier {
     _authStateSubscription = _authService.authStateChanges.listen((
       User? user,
     ) async {
-      if (user != null) {
+      // ข้าม listener ตอนอยู่ใน child mode (anonymous auth)
+      if (_isChildMode) return;
+
+      if (user != null && !user.isAnonymous) {
         _userModel = await _authService.getUserData(user.uid);
         if (_userModel != null) {
           await fetchChildren();
         }
-      } else {
+      } else if (user == null) {
         _userModel = null;
         _children = [];
       }
@@ -226,34 +232,83 @@ class AuthProvider with ChangeNotifier {
     _currentChildSubscription = null;
 
     if (_userModel != null && _currentChild != null) {
-      await _authService.updateChildStatus(
-        _userModel!.uid,
-        _currentChild!.id,
-        false,
-      );
+      try {
+        await _authService.updateChildStatus(
+          _userModel!.uid,
+          _currentChild!.id,
+          false,
+        );
+      } catch (_) {}
     }
+
+    // ลบ child session และ anonymous account
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null && currentUser.isAnonymous) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('child_sessions')
+            .doc(currentUser.uid)
+            .delete();
+        await currentUser.delete();
+      } catch (_) {
+        try {
+          await FirebaseAuth.instance.signOut();
+        } catch (_) {}
+      }
+    }
+
     _currentChild = null;
+    _userModel = null;
+    _children = [];
+    _isChildMode = false;
     notifyListeners();
   }
 
   Future<bool> childLogin(String pin) async {
     try {
       _isLoading = true;
+      _isChildMode = true;
       notifyListeners();
-      final parentUser = await _authService.verifyPin(pin);
-      if (parentUser != null) {
-        // For child login, we might want to store the parent's info
-        // or a specific child session. For now, we'll store the parent user
-        // but we should probably handle this differently in a real app
-        // (e.g., separate ChildModel).
-        // Assuming the requirement is just to link/login.
-        _userModel = parentUser;
-        await fetchChildren(); // Fetch children for the parent
-        return true;
+
+      // 1. Sign in anonymously (ให้มี Firebase Auth session)
+      await FirebaseAuth.instance.signInAnonymously();
+
+      // 2. ดึง parentUid จาก PIN (อ่าน pins/{pin} ไม่ต้อง auth)
+      final parentUid = await _authService.getParentUidFromPin(pin);
+      if (parentUid == null) {
+        _isChildMode = false;
+        try {
+          await FirebaseAuth.instance.signOut();
+        } catch (_) {}
+        return false;
       }
-      return false;
+
+      // 3. สร้าง child session mapping
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        _isChildMode = false;
+        return false;
+      }
+      await FirebaseFirestore.instance
+          .collection('child_sessions')
+          .doc(currentUser.uid)
+          .set({
+            'parentUid': parentUid,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      // 4. ตอนนี้ rules อนุญาตแล้ว — ดึงข้อมูล parent
+      _userModel = await _authService.getUserData(parentUid);
+      if (_userModel != null) {
+        await fetchChildren();
+      }
+
+      return _userModel != null;
     } catch (e) {
-      // Error during child login
+      _isChildMode = false;
+      try {
+        await FirebaseAuth.instance.signOut();
+      } catch (_) {}
       return false;
     } finally {
       _isLoading = false;

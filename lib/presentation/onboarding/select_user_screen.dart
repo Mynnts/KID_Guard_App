@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/routes.dart';
 import '../../logic/providers/auth_provider.dart';
@@ -78,72 +77,47 @@ class _SelectUserScreenState extends State<SelectUserScreen>
     }
 
     // FIRST: Check if child mode is active (app relaunched after swipe-away)
-    // This must be checked before Firebase Auth because child device
-    // uses PIN login (no Firebase Auth session)
     final prefs = await SharedPreferences.getInstance();
     final isChildModeActive = prefs.getBool('isChildModeActive') ?? false;
     final activeChildId = prefs.getString('activeChildId');
     final activeParentUid = prefs.getString('activeParentUid');
 
     if (isChildModeActive && activeChildId != null && activeParentUid != null) {
-      // Restore child session without Firebase Auth
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // Wait for AuthProvider to be ready (max 3 seconds)
-      int attempts = 0;
-      while (authProvider.userModel == null && attempts < 30) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
-        if (!mounted) return;
-      }
+      // ดึง PIN จาก SharedPreferences แล้วใช้ childLogin
+      final savedPin = prefs.getString('activeParentPin');
+      if (savedPin != null) {
+        final success = await authProvider.childLogin(savedPin);
+        if (success && authProvider.children.isNotEmpty) {
+          try {
+            final child = authProvider.children.firstWhere(
+              (c) => c.id == activeChildId,
+            );
+            await authProvider.selectChild(child);
 
-      // If AuthProvider didn't load (no Firebase Auth), manually restore via Firestore
-      if (authProvider.userModel == null) {
-        try {
-          // Restore parent data from Firestore using saved parentUid
-          final parentDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(activeParentUid)
-              .get();
-
-          if (parentDoc.exists && parentDoc.data() != null) {
-            // Use childLogin with the parent's PIN to restore session
-            final parentPin = parentDoc.data()!['pin'] as String?;
-            if (parentPin != null) {
-              await authProvider.childLogin(parentPin);
+            if (mounted && !_hasNavigated) {
+              _hasNavigated = true;
+              Navigator.pushReplacementNamed(context, AppRoutes.childHome);
             }
+            return;
+          } catch (_) {
+            // Child not found, clear stale data
           }
-        } catch (e) {
-          // Failed to restore child session
         }
       }
 
-      // Now try to select the child
-      if (authProvider.children.isNotEmpty) {
-        try {
-          final child = authProvider.children.firstWhere(
-            (c) => c.id == activeChildId,
-          );
-          await authProvider.selectChild(child);
-
-          if (mounted && !_hasNavigated) {
-            _hasNavigated = true;
-            Navigator.pushReplacementNamed(context, AppRoutes.childHome);
-          }
-          return;
-        } catch (_) {
-          // Child not found, clear stale data and fall through
-          await prefs.setBool('isChildModeActive', false);
-          await prefs.remove('activeChildId');
-          await prefs.remove('activeParentUid');
-        }
-      }
+      // Failed to restore — clear stale data
+      await prefs.setBool('isChildModeActive', false);
+      await prefs.remove('activeChildId');
+      await prefs.remove('activeParentUid');
+      await prefs.remove('activeParentPin');
     }
 
-    // SECOND: Check Firebase Auth for parent login
+    // SECOND: Check Firebase Auth for parent login (skip anonymous users)
     final firebaseUser = FirebaseAuth.instance.currentUser;
 
-    if (firebaseUser != null) {
+    if (firebaseUser != null && !firebaseUser.isAnonymous) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       int attempts = 0;
@@ -159,6 +133,17 @@ class _SelectUserScreenState extends State<SelectUserScreen>
         Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
       }
     } else {
+      // Stale anonymous user — sign out
+      if (firebaseUser != null && firebaseUser.isAnonymous) {
+        try {
+          await firebaseUser.delete();
+        } catch (_) {
+          try {
+            await FirebaseAuth.instance.signOut();
+          } catch (_) {}
+        }
+      }
+
       // Not logged in, show select user screen
       if (mounted) {
         setState(() {
