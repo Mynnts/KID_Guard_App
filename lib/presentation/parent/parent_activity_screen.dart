@@ -368,38 +368,42 @@ class _ParentActivityScreenState extends State<ParentActivityScreen>
       futures.add(docRef.collection('daily_stats').doc(dateStr).get());
     }
 
-    final results = await Future.wait(futures);
+    try {
+      final results = await Future.wait(futures);
 
-    for (int i = 0; i < results.length; i++) {
-      final doc = results[i];
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        final seconds = data['screenTime'] as int? ?? 0;
-        screenTimeMap[dateStrs[i]] = seconds / 3600.0;
+      for (int i = 0; i < results.length; i++) {
+        final doc = results[i];
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          final seconds = data['screenTime'] as int? ?? 0;
+          screenTimeMap[dateStrs[i]] = seconds / 3600.0;
 
-        if (data.containsKey('apps') && data['apps'] is Map) {
-          appsDataMap[dateStrs[i]] = Map<String, dynamic>.from(
-            data['apps'] as Map,
-          );
-        } else {
-          final Map<String, Map<String, dynamic>> extractedApps = {};
-          data.forEach((key, value) {
-            if (key.startsWith('apps.')) {
-              final withoutPrefix = key.substring(5);
-              final dotIndex = withoutPrefix.indexOf('.');
-              if (dotIndex > 0) {
-                final appKey = withoutPrefix.substring(0, dotIndex);
-                final field = withoutPrefix.substring(dotIndex + 1);
-                extractedApps.putIfAbsent(appKey, () => {});
-                extractedApps[appKey]![field] = value;
+          if (data.containsKey('apps') && data['apps'] is Map) {
+            appsDataMap[dateStrs[i]] = Map<String, dynamic>.from(
+              data['apps'] as Map,
+            );
+          } else {
+            final Map<String, Map<String, dynamic>> extractedApps = {};
+            data.forEach((key, value) {
+              if (key.startsWith('apps.')) {
+                final withoutPrefix = key.substring(5);
+                final dotIndex = withoutPrefix.indexOf('.');
+                if (dotIndex > 0) {
+                  final appKey = withoutPrefix.substring(0, dotIndex);
+                  final field = withoutPrefix.substring(dotIndex + 1);
+                  extractedApps.putIfAbsent(appKey, () => {});
+                  extractedApps[appKey]![field] = value;
+                }
               }
+            });
+            if (extractedApps.isNotEmpty) {
+              appsDataMap[dateStrs[i]] = extractedApps.cast<String, dynamic>();
             }
-          });
-          if (extractedApps.isNotEmpty) {
-            appsDataMap[dateStrs[i]] = extractedApps.cast<String, dynamic>();
           }
         }
       }
+    } catch (e) {
+      debugPrint('Error fetching weekly data: $e');
     }
 
     return {'screenTimeMap': screenTimeMap, 'appsDataMap': appsDataMap};

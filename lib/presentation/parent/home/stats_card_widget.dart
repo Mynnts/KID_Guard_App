@@ -209,7 +209,9 @@ class _YesterdayComparison extends StatelessWidget {
           .get(),
       builder: (context, snapshot) {
         int yesterdaySeconds = 0;
-        if (snapshot.hasData && snapshot.data!.exists) {
+        if (snapshot.hasError) {
+          // Firestore permission denied — show no data gracefully
+        } else if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           yesterdaySeconds = data?['screenTime'] ?? 0;
         }
